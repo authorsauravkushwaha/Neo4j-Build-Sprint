@@ -22,6 +22,7 @@ import { WORKFLOW_ALLOWED_HOSTS, createMemoryRecorder, createWorkflowServices, u
 import { WORKFLOW_LIBRARY, findWorkflow, scheduledWorkflows } from '@core/workflow/library.ts'
 import { exportLibrary, toN8n } from '@core/workflow/n8nCompat.ts'
 import { evaluate, resolveReference, validateExpressions, type ExpressionScope } from '@core/workflow/expressions.ts'
+import { WORKFLOW_NODE_TYPES } from '@core/workflow/types.ts'
 import { describeCron, isDue, isValidCron, nextOccurrences, parseCron } from '@core/workflow/cron.ts'
 import type { WorkflowDefinition, WorkflowItem, WorkflowServices } from '@core/workflow/types.ts'
 
@@ -407,6 +408,19 @@ describe('the workflow library', () => {
     }
   })
 
+  it('ships six workflows: five read the graph, one sweeps the web', () => {
+    expect(WORKFLOW_LIBRARY).toHaveLength(6)
+    const probing = WORKFLOW_LIBRARY.filter((definition) => definition.nodes.some((node) => node.type === 'gm.resources.check'))
+    expect(probing).toHaveLength(1)
+  })
+
+  it('implements every node type the documentation names, including the pathway', async () => {
+    const { nodeTypes } = await import('@core/workflow/registry.ts')
+    for (const type of WORKFLOW_NODE_TYPES) {
+      expect(nodeTypes(), `No implementation for ${type}`).toContain(type)
+    }
+  })
+
   it('states its limits on every workflow, because a feature list without limits is marketing', () => {
     for (const definition of WORKFLOW_LIBRARY) {
       expect(definition.limitations.length, definition.id).toBeGreaterThan(0)
@@ -472,6 +486,7 @@ describe('the n8n export', () => {
   it('exports the whole library under stable file names', () => {
     const files = exportLibrary(WORKFLOW_LIBRARY)
     expect(Object.keys(files).sort()).toEqual([
+      'career-switch-trace.n8n.json',
       'frontier-export.n8n.json',
       'grounded-question.n8n.json',
       'public-api-map.n8n.json',

@@ -285,6 +285,62 @@ const publicApiMap: WorkflowDefinition = {
 }
 
 /**
+ * Career switch trace.
+ *
+ * The question a person actually asks when they are changing direction: "if I
+ * retrain for this, what is the order, and what does each step buy me?". The answer
+ * is the engine's route, with each step naming what it unblocks — not a list of
+ * courses, and not a promise about how long it will take in somebody else's life.
+ */
+const careerSwitchTrace: WorkflowDefinition = {
+  id: 'workflow:career-switch-trace',
+  name: 'Career switch trace',
+  version: 1,
+  description:
+    'Traces the ordered route into a second career from a stated starting point, naming what each step needs first and what it unlocks.',
+  limitations: [
+    'It knows the curriculum, not your CV. The starting point is the profile in the parameters and nothing else.',
+    'Ordering is the graph’s, which follows prerequisites, not the order a particular employer or course would teach.',
+    'A step appearing early is not advice to start it today; it means nothing else is blocking it.',
+  ],
+  trigger: { kind: 'manual', description: 'Run by hand, from the workflow page' },
+  settings: { limits: { maxNodes: 14, maxItemsPerNode: 120, maxRunMs: 30_000 } },
+  nodes: [
+    { id: 'c1', name: 'Start', type: 'gm.trigger.manual', typeVersion: 1, position: [0, 0], parameters: {} },
+    {
+      id: 'c2',
+      name: 'Route',
+      type: 'gm.graph.pathway',
+      typeVersion: 1,
+      position: [220, 0],
+      parameters: {
+        careerId: 'career:cloud-devops-engineer',
+        weeklyHours: 8,
+        pace: 'steady',
+        learningStyle: 'mixed',
+        ratings: [
+          { skillId: 'skill:programming-fundamentals', state: 'practised' },
+          { skillId: 'skill:operating-systems-and-linux', state: 'learning' },
+        ],
+      },
+      notes: 'The starting point is written here rather than inferred, so a reader can disagree with it.',
+    },
+    {
+      id: 'c3',
+      name: 'Digest',
+      type: 'gm.io.digest',
+      typeVersion: 1,
+      position: [440, 0],
+      parameters: { title: 'The route into cloud and DevOps' },
+    },
+  ],
+  connections: {
+    Start: { main: [[{ node: 'Route', type: 'main', index: 0 }]] },
+    Route: { main: [[{ node: 'Digest', type: 'main', index: 0 }]] },
+  },
+}
+
+/**
  * Frontier export.
  *
  * The canonical, diffable fixture that `tools/oracle/FrontierOracle.java`
@@ -330,6 +386,7 @@ const frontierExport: WorkflowDefinition = {
 
 export const WORKFLOW_LIBRARY: readonly WorkflowDefinition[] = [
   resourceFreshnessSweep,
+  careerSwitchTrace,
   weeklyPlanDigest,
   groundedQuestion,
   publicApiMap,

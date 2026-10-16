@@ -1,9 +1,23 @@
 {
+  "//": "Solution file. `compilerOptions.paths` is repeated here (and in tsconfig.node.json) so that tooling which reads the root config \u2014 `tsx` running the scripts in scripts/, and editors \u2014 resolves the same aliases the app and the tests use. Type checking still happens in the referenced projects.",
   "files": [],
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@core/*": [
+        "supabase/functions/_shared/core/*"
+      ]
+    }
+  }
 }
-
-

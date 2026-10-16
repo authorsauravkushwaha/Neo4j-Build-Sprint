@@ -127,6 +127,7 @@ export function hostAllowed(url: string, allowedHosts: readonly string[]): { all
  * implementations, and asserted in the tests.
  */
 const BATCH_NODES = new Set<string>([
+  'gm.graph.pathway',
   'gm.transform.merge',
   'gm.transform.filter',
   'gm.io.digest',
@@ -169,6 +170,44 @@ const implementations: Record<string, NodeImplementation> = {
       hoursHigh: report.hours.high,
       summary: report.summaryLine,
     })
+  },
+
+  /**
+   * The ordered route for one career.
+   *
+   * The steps arrive in the engine's own order, each naming what it needs first and
+   * what it unlocks, so a digest built from this node can say "start with X
+   * because it unlocks Y" without the workflow knowing anything about the graph.
+   */
+  'gm.graph.pathway': async (context) => {
+    const careerId = requireString(context, 'careerId')
+    const pace = stringifyValue(context.parameters.pace)
+    const style = stringifyValue(context.parameters.learningStyle)
+    const comfort = stringifyValue(context.parameters.difficultyComfort)
+    const route = await context.services.pathway({
+      careerId,
+      ratings: ratings(context),
+      weeklyHours: optionalNumber(context, 'weeklyHours', 8),
+      ...(pace === 'relaxed' || pace === 'steady' || pace === 'intensive' ? { pace } : {}),
+      ...(style === 'video' || style === 'reading' || style === 'hands-on' || style === 'mixed' ? { learningStyle: style } : {}),
+      ...(comfort === 'beginner' || comfort === 'intermediate' || comfort === 'advanced' ? { difficultyComfort: comfort } : {}),
+    })
+    if (route.steps.length === 0) {
+      return skipped('this profile has nothing left to learn for that career')
+    }
+    return {
+      items: route.steps.map((step) => ({
+        json: {
+          order: step.order,
+          skillId: step.skillId,
+          name: step.name,
+          needs: step.dependsOn,
+          unlocks: step.unlocks,
+          hoursLow: step.estimatedHours[0],
+          hoursHigh: step.estimatedHours[1],
+        },
+      })),
+    }
   },
 
   /** Resources that teach the skills in the incoming items. */

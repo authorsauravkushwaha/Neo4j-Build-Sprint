@@ -144,6 +144,10 @@ Two lists, side by side, because a feature list without its limits is marketing.
   prompt that asks before reloading — it never silently swaps the app under you.
 - **Capacitor Android** configuration committed (`appId: ai.graphmentor.app`) sharing the same build, plus
   the same Edge Functions, so user data has exactly one home.
+- **Two storage backends, one API**: Supabase (row-level security in the database) or Appwrite (the
+  ownership policy enforced by the adapter). Swapping them changes no screen and no handler. What differs,
+  and what has not been exercised, is in [appwrite.md](appwrite.md) — including the honest part: no live
+  Appwrite project has been run against this code.
 - Accessibility: skip link, focus-visible rings, labelled controls, reduced-motion support (which also
   disables graph animation), a theme selector, and text alternatives for every canvas-based feature.
 

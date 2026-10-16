@@ -101,6 +101,7 @@ export function createWorkflowServices(
     dataSource: options.dataSource ?? 'bundled-sample',
     network: options.network ?? false,
     frontier: overrides.frontier ?? (async () => unavailable('run a frontier analysis here', note)),
+    pathway: overrides.pathway ?? (async () => unavailable('trace a pathway here', note)),
     resources: overrides.resources ?? (async () => unavailable('list resources here', note)),
     mentor: overrides.mentor ?? (async () => unavailable('answer mentor questions here', note)),
     publicApis: overrides.publicApis ?? (async () => []),

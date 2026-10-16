@@ -177,6 +177,33 @@ export interface WorkflowServices {
     gatesUnlock: number
     hours: { low: number; high: number }
   }>
+  /**
+   * The ordered route for one career: what to learn, in what order, and what each
+   * step unlocks.
+   *
+   * Separate from `frontier` because they answer different questions. The frontier
+   * says what is left; the pathway says in what order to take it. Both come from
+   * the same engine and the same slice, so they cannot disagree.
+   */
+  pathway: (input: {
+    careerId: string
+    ratings: Array<{ skillId: string; state: string }>
+    weeklyHours: number
+    pace?: 'relaxed' | 'steady' | 'intensive'
+    learningStyle?: 'video' | 'reading' | 'hands-on' | 'mixed'
+    difficultyComfort?: 'beginner' | 'intermediate' | 'advanced'
+  }) => Promise<{
+    steps: Array<{
+      order: number
+      skillId: string
+      name: string
+      dependsOn: string[]
+      unlocks: string[]
+      estimatedHours: [number, number]
+    }>
+    totalHours: [number, number]
+    alternatives: number
+  }>
   /** Resources that teach a set of skills, with their verification state. */
   resources: (input: { skillIds: string[]; limit?: number }) => Promise<
     Array<{ id: string; name: string; url: string; accessModel: string; verified: string | null }>

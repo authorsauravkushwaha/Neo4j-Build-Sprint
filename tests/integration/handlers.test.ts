@@ -635,7 +635,17 @@ describe('authenticated writes', () => {
     expect(payload).toContain('Alice plan')
     expect(payload).not.toContain('Bob plan')
 
-    await call(manageAccountHandler, runtime, makeRequest({ path: '/manage-account', body: { action: 'delete-account-data' }, token: 'alice' }))
+    // Without the typed confirmation the server refuses, and nothing is deleted:
+    // the confirmation is enforced here, not only in the UI that happens to send it.
+    const unconfirmed = await call(manageAccountHandler, runtime, makeRequest({ path: '/manage-account', body: { action: 'delete-account-data' }, token: 'alice' }))
+    expect(unconfirmed.status).toBe(422)
+    expect(runtime.repos.snapshot().roadmaps.map((roadmap) => roadmap.title)).toEqual(['Alice plan', 'Bob plan'])
+
+    await call(
+      manageAccountHandler,
+      runtime,
+      makeRequest({ path: '/manage-account', body: { action: 'delete-account-data', confirm: 'DELETE' }, token: 'alice' }),
+    )
     const remaining = runtime.repos.snapshot().roadmaps
     expect(remaining.map((roadmap) => roadmap.title)).toEqual(['Bob plan'])
   })

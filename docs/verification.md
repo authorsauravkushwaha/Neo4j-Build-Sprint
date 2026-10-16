@@ -61,6 +61,29 @@ hiding the warning would hide the reason to split the landing route further.
 | `tests/integration/landing.test.tsx` | 6 | The 3D hero is labelled a fixed composition, no fabricated social proof, `guarantee` appears only in a denial, security bullets match implemented controls, the WebGL fallback still carries the page |
 | `tests/unit/docs.test.ts` | 3 | Every `docs/*.md` referenced from `src/` or `supabase/` exists and is cased correctly — the check that would have caught the three dead references this repo once had |
 
+### Later runs (2026-10-16)
+
+The rows above are the 2026-10-14 run and are kept as written, because a log that gets edited to match the
+current tree is no longer a log. These were re-measured on **2026-10-16**, after the workflow engine, the
+public-API import, the self-audit harness and the Appwrite storage adapter landed:
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Type check | `npx tsc -b` | **0 errors** |
+| Unit + integration tests | `npx vitest run` | **569 passed / 0 failed** across **35 files** |
+| Self-audit | `npx tsx scripts/audit/self.ts` | **25/25 passed**, 0 failed, 0 errored (report: [security-self-audit.md](security-self-audit.md)) |
+| Production build | `npm run build` | OK — 29 precache entries, 2832.45 KiB |
+| Appwrite adapter + conformance | `npx vitest run tests/unit/appwrite-adapter.test.ts tests/integration/appwrite-backend.test.ts` | **49 passed** (41 + 8; the integration half replays 21 requests on both backends and compares them one at a time) |
+
+Suites that did not exist when the table above was written: `tests/unit/workflow-engine.test.ts` (56),
+`tests/unit/self-audit.test.ts` (9), `tests/unit/appwrite-adapter.test.ts` (41),
+`tests/integration/appwrite-backend.test.ts` (8), `tests/unit/story-graph.test.ts` (11),
+`tests/unit/skiper-motion.test.ts` (14), `tests/integration/workflows.test.tsx` (7).
+
+**Not re-run on 2026-10-16**, and therefore still only claimed for 2026-10-14: §3 (resource links, which
+needs the open internet), §5's browser checks and local PostgreSQL rows, and the Java oracle. The container
+this change was made in has no Chromium download, no local database and no JDK; CI runs the first two.
+
 ## 2. Verified: dataset and generated Cypher
 
 | Check | Command | Result |

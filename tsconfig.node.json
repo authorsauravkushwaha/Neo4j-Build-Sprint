@@ -14,6 +14,15 @@
     "types": [
       "node"
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@core/*": [
+        "supabase/functions/_shared/core/*"
+      ]
+    },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   },
   "include": [
@@ -21,7 +30,8 @@
     "vitest.config.ts",
     "capacitor.config.ts",
     "scripts/**/*.ts",
-    "server/**/*.ts"
+    "server/**/*.ts",
+    "tests/helpers/**/*.ts"
   ]
 }
 

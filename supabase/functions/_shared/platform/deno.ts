@@ -5,12 +5,22 @@
  * (`Deno.env`, `Deno.serve`, the `npm:` Supabase client). Everything below it is
  * plain TypeScript that also runs in Node and the browser.
  *
- * Two Supabase clients are used deliberately:
+ * Two backends, one API. `selectBackend` reads the environment and the storage
+ * seam below it is injected either way, so handlers, repositories and the
+ * middleware are identical on both; see `appwrite.ts` and `docs/appwrite.md` for
+ * what genuinely differs (no row-level security, sessions instead of JWTs, no
+ * stored procedures) and how the adapter covers each gap.
+ *
+ * On Supabase, two clients are used deliberately:
  *  - `userClient`: anon key + the caller's `Authorization` header, so Row Level
  *    Security is enforced by Postgres for all user-owned records (primary control),
  *  - `adminClient`: service-role key, used ONLY for the rate-limit and nonce
  *    functions, which must work for anonymous callers too (secondary control).
  * The service-role key is never returned, logged, or forwarded anywhere.
+ *
+ * An Appwrite configuration that is present but incomplete is *not* a fallback to
+ * Supabase: `selectBackend` reports it, and the deployment stays read-only rather
+ * than writing somebody's data to a backend they did not configure.
  */
 import { createClient } from 'npm:@supabase/supabase-js@2.117.3'
 import {
@@ -36,6 +46,14 @@ import {
   createUserRepositories,
   type SupabaseLikeClient,
 } from './supabaseStore.ts'
+import {
+  appwriteConfigFromEnv,
+  createAppwriteAuthVerifier,
+  createAppwriteClient,
+  createAppwriteFixedWindowStore,
+  createAppwriteNonceStore,
+  selectBackend,
+} from './appwrite.ts'
 import type { GraphReader } from '../core/graphReader.ts'
 
 const env = (key: string) => Deno.env.get(key)
@@ -75,7 +93,25 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
   let nonce: Runtime['nonce'] | undefined
   let verifyAuth: Runtime['verifyAuth'] | undefined
 
-  if (supabaseUrl && anonKey) {
+  const backend = selectBackend(env)
+  if (backend.kind === 'appwrite') {
+    /*
+     * One client, because Appwrite has no separate privileged key: the server API
+     * key is the whole of it, and the boundary that RLS would draw is drawn by the
+     * adapter instead (`assertScoped` refuses an unscoped query on a user-scoped
+     * collection). Sessions are verified against `/account`, so identity still
+     * comes from the backend and never from the token's contents.
+     */
+    const appwrite = appwriteConfigFromEnv(env)
+    const appwriteClient = createAppwriteClient(appwrite)
+    repos = createUserRepositories(appwriteClient)
+    verifyAuth = createAppwriteAuthVerifier(appwrite)
+    rateLimit = createAppwriteFixedWindowStore(appwriteClient)
+    nonce = createAppwriteNonceStore(appwriteClient)
+    console.log(
+      JSON.stringify({ ts: new Date().toISOString(), level: 'info', msg: 'storage backend selected', backend: backend.kind, reason: backend.reason }),
+    )
+  } else if (backend.kind === 'supabase') {
     // User-scoped client: RLS applies because we forward the caller's token.
     const userClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -103,6 +139,7 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
     readerReason: selection.reason,
     ...(selection.hint ? { readerSetupHint: selection.hint } : {}),
     repos,
+    ...(backend.kind === 'appwrite' || backend.kind === 'supabase' ? { storageBackend: backend.kind } : {}),
     ...(rateLimit ? { rateLimit } : {}),
     ...(nonce ? { nonce } : {}),
     ...(verifyAuth ? { verifyAuth } : {}),

@@ -70,6 +70,29 @@ export function createClientWorkflowServices(client: GraphMentorClient, options:
           hours: { low: report.hours.low, high: report.hours.high },
         }
       },
+      pathway: async ({ careerId, ratings, weeklyHours, pace, learningStyle, difficultyComfort }) => {
+        const result = await client.getCareerPath({
+          careerId,
+          ratings,
+          weeklyHours,
+          pace: pace ?? 'steady',
+          learningStyle: learningStyle ?? 'mixed',
+          difficultyComfort: difficultyComfort ?? 'beginner',
+        })
+        const pathway = result.data.pathway
+        return {
+          steps: pathway.steps.map((step) => ({
+            order: step.order,
+            skillId: step.skillId,
+            name: step.name,
+            dependsOn: step.dependsOn,
+            unlocks: step.unlocks,
+            estimatedHours: step.estimatedHours,
+          })),
+          totalHours: pathway.estimatedHours,
+          alternatives: pathway.alternatives.length,
+        }
+      },
       resources: async ({ skillIds, limit }) => {
         const query: ResourceQueryInput = { limit, ...(skillIds.length > 0 ? { skillIds } : {}) }
         const result = await client.listResources(query)

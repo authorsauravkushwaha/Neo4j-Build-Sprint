@@ -191,6 +191,7 @@ Notes for Windows users:
 | `npm run db:provision` | Creates (or re-applies) this project's own hardened PostgreSQL 17 cluster: loopback-only, TLS with client certificates, least-privilege roles, FORCE RLS. Secrets live outside the repo in `/srv/graphmentor-pg`. | No (local DB) |
 | `npm run verify:db` | Hardening assertions plus a live attack battery against that cluster (71 checks; `-- --with-backup` also proves a dump restores). Writes `docs/database-verification.json`. | No (local DB) |
 | `npm run smoke:http` | Serves the Edge Function request pipeline on a real port and asserts the auth path over HTTP (30 checks; add `DATABASE_URL=…` to run the limiter against Postgres). | No (local) |
+| `npm run appwrite:provision` | Prints the Appwrite collections and indexes this API needs (`--json` for a pipeline, `--run` to execute). Derived from the same schema module the adapter reads, so the two cannot drift. | No |
 | `npm run verify:browser` | Drives the built app in headless Chromium: WebGL scenes, the neumorphic material, mobile layout, reduced motion, the command palette, the delta view and the enforced CSP (91 checks; 93 with `CHECK_OFFLINE=1`). Needs a running preview of `dist/` — pass `BASE_URL=http://127.0.0.1:4173`. | No (local) |
 | `npm run seed:neo4j -- --dry-run` | Prints the statements it would send. | No |
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
@@ -261,7 +262,23 @@ Everything below is optional. Nothing in the app requires it to run.
    belongs in `supabase/.env` (server-side) and nowhere else. `npm run lint:secrets` fails the build if a
    key-shaped string is ever committed.
 
-### 3. Optional: an AI provider for the mentor
+### 3. Optional: run the same API on Appwrite instead
+
+The storage layer has two implementations behind one contract, so the Edge Functions, the ownership rules
+and every handler are identical on either. To switch:
+
+```bash
+npm run appwrite:provision -- --run   # creates the 8 collections + indexes (no client permissions)
+```
+
+then set `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` and `APPWRITE_API_KEY` as function secrets. A
+partially filled Appwrite block is **not** a fallback to Supabase — the deployment goes read-only and
+`health-check` names the missing variables. What genuinely differs (no row-level security to fall back on,
+session secrets instead of JWTs, no stored procedures, one request per document write) and how each gap is
+covered is in [docs/appwrite.md](docs/appwrite.md), including the part that has *not* been exercised: no
+live Appwrite project has been run against this code.
+
+### 4. Optional: an AI provider for the mentor
 
 With `AI_PROVIDER=none` the mentor answers from a deterministic rules engine and the UI shows
 *"no language model was called"*. To let a model rephrase those answers (it still only sees graph context,
@@ -361,8 +378,8 @@ graphmentor-ai/
 ├─ supabase/
 │  ├─ functions/_shared/core/    # the engine: recommend, validate, security, rateLimit, assessment…
 │  ├─ functions/_shared/handlers/# one handler per endpoint (unit-tested without a server)
-│  ├─ functions/_shared/platform/# Supabase store + Deno adapter
-│  ├─ functions/<name>/index.ts  # 16 deployed shims — no logic, just wiring
+│  ├─ functions/_shared/platform/# storage seam: Supabase store, Appwrite client, Deno adapter
+│  ├─ functions/<name>/index.ts  # 18 deployed shims — no logic, just wiring
 │  ├─ migrations/                # 001 core schema + RLS, 002 rate limiting
 │  └─ .env.example               # every server secret, documented
 ├─ neo4j/                        # schema.cypher, seed.cypher, seed.parameters.json, sample-queries.cypher
@@ -372,10 +389,13 @@ graphmentor-ai/
 └─ public/                       # favicon, icons, offline page, _headers
 ```
 
-**Data flow:** the browser only ever calls Supabase Edge Functions. The Edge Functions hold the Neo4j
-credentials and run parameterized Cypher through the HTTPS Query API. The browser can also run the same
-engine locally over the bundled dataset (demo mode) — the two paths share one interface
-(`GraphMentorClient`), so a screen cannot behave differently in the two modes by accident.
+**Data flow:** the browser only ever calls the Edge Functions (Supabase-hosted, or any Deno/Node host that
+mounts the same handlers). They hold the Neo4j credentials and run parameterized Cypher through the HTTPS
+Query API, and they hold the only credential that reaches the account database — on Supabase that is the
+service-role key, on Appwrite the server API key. See [docs/appwrite.md](docs/appwrite.md).
+
+The browser can also run the same engine locally over the bundled dataset (demo mode) — the two paths share
+one interface (`GraphMentorClient`), so a screen cannot behave differently in the two modes by accident.
 
 ## Tests and verification
 

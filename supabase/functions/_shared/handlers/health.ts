@@ -22,6 +22,8 @@ export interface HealthPayload {
   }
   storage: {
     configured: boolean
+    /** Which backend holds the rows. Absent in guest mode, where nothing does. */
+    backend?: 'supabase' | 'appwrite'
     note: string
   }
   security: {
@@ -108,9 +110,8 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
     },
     storage: {
       configured: runtime.repos !== null,
-      note: runtime.repos
-        ? 'Accounts, saved roadmaps and progress are stored in your Supabase project under Row Level Security.'
-        : 'Account storage is not configured here. The app runs in guest mode with progress kept in this browser only.',
+      ...(runtime.storageBackend ? { backend: runtime.storageBackend } : {}),
+      note: describeStorage(runtime),
     },
     security: {
       requestSigningRequired: signing.required,
@@ -135,4 +136,21 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
   })
 }
 
-
+/**
+ * What a user is told about where their data lives.
+ *
+ * Two things this must never do: claim Supabase on a deployment that runs on
+ * Appwrite, and imply a hosted database when there is none. `storageBackend` is
+ * set by the platform layer that created the repositories (see
+ * `_shared/platform/deno.ts`), so the sentence follows the wiring rather than
+ * guessing at it.
+ */
+function describeStorage(runtime: Runtime): string {
+  if (!runtime.repos) {
+    return 'Account storage is not configured here. The app runs in guest mode with progress kept in this browser only.'
+  }
+  if (runtime.storageBackend === 'appwrite') {
+    return 'Accounts, saved roadmaps and progress are stored in this deployment’s Appwrite project, and every query is scoped to your account by the server.'
+  }
+  return 'Accounts, saved roadmaps and progress are stored in your Supabase project under Row Level Security.'
+}

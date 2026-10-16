@@ -292,7 +292,10 @@ export async function submitFeedbackHandler(runtime: Runtime, request: ApiReques
     const payload: FeedbackResponse = {
       id,
       receivedAt: new Date().toISOString(),
-      note: 'Thanks — feedback is stored in the project owner’s Supabase database. Contact details are optional and never used for marketing.',
+      note:
+        runtime.storageBackend === 'appwrite'
+          ? 'Thanks — feedback is stored in this deployment’s Appwrite project. Contact details are optional and never used for marketing.'
+          : 'Thanks — feedback is stored in the project owner’s database. Contact details are optional and never used for marketing.',
     }
     return json(202, { ok: true, data: payload, meta: { source: 'cache', generatedAt: new Date().toISOString() } }, { 'cache-control': 'no-store' })
   } catch (error) {
@@ -335,7 +338,28 @@ export async function manageAccountHandler(runtime: Runtime, request: ApiRequest
     )
   }
 
+  /*
+   * Destructive actions require a typed confirmation, checked here rather than
+   * only in the UI.
+   *
+   * The client has always sent one — the field is documented in the API type as
+   * "required by the server for destructive actions" — but the server did not
+   * enforce it, so a request built by hand (or by a buggy client) could wipe a
+   * learner's records. The self-audit caught that gap; this is the fix. A
+   * confirmation that only exists in the browser is decoration, not a control.
+   */
+  const confirmation = (body as { confirm?: unknown })?.confirm
+  const requireConfirmation = (word: 'DELETE' | 'RESET'): void => {
+    if (confirmation === word) return
+    throw new AppError('validation_failed', {
+      requestId: request.requestId,
+      publicMessage: `Type ${word} to confirm this action. It cannot be undone.`,
+      fields: { confirm: `Expected ${word}.` },
+    })
+  }
+
   if (action === 'reset-progress') {
+    requireConfirmation('RESET')
     const affected = await repos.progress.reset(userId)
     const clearedSkills = await repos.skills.clear(userId)
     return json(200, {
@@ -346,6 +370,7 @@ export async function manageAccountHandler(runtime: Runtime, request: ApiRequest
   }
 
   if (action === 'delete-account-data') {
+    requireConfirmation('DELETE')
     const { deleted } = await repos.dataRights.deleteAll(userId)
     return json(200, {
       ok: true,

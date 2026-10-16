@@ -33,9 +33,14 @@ export function createInMemoryRepos(): UserRepositories & {
   snapshot(): { roadmaps: RoadmapRow[]; tasks: RoadmapTaskRow[]; bookmarks: BookmarkRow[]; skills: SkillProgressRow[]; feedback: Array<Record<string, unknown>> }
 } {
   const roadmaps = new Map<string, RoadmapRow>()
-  const tasks = new Map<string, RoadmapTaskRow>()
+  // The row types describe what the API reads; the tables also carry a
+  // `created_at` default, and the double has to store it or an export of the two
+  // differs (see appwrite-backend.test.ts).
+  type TaskRow = RoadmapTaskRow & { created_at: string }
+  type SkillRow = SkillProgressRow & { created_at: string }
+  const tasks = new Map<string, TaskRow>()
   const bookmarks = new Map<string, BookmarkRow>()
-  const skills = new Map<string, SkillProgressRow>()
+  const skills = new Map<string, SkillRow>()
   const feedback: Array<Record<string, unknown>> = []
   const profiles = new Map<string, Record<string, unknown>>()
   const now = (): string => new Date().toISOString()
@@ -103,6 +108,9 @@ export function createInMemoryRepos(): UserRepositories & {
             essential: task.essential,
             note: task.notes ?? null,
             actual_hours: task.actualHours ?? null,
+            // The Postgres table defaults both timestamps; the double used to
+            // write only `updated_at`, so an export of the two rows differed.
+            created_at: stamp,
             updated_at: stamp,
           })
         })
@@ -127,7 +135,7 @@ export function createInMemoryRepos(): UserRepositories & {
         // 404 without confirming that the row exists.
         if (!task || task.user_id !== userId) throw new PersistenceError('Task not found for this account')
         if (task.roadmap_id !== input.roadmapId) throw new PersistenceError('Task not found for this account')
-        const updated: RoadmapTaskRow = {
+        const updated: TaskRow = {
           ...task,
           status: input.status,
           note: input.note ?? task.note,
@@ -142,7 +150,8 @@ export function createInMemoryRepos(): UserRepositories & {
         for (const task of [...tasks.values()]) {
           if (task.user_id !== userId) continue
           if (roadmapId && task.roadmap_id !== roadmapId) continue
-          tasks.set(task.id, { ...task, status: 'not-started', actual_hours: null, updated_at: now() })
+          const reset: TaskRow = { ...task, status: 'not-started', actual_hours: null, updated_at: now() }
+          tasks.set(reset.id, reset)
           count += 1
         }
         return count
@@ -154,12 +163,13 @@ export function createInMemoryRepos(): UserRepositories & {
         let count = 0
         for (const rating of ratings) {
           const existing = [...skills.values()].find((row) => row.user_id === userId && row.skill_id === rating.skillId)
-          const row: SkillProgressRow = {
+          const row: SkillRow = {
             id: existing?.id ?? nextId('skill'),
             user_id: userId,
             skill_id: rating.skillId,
             state: rating.state as SkillState,
             quiz_score: rating.quizScore ?? null,
+            created_at: existing?.created_at ?? now(),
             updated_at: now(),
           }
           skills.set(row.id, row)
@@ -184,9 +194,18 @@ export function createInMemoryRepos(): UserRepositories & {
 
     bookmarks: {
       async add(userId, targetType, targetId, note) {
+        /*
+         * An omitted note clears the note, which is the behaviour of both other
+         * implementations: the Postgres store writes `note ? slice : null`, and
+         * the local client replaces the entry with `note ?? ''`. Preserving the
+         * old note here (as this double used to) made the in-memory API disagree
+         * with the API it stands in for — caught by appwrite-backend.test.ts,
+         * which compares the two backends request by request.
+         */
+        const stored = note ? note.slice(0, 400) : null
         const existing = [...bookmarks.values()].find((row) => row.user_id === userId && row.target_id === targetId)
         if (existing) {
-          const updated = { ...existing, target_type: targetType, note: note ?? existing.note }
+          const updated = { ...existing, target_type: targetType, note: stored }
           bookmarks.set(updated.id, updated)
           return updated
         }
@@ -195,7 +214,7 @@ export function createInMemoryRepos(): UserRepositories & {
           user_id: userId,
           target_type: targetType,
           target_id: targetId,
-          note: note ?? null,
+          note: stored,
           created_at: now(),
         }
         bookmarks.set(row.id, row)
@@ -231,16 +250,27 @@ export function createInMemoryRepos(): UserRepositories & {
 
     dataRights: {
       async export(userId) {
+        /*
+         * The payload `createUserRepositories` produces, table by table — not a
+         * friendlier redistribution of it.
+         *
+         * This used to return `{profile, roadmaps, roadmapsDetail, skillRatings,
+         * bookmarks}`, which is a nicer document and tells a person less about
+         * what is actually stored. It also meant the export a hosted user gets
+         * (raw rows) was never the export under test. The double stands in for the
+         * store, so it emits the store's shape; `appwrite-backend.test.ts` compares
+         * the two request by request.
+         */
+        const profile = profiles.get(userId)
         return {
           exportedAt: now(),
           userId,
-          profile: profiles.get(userId) ?? null,
-          roadmaps: [...roadmaps.values()].filter((row) => row.user_id === userId),
-          roadmapsDetail: [...roadmaps.values()]
-            .filter((row) => row.user_id === userId)
-            .map((row) => ({ roadmap: row, tasks: tasksOf(userId, row.id) })),
-          skillRatings: [...skills.values()].filter((row) => row.user_id === userId),
+          profiles: profile ? [{ id: userId, ...profile, created_at: profile.created_at ?? now() }] : [],
+          saved_roadmaps: [...roadmaps.values()].filter((row) => row.user_id === userId),
+          roadmap_tasks: [...tasks.values()].filter((row) => row.user_id === userId),
+          user_skill_progress: [...skills.values()].filter((row) => row.user_id === userId),
           bookmarks: [...bookmarks.values()].filter((row) => row.user_id === userId),
+          feedback: feedback.filter((row) => row.user_id === userId),
         }
       },
       async deleteAll(userId) {

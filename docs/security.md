@@ -395,6 +395,7 @@ The named threats, each mapped to where it is implemented and what would fail if
 | 11 | Secrets management | Distinct secrets per concern; no default fallbacks; the health check reports *whether* things are configured without echoing values; logs redact secret-shaped keys and values | `core/security.ts` → `redactSecrets`, `redactSecretsInString`; `core/runtimeConfig.ts` | `tests/unit/security.test.ts` (redaction), `handlers/health.ts` integration assertions |
 | 12 | File upload security | There is **no upload surface** — no file input, no multipart endpoint, no `upload()` call, no storage bucket. Nothing to exploit because nothing exists | absence is asserted, not assumed (see §7) | `tests/unit/hardening-invariants.test.ts` — no file input in any component, no `FormData`/multipart anywhere, no file or bucket access in any Edge Function, and the landing page's claim is checked against the code it describes |
 | 13 | Error handling and information leakage | One mapping from internal failure to a fixed public vocabulary (see §8); `not_found` is deliberately indistinguishable from "not yours" — in the message *and* in the query that produces it; provider error strings, SQL, Cypher, stack traces and hostnames never reach a client | `core/http.ts` → `toErrorResponse`, `core/errors.ts`, `src/core/auth.ts` → `describeAuthError`, `platform/supabaseStore.ts` (identical failure for a foreign or missing row) | `tests/integration/handlers.test.ts` (43 — a real Postgres constraint string arrives as a generic 502), `tests/integration/store-authorization.test.ts` (17), `tests/unit/auth.test.ts` (17 — provider wording is rewritten) |
+| 14 | A storage backend with no database-enforced policy | On Appwrite a server API key bypasses collection permissions, so the ownership policy is enforced in the adapter **before a request is built**: an unscoped select/update/delete on a user-owned collection, an ownerless write, and a `PATCH` onto another account's document are all refused. Every collection is created with no role permissions at all, so the browser-facing surface is still only our API | `platform/appwrite.ts` → `assertScoped`, `assertOwned`; `platform/appwriteSchema.ts` (a unique index for every upsert target); `platform/deno.ts` → `selectBackend` (a half-configured Appwrite is not a Supabase fallback) | `tests/unit/appwrite-adapter.test.ts` (41), `tests/integration/appwrite-backend.test.ts` (8 — a 21-request replay on both backends, plus storage-level isolation and a deletion that spares the other account), `npm run audit:self` → `storage.*` (2 checks: the schema covers the store, and the scope guards fire with zero requests sent) |
 
 ### What this hardening pass changed, and why
 
@@ -435,7 +436,10 @@ boundaries in [verification.md](verification.md) §5):
 
 Because none of this is a deployment, **`service_role` has never been used against a hosted Supabase
 project, no JWT has ever been verified by GoTrue, and no secret has ever been stored in a real project's
-secret store.** Those remain unexercised, and [verification.md](verification.md) §6 says so.
+secret store.** The Appwrite adapter is in the same position: **no live Appwrite project has been run
+against this code.** Its tests exercise a model of the document API (`tests/helpers/fakeAppwrite.ts`) built
+from the published request and response shapes, which is enough to pin the adapter's behaviour and not
+enough to prove the service's — [appwrite.md](appwrite.md) says so in the same words. Those remain unexercised, and [verification.md](verification.md) §6 says so.
 
 ## 14. What is not defended (deliberately or by scope)
 
@@ -456,6 +460,11 @@ secret store.** Those remain unexercised, and [verification.md](verification.md)
 - One dependency injects a stylesheet the policy refuses, and the console error Chromium logs for it is
   expected: see the Cytoscape row in §9. It is blocked deliberately, and the block is verified harmless rather
   than argued harmless.
+- The Appwrite path trades one guarantee for another: Postgres enforces ownership *in the database*, so a
+  bug in a query cannot leak another account's rows. Appwrite does not have that backstop — the adapter
+  refuses unscoped queries, which means the guarantee rests on that code being right (and on its tests and
+  the `storage.*` self-audit checks). If you need the database-enforced property, run Supabase. Both are
+  supported, and neither is presented as equivalent to the other.
 - No penetration test or external security review has been performed on this code. The claims here are
   about what is implemented and unit-tested, not about being unconditionally secure. Nothing on any screen
   promises that this app cannot be broken — only what it does, and what it refuses to do.

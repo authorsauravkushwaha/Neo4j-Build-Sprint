@@ -398,7 +398,7 @@ export const INTEGRATIONS: IntegrationCard[] = [
     icon: <Blocks aria-hidden="true" className="h-4 w-4" />,
     body: (
       <>
-        17 Edge Functions hold the API, the rate limiter and the account routes; row-level security repeats every ownership
+        18 Edge Functions hold the API, the rate limiter and the account routes; row-level security repeats every ownership
         check the server already makes. Database credentials never reach the browser, and the migrations are in the repo.
       </>
     ),

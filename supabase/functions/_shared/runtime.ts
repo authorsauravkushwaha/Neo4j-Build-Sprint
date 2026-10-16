@@ -179,6 +179,16 @@ export function createReaderFromConfig(config: RuntimeConfig, deps: ReaderDeps =
   }
 }
 
+/**
+ * Which storage backend the repositories talk to.
+ *
+ * The API is deliberately identical on both, but the *explanation* is not: the
+ * health check and the feedback receipt tell the user where their data lives, and
+ * "your Supabase project" is a false statement on an Appwrite deployment. So the
+ * backend is part of the runtime rather than something each message guesses at.
+ */
+export type StorageBackend = 'supabase' | 'appwrite'
+
 /** Assembled per-request dependencies for the handlers. */
 export interface Runtime {
   config: RuntimeConfig
@@ -188,6 +198,8 @@ export interface Runtime {
   readerSetupHint?: string
   ai: AiProvider
   repos: UserRepositories | null
+  /** Set when `repos` is non-null; `null` means guest mode with no server storage. */
+  storageBackend: StorageBackend | null
   rateLimit: FixedWindowStore
   nonce: NonceStore
   verifyAuth: (headers: Headers) => Promise<AuthCheck>
@@ -200,6 +212,7 @@ export interface RuntimeParts {
   readerReason: string | null
   readerSetupHint?: string
   repos: UserRepositories | null
+  storageBackend?: StorageBackend
   rateLimit?: FixedWindowStore
   nonce?: NonceStore
   verifyAuth?: (headers: Headers) => Promise<AuthCheck>
@@ -208,9 +221,13 @@ export interface RuntimeParts {
 }
 
 /**
- * Assembles a Runtime. The in-memory stores are used only when no Supabase
- * client is available (local development); they are explicitly documented as
+ * Assembles a Runtime. The in-memory stores are used only when no client is
+ * available (local development); they are explicitly documented as
  * single-instance-only.
+ *
+ * `storageBackend` defaults to 'supabase' when repositories are present, because
+ * that is what the repositories are when nobody says otherwise — the in-memory
+ * doubles the tests inject behave like the Postgres ones.
  */
 export function assembleRuntime(parts: RuntimeParts): Runtime {
   const ai =
@@ -227,6 +244,7 @@ export function assembleRuntime(parts: RuntimeParts): Runtime {
     ...(parts.readerSetupHint ? { readerSetupHint: parts.readerSetupHint } : {}),
     ai,
     repos: parts.repos,
+    storageBackend: parts.repos ? (parts.storageBackend ?? 'supabase') : null,
     rateLimit: parts.rateLimit ?? new MemoryFixedWindowStore(),
     nonce: parts.nonce ?? new MemoryNonceStore(),
     verifyAuth:

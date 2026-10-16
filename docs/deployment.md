@@ -112,7 +112,26 @@ carries the same policy as `netlify.toml`.
    [`neo4j/sample-queries.cypher`](../neo4j/sample-queries.cypher). You should see 444 nodes and 1585
    relationships.
 
-### 4.2 Supabase
+### 4.2 Storage backend: Supabase (default) or Appwrite
+
+The API has one storage contract and two implementations, so this choice does not change any screen, any
+handler or any ownership rule. Pick Supabase if you want row-level security enforced *in the database* (the
+stronger guarantee — it survives an application bug). Pick Appwrite if your organisation already runs it.
+Both are first-class; [docs/appwrite.md](appwrite.md) states exactly what differs, how each gap is covered,
+and what has not been exercised (no live Appwrite project has been run against this code yet).
+
+For Appwrite, provision the collections first and then set the secrets:
+
+```bash
+npm run appwrite:provision            # review the commands
+npm run appwrite:provision -- --run   # create the 8 collections + indexes (no client permissions)
+supabase secrets set --env-file supabase/.env   # APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY
+```
+
+`health-check` reports which backend is live under `data.storage.backend`, and the sentence it shows a user
+is derived from that — not hard-coded to one vendor.
+
+### 4.3 Supabase (accounts, migrations, functions)
 
 1. <https://supabase.com> → new project (free tier is enough). Note the project ref and the anon key.
 2. Apply the migrations, in order, with the SQL editor or the CLI:
@@ -185,7 +204,7 @@ carries the same policy as `netlify.toml`.
    If it answers `503 not_configured`, the function is deployed but the rate-limit table is missing — run
    `supabase db push` again.
 
-### 4.3 Optional: AI provider
+### 4.4 Optional: AI provider
 
 ```bash
 # in supabase/.env
@@ -199,7 +218,7 @@ AI_MAX_CONTEXT_CHARS=12000
 Redeploy the `mentor-chat` function after changing secrets. With `AI_PROVIDER=none` nothing is sent
 anywhere and the mentor uses the rules engine — the UI states which path answered.
 
-### 4.4 Turn on request signing (optional hardening)
+### 4.5 Turn on request signing (optional hardening)
 
 ```bash
 openssl rand -hex 32            # REQUEST_SIGNING_SECRET

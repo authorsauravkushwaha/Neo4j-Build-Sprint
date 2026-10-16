@@ -26,7 +26,7 @@ import { resolve } from 'node:path'
 import { knowledgeGraph } from '../src/data/seed/knowledgeGraph.ts'
 import { loadCareerSlice } from '../supabase/functions/_shared/core/careerSlice.ts'
 import { createLocalReader } from '../supabase/functions/_shared/core/localReader.ts'
-import { analyzeFrontier, rankResources } from '../supabase/functions/_shared/core/recommend.ts'
+import { analyzeFrontier, buildPathway, rankResources } from '../supabase/functions/_shared/core/recommend.ts'
 import { DEFAULT_CONTEXT_LIMITS, buildMentorContext, classifyIntent } from '../supabase/functions/_shared/core/mentorContext.ts'
 import { answerWithRules } from '../supabase/functions/_shared/core/fallbackMentor.ts'
 import { createWorkflowServices } from '../supabase/functions/_shared/core/workflow/services.ts'
@@ -122,6 +122,33 @@ function cliServices(args: Args, records: Array<{ collection: string; item: Reco
           gates: report.gates.map((gate) => ({ skillId: gate.skillId, name: gate.name, unlocks: gate.unlocks })),
           gatesUnlock: report.gatesUnlock,
           hours: { low: report.hours.low, high: report.hours.high },
+        }
+      },
+      pathway: async ({ careerId, ratings, weeklyHours, pace, learningStyle, difficultyComfort }) => {
+        const slice = await sliceFor(careerId)
+        const pathway = buildPathway({
+          careerId: slice.careerId,
+          careerName: slice.careerName,
+          careerSkills: slice.careerSkills,
+          skillMeta: slice.skillMeta,
+          prereqEdges: slice.prereqEdges,
+          ratings: ratings.map((rating) => ({ skillId: rating.skillId, state: rating.state as SkillState })),
+          weeklyHours,
+          pace: pace ?? 'steady',
+          learningStyle: learningStyle ?? 'mixed',
+          difficultyComfort: difficultyComfort ?? 'beginner',
+        })
+        return {
+          steps: pathway.steps.map((step) => ({
+            order: step.order,
+            skillId: step.skillId,
+            name: step.name,
+            dependsOn: step.dependsOn,
+            unlocks: step.unlocks,
+            estimatedHours: step.estimatedHours,
+          })),
+          totalHours: pathway.estimatedHours,
+          alternatives: pathway.alternatives.length,
         }
       },
       resources: async ({ skillIds, limit }) => {
