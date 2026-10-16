@@ -86,8 +86,13 @@ const RULES = [
     name: 'Credentials inside a URL',
     // Inclusive of the host, so the allow-list below can recognise reserved
     // example domains and placeholder user/password pairs.
-    pattern: /(?:https?|bolt|neo4j|postgres(?:ql)?|mysql):\/\/[^\s:'"`]+:[^\s:@'"`]{3,}@[^\s/'"`]+/g,
+    pattern: /(?:https?|bolt(?:\+s(?:sc)?)?|neo4j(?:\+s(?:sc)?)?|postgres(?:ql)?|mysql):\/\/[^\s:'"`]+:[^\s:@'"`]{3,}@[^\s/'"`]+/g,
     detail: 'A connection string with an inline password. Use environment variables instead.',
+  },
+  {
+    name: 'Environment secret assignment',
+    pattern: /^\s*(?:export\s+)?(?:[A-Z][A-Z0-9_]*_)?(?:PASSWORD|PASSWD|SECRET|TOKEN|API_KEY|SERVICE_ROLE_KEY)\s*=\s*["']?[^\s#"'][^\s#"']{11,}/g,
+    detail: 'A non-placeholder environment credential. Rotate it if it was published.',
   },
   {
     name: 'Assigned secret value',
@@ -176,7 +181,7 @@ function redact(value) {
  * Scan one file's text and return findings, without touching the exit code.
  * The returned `exempted` count keeps a deliberate `secret-scan:allow` visible.
  */
-function scanText(rel, name, text) {
+function scanText(rel, _name, text) {
   const found = []
   let exempted = 0
   /*
@@ -206,7 +211,6 @@ function scanText(rel, name, text) {
         const value = match[0]
         const allowed =
           ALLOW_PATTERNS.some((pattern) => pattern.test(value)) ||
-          PLACEHOLDER_FILES.has(name) ||
           rule.allowMatch?.(value) === true
         if (allowed) continue
         found.push({
@@ -285,7 +289,7 @@ if (existsSync(distDir)) {
  */
 const canaryMisses = []
 for (const entry of CANARY_FIXTURES) {
-  const { findings: hits } = scanText('<canary>', 'canary.ts', entry.fixture)
+  const { findings: hits } = scanText(entry.file ?? '<canary>', entry.file ?? 'canary.ts', entry.fixture)
   const caught = hits.length > 0
   const wanted = entry.expect === 'caught'
   if (caught !== wanted) canaryMisses.push({ ...entry, caught })

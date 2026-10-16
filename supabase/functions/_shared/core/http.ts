@@ -168,7 +168,32 @@ export async function buildApiRequest(request: Request, options: BuildRequestOpt
     if (Number.isFinite(declaredLength) && declaredLength > maxBody) {
       throw new AppError('payload_too_large', { requestId })
     }
-    bodyText = await request.text()
+    // Enforce the ceiling while streaming, not after buffering an unbounded
+    // chunked body. Content-Length is attacker controlled and may be absent.
+    if (request.body) {
+      const reader = request.body.getReader()
+      const decoder = new TextDecoder('utf-8', { fatal: true })
+      let bytes = 0
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          bytes += value.byteLength
+          if (bytes > maxBody) {
+            void reader.cancel().catch(() => {})
+            throw new AppError('payload_too_large', { requestId })
+          }
+          bodyText += decoder.decode(value, { stream: true })
+        }
+        bodyText += decoder.decode()
+      } catch (error) {
+        if (error instanceof AppError) throw error
+        void reader.cancel().catch(() => {})
+        throw new AppError('bad_request', { requestId })
+      } finally {
+        reader.releaseLock()
+      }
+    }
     try {
       assertSafeBodyText(bodyText, maxBody)
     } catch (error) {

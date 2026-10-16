@@ -58,6 +58,31 @@ export const CANARY_FIXTURES = [
     expect: 'caught',
   },
 
+  {
+    label: 'a provider key in an example environment file is not exempt',
+    fixture: glue('AI_API_KEY=', 'sk-live-', 'abcdefghijklmnop'),
+    file: '.env.example',
+    expect: 'caught',
+  },
+  {
+    label: 'an unquoted environment password',
+    fixture: glue('NEO4J_PASSWORD=', 'hunter2hunter2'),
+    file: '.env.local.example',
+    expect: 'caught',
+  },
+  {
+    label: 'credentials in an encrypted Neo4j URL',
+    fixture: glue('neo4j+s:', '//svc:', 'hunter2hunter2', '@db.neo4j.io'),
+    expect: 'caught',
+  },
+
+  {
+    label: 'a quoted environment password',
+    fixture: glue('NEO4J_PASSWORD=', '"', 'hunter2hunter2', '"'),
+    file: '.env.example',
+    expect: 'caught',
+  },
+
   // -------------------------------------------------------------- must allow
   {
     label: 'a REPLACE_WITH placeholder',

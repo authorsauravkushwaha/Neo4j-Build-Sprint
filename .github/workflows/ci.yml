@@ -20,17 +20,23 @@ on:
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC: the network-dependent checks
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint:secrets
+      - run: npm run lint:secrets:history
       - run: npm run validate:seed
       - run: npm run emit:cypher
       - run: node -e "const a=require('./neo4j/MANIFEST.json');console.log('datasetVersion',a.datasetVersion,'nodes',a.counts.Career+a.counts.Skill+a.counts.Resource)"
@@ -39,6 +45,8 @@ jobs:
       - run: npm run typecheck:functions
       - run: npm test
       - run: npm run build
+      - run: npm run lint:secrets # Scan the actual browser artifact too.
+      - run: npm audit --audit-level=high
       - run: npm run check:bundle
       - uses: actions/upload-artifact@v4
         with:

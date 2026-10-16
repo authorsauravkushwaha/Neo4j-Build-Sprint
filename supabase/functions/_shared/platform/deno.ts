@@ -55,8 +55,12 @@ import {
   selectBackend,
 } from './appwrite.ts'
 import type { GraphReader } from '../core/graphReader.ts'
+import { MemoryFixedWindowStore, MemoryNonceStore } from '../core/rateLimit.ts'
 
 const env = (key: string) => Deno.env.get(key)
+// Local/read-only deployments still share budgets across requests in an isolate.
+const localRateLimit = new MemoryFixedWindowStore()
+const localNonce = new MemoryNonceStore()
 
 // A single reader per isolate: the Neo4j reader is stateless and safe to reuse.
 let cachedReader: { key: string; reader: GraphReader | null; reason: string | null; hint?: string } | null = null
@@ -89,8 +93,8 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
   const authorization = request.headers.get('authorization') ?? undefined
 
   let repos: Runtime['repos'] = null
-  let rateLimit: Runtime['rateLimit'] | undefined
-  let nonce: Runtime['nonce'] | undefined
+  let rateLimit: Runtime['rateLimit'] = localRateLimit
+  let nonce: Runtime['nonce'] = localNonce
   let verifyAuth: Runtime['verifyAuth'] | undefined
 
   const backend = selectBackend(env)
@@ -128,6 +132,11 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
       }) as unknown as SupabaseLikeClient
       rateLimit = createPostgresFixedWindowStore(adminClient)
       nonce = createPostgresNonceStore(adminClient)
+    } else {
+      // A fresh per-request memory store silently disables throttling. A hosted
+      // backend needs shared atomic counters/nonces; missing secrets fail closed.
+      rateLimit = { increment: async () => { throw new Error('shared limiter not configured') } }
+      nonce = { claim: async () => { throw new Error('shared nonce store not configured') } }
     }
   }
 

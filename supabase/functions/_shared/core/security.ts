@@ -462,7 +462,10 @@ export function validateResourceUrl(raw: string, options: { allowUnlistedHosts?:
     host.endsWith('.local') ||
     host.endsWith('.internal') ||
     /^\d{1,3}(\.\d{1,3}){3}$/.test(host) ||
-    host === '[::1]'
+    host.includes(':') ||
+    !host.includes('.') ||
+    host.endsWith('.') ||
+    Boolean(parsed.port)
   ) {
     return { ok: false, reason: 'private-host' }
   }
