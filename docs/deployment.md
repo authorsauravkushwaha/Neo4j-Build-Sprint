@@ -46,27 +46,56 @@ Never put the `service_role` key, the Neo4j password, or an AI key in this file.
 A workflow is committed at `.github/workflows/deploy.yml`. It type-checks, tests, builds and publishes
 `dist/` to Pages on every push to `main`.
 
+**The URL and the base path are derived from the repository, not configured.** GitHub Pages decides
+them for you: a repository named `<owner>.github.io` is served at the domain root, and every other
+repository is served from `/<repo-name>/`. The workflow computes both and logs what it chose:
+
+| Repository | Published at | Base path |
+| --- | --- | --- |
+| `Neo4j-Build-Sprint` | `https://<owner>.github.io/Neo4j-Build-Sprint/` | `/Neo4j-Build-Sprint/` |
+| `<owner>.github.io` | `https://<owner>.github.io/` | `/` |
+
+This repository is deployed at **<https://authorsauravkushwaha.github.io/Neo4j-Build-Sprint/>**.
+
+Steps:
+
 1. Push the repository to GitHub.
 2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-3. **Settings → Secrets and variables → Actions → New repository secret** for each of these you want
-   (a secrets-only deployment is fine, but they are needed for live mode):
+3. Push to `main` (or run the workflow manually from the Actions tab). The workflow prints
+   `Publishing <url> with base path <base>` in the *Resolve the Pages target* step — that is the URL
+   the site will answer on.
+4. Optional, for live mode only — **Settings → Secrets and variables → Actions → New repository
+   secret**:
 
    | Secret | Value |
    | --- | --- |
    | `VITE_SUPABASE_URL` | your project URL |
    | `VITE_SUPABASE_ANON_KEY` | your anon/publishable key |
-   | `VITE_SITE_URL` | `https://<user>.github.io/<repo>/` |
+   | `VITE_SITE_URL` | the public URL, only if it differs from the derived one (a custom domain) |
 
-4. Push to `main`. Watch the Actions tab. The site appears at `https://<user>.github.io/<repo>/`.
+   A secrets-only deployment is fine: with none of them set the build produces a working demo-mode
+   site, which is a legitimate deployment.
 
-For project sites (a path, not a domain root), set the base path so assets resolve:
+Overrides, both optional: repository **variable** `VITE_BASE_PATH` replaces the derived base path
+(custom domain in front of the same Pages deployment → `/`), and repository **secret**
+`VITE_SITE_URL` replaces the derived canonical URL. For a local build against a project site set the
+same values in `.env.local`:
 
 ```bash
-VITE_BASE_PATH=/<repo-name>/
+VITE_BASE_PATH=/Neo4j-Build-Sprint/
 ```
 
-Set it as a repository **variable** (Actions → Variables) or commit it in `.env.local` for local builds. If
-you forget, the deployed page loads a blank screen with 404s in the console — that is the symptom.
+If you get the base path wrong, the deployed page loads a blank screen with 404s for `/assets/…` in
+the console — that is the symptom. The workflow's final *Check the published artifact* step refuses
+to accept a deploy with that shape.
+
+### Deep links
+
+GitHub Pages has no rewrite rules, so the workflow's build also writes `404.html` from the app
+shell: a shared link to `/careers/backend-engineer` renders the screen it names instead of GitHub's
+own 404 page. The status code is still 404 — Pages gives a static host no way to change that — but
+the content is the app. Netlify and Cloudflare do the same job with `netlify.toml` /
+`public/_headers` redirects and never serve this file.
 
 ## 2. Netlify
 

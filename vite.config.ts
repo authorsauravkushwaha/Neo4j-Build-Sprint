@@ -1,9 +1,11 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
+import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa'
+
+import { canonicalSiteUrl, escapeRegExp, normalizeBase, spaFallbackDocument, withManifestBaseUrl } from './scripts/pages-target.ts'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
@@ -40,23 +42,77 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
  * policy explicitly, plus the frame-ancestors / HSTS directives that a <meta>
  * tag cannot express.
  */
-function htmlPlugin(connectSrc: string, styleSrc: string, canonicalHref: string | null, base: string): Plugin {
+function htmlPlugin(connectSrc: string, styleSrc: string, canonicalHref: string | null, socialCard: string | null): Plugin {
   return {
     name: 'graphmentor-html',
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
         const canonical = canonicalHref ? `<link rel="canonical" href="${canonicalHref}" />` : ''
-        // Crawlers want an absolute image URL. With no configured site URL the
-        // relative path is the honest fallback: it resolves when the file is
-        // served, and it says nothing about an origin we do not have.
-        const ogImage = canonicalHref ? `${canonicalHref.replace(/\/$/, '')}${base}social-card.png` : `${base}social-card.png`
+        /**
+         * The Open Graph image block, or a comment explaining its absence. The caller
+         * resolved the URL (see the `socialCard` computation) and checked that the file
+         * is in the output; writing `og:image:width` / `og:image:height` for an image
+         * that was never rendered would be a promise the deploy cannot keep.
+         */
+        const socialCardBlock = socialCard
+          ? [
+              `<meta property="og:image" content="${socialCard}" />`,
+              '<meta property="og:image:width" content="1200" />',
+              '<meta property="og:image:height" content="630" />',
+              '<meta property="og:image:alt" content="GraphMentor AI: engineering careers as a knowledge graph" />',
+            ].join('\n    ')
+          : '<!-- npm run emit:social-card has not been run, so there is no og:image to advertise. -->'
+        const twitterImage = socialCard ? `<meta name="twitter:image" content="${socialCard}" />` : ''
         return html
           .replaceAll('__CSP_CONNECT_SRC__', connectSrc)
           .replaceAll('__CSP_STYLE_SRC__', styleSrc)
           .replaceAll('<!-- __CANONICAL__ -->', canonical)
-          .replaceAll('__OG_IMAGE__', ogImage)
+          .replaceAll('<!-- __OG_IMAGE__ -->', socialCardBlock)
+          .replaceAll('<!-- __TWITTER_IMAGE__ -->', twitterImage)
       },
+    },
+  }
+}
+
+/**
+ * The 404.html that makes deep links work on a host with no rewrite rules.
+ *
+ * GitHub Pages serves one static file per URL and offers no `/* -> /index.html`
+ * fallback (Netlify and Cloudflare get that from netlify.toml and _redirects).
+ * Without this, every shared link to `/careers/backend-engineer` — the single most
+ * likely way this app gets forwarded — lands on GitHub's own 404 page even though the
+ * client router knows exactly how to render it.
+ *
+ * Written in `writeBundle`, after Vite has put `index.html` on disk and before
+ * `vite-plugin-pwa` globs the output for the precache list, so the fallback is a
+ * byte-relative copy of the real app shell and is itself cached for offline use.
+ */
+function spaFallbackPlugin(): Plugin {
+  return {
+    name: 'graphmentor-spa-fallback',
+    apply: 'build',
+    writeBundle(options, bundle) {
+      const outDir = options.dir ?? fileURLToPath(new URL('./dist/', import.meta.url))
+      const emitted = bundle['index.html']
+      const built =
+        emitted?.type === 'asset'
+          ? typeof emitted.source === 'string'
+            ? emitted.source
+            : Buffer.from(emitted.source).toString('utf8')
+          : existsSync(`${outDir}/index.html`)
+            ? readFileSync(`${outDir}/index.html`, 'utf8')
+            : null
+      if (!built) {
+        // Nothing to copy: a build that produced no app shell has already failed
+        // elsewhere, and inventing a fallback page here would hide that.
+        // eslint-disable-next-line no-console
+        console.log('[pages] no index.html in the output: wrote no 404.html fallback.')
+        return
+      }
+      writeFileSync(`${outDir}/404.html`, spaFallbackDocument(built))
+      // eslint-disable-next-line no-console
+      console.log('[pages] wrote 404.html: GitHub Pages serves it for unmatched paths, so deep links still render.')
     },
   }
 }
@@ -106,17 +162,31 @@ export const PRODUCTION_STYLE_POLICY = "style-src 'self'; style-src-elem 'self';
 /** The development policy, which can never reach a built artifact. */
 const DEVELOPMENT_STYLE_POLICY = "style-src 'self' 'unsafe-inline'"
 
-/** Absolute canonical URL, or null when the operator has not set a site URL. */
-function canonicalHref(siteUrl: string | undefined, base: string): string | null {
-  const trimmed = siteUrl?.trim()
-  if (!trimmed) return null
-  const normalisedBase = base === '/' ? '' : base.replace(/\/$/, '')
-  return `${trimmed.replace(/\/$/, '')}${normalisedBase}/`
-}
-
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const base = env.VITE_BASE_PATH?.trim() || '/'
+  /**
+   * `/` for a root domain or `/<repo>/` for a GitHub Pages project site. Normalised
+   * here once, because the manifest, the social card and the 404 fallback all join
+   * this value onto paths with string concatenation — see `normalizeBase`.
+   */
+  const base = normalizeBase(env.VITE_BASE_PATH)
+  /** The site's own URL including the base path and a trailing slash, or null. */
+  const siteCanonical = canonicalSiteUrl(env.VITE_SITE_URL, base)
+  /**
+   * URL of the Open Graph card: absolute when a site URL is configured, root-relative
+   * otherwise — the same rule the canonical link follows, so the page never invents an
+   * origin it does not have. `canonicalSiteUrl` already ends with the base path *and* a
+   * slash, so the file name is joined to it directly; joining `base` a second time is
+   * what made the old build advertise `/<repo>/<repo>/social-card.png`.
+   *
+   * `public/social-card.png` is rendered by `npm run emit:social-card` from the
+   * dataset, so it exists in a deploy that ran that step and not in one that did not.
+   * A card that is not there is not advertised: a broken `og:image` renders the same
+   * empty preview as no `og:image`, but with a 404 in the log and a lie in the markup.
+   */
+  const socialCard = existsSync(r('./public/social-card.png'))
+    ? `${siteCanonical ?? base}social-card.png`
+    : null
   /**
    * Hosts the dev/preview servers will answer to. Vite rejects unknown Host
    * headers by default (DNS-rebinding protection), which breaks tunnelled
@@ -191,10 +261,11 @@ export default defineConfig(({ mode, command }) => {
         // build, and 'serve' only for the dev server, which is exactly the split
         // this policy needs.
         command === 'build' ? PRODUCTION_STYLE_POLICY : DEVELOPMENT_STYLE_POLICY,
-        canonicalHref(env.VITE_SITE_URL, base),
-        base,
+        siteCanonical,
+        socialCard,
       ),
-      seoPlugin(canonicalHref(env.VITE_SITE_URL, base)?.replace(/\/$/, '') ?? null, publicRoutes),
+      spaFallbackPlugin(),
+      seoPlugin(siteCanonical?.replace(/\/$/, '') ?? null, publicRoutes),
       VitePWA({
         // 'prompt' => the UI asks before reloading; we never silently swap the app shell.
         registerType: 'prompt',
@@ -203,38 +274,50 @@ export default defineConfig(({ mode, command }) => {
         injectRegister: null,
         strategies: 'generateSW',
         includeAssets: ['favicon.svg', 'icons/*.png', 'offline.html', 'robots.txt'],
-        manifest: {
-          id: '/?source=pwa',
-          name: 'GraphMentor AI — Engineering Career Navigator',
-          short_name: 'GraphMentor',
-          description:
-            'Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps, build a dependency-aware learning roadmap, and get practical project ideas.',
-          theme_color: '#0b1220',
-          background_color: '#0b1220',
-          display: 'standalone',
-          display_override: ['standalone', 'minimal-ui'],
-          orientation: 'any',
-          start_url: '.',
-          scope: '.',
-          lang: 'en',
-          dir: 'ltr',
-          categories: ['education', 'productivity'],
-          icons: [
-            { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-            { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          ],
-          shortcuts: [
-            { name: 'Explore careers', url: '/careers' },
-            { name: 'Knowledge graph', url: '/graph' },
-            { name: 'AI mentor', url: '/mentor' },
-          ],
-        },
+        // Every root-relative field below is joined onto the base path by
+        // `withManifestBaseUrl`, because vite-plugin-pwa rebases `start_url` and
+        // `scope` but leaves `id` and the shortcut URLs alone. Under a project site
+        // those two are what stop the installed app from pointing at the host's root.
+        manifest: withManifestBaseUrl(
+          {
+            id: '/?source=pwa',
+              name: 'GraphMentor AI — Engineering Career Navigator',
+              short_name: 'GraphMentor',
+              description:
+                'Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps, build a dependency-aware learning roadmap, and get practical project ideas.',
+              theme_color: '#0b1220',
+              background_color: '#0b1220',
+              display: 'standalone',
+              display_override: ['standalone', 'minimal-ui'],
+              orientation: 'any',
+              // Relative to the manifest's own URL, which the host serves from the
+              // base path — so these two need no rebasing and are left as written.
+              start_url: '.',
+              scope: '.',
+              lang: 'en',
+              dir: 'ltr',
+              categories: ['education', 'productivity'],
+              icons: [
+                { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+                { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+                { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+              ],
+              shortcuts: [
+                { name: 'Explore careers', url: '/careers' },
+                { name: 'Knowledge graph', url: '/graph' },
+                { name: 'AI mentor', url: '/mentor' },
+              ],
+          } satisfies Partial<ManifestOptions>,
+          base,
+        ),
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,json}'],
           // Never precache the app shell for PDFs / assets that must hit the network.
           navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/offline\.html$/],
+          // Workbox tests the denylist against the whole path, not the path relative to
+          // the base, so the pattern has to carry the base: under a project site the
+          // file is `/<repo>/offline.html`, and `^/offline\.html$` would never match it.
+          navigateFallbackDenylist: [new RegExp(`^${escapeRegExp(base)}offline\\.html$`)],
           cleanupOutdatedCaches: true,
           clientsClaim: false,
           skipWaiting: false,

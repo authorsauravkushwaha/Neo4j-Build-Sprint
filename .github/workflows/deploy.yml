@@ -3,11 +3,20 @@
 # Runs on every push to main and on pull requests (verification only).
 # Publish step needs: Settings -> Pages -> Source: GitHub Actions.
 #
+# URL and base path are derived from the repository, because on GitHub Pages those two
+# are not free choices: a repository named `<owner>.github.io` is served at the domain
+# root and everything else is served from `/<repo-name>/`. Getting that wrong is the one
+# mistake that turns a deployment into a blank page, so it is computed here instead of
+# trusted to a variable somebody remembers to set:
+#
+#   https://authorsauravkushwaha.github.io/Neo4j-Build-Sprint/   <- this repository
+#   https://authorsauravkushwaha.github.io/                       <- a `<owner>.github.io` repository
+#
 # Repository secrets (optional — the app runs with none of them set, in clearly
 # labelled demo mode):
 #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SITE_URL
-# Repository variables (optional):
-#   VITE_BASE_PATH  e.g. /graphmentor-ai/ for a project site
+# Repository variables (optional — both are derived from the repository when unset):
+#   VITE_BASE_PATH  override the computed base path, e.g. "/" to force the root
 name: Build and deploy
 
 on:
@@ -15,6 +24,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish this run to GitHub Pages (verification only when unset)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -60,8 +74,9 @@ jobs:
     name: Build and deploy
     needs: verify
     runs-on: ubuntu-latest
-    # Publishing only happens from main; pull requests stop after verification.
-    if: github.ref == 'refs/heads/main'
+    # Publishing happens from main, and from a manually dispatched run that asked for
+    # it — which is how a branch can be published for review before it is merged.
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
     permissions:
       contents: read
       pages: write
@@ -79,8 +94,70 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `enablement` turns on Pages (Source: GitHub Actions) if it is not already on,
+      # using the workflow's own token — which carries pages:write above. Without this,
+      # a first deploy on a fresh repository needs somebody to click the setting by hand
+      # before any of the rest of this file can do its job.
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # The address the site will be reachable at, and the path every asset URL in the
+      # HTML has to be prefixed with. Both are computed from the repository name and
+      # both can be overridden (the base path by a repository variable, the site URL by
+      # a repository secret) for a custom domain in front of the same Pages deployment.
+      - name: Resolve the Pages target
+        id: target
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          BASE_OVERRIDE: ${{ vars.VITE_BASE_PATH }}
+          URL_OVERRIDE: ${{ secrets.VITE_SITE_URL }}
+        run: |
+          # The host is folded to lower case, because DNS is; the repository name is
+          # not, because a Pages path is a case-sensitive lookup into the published
+          # files -- "/neo4j-build-sprint/" would 404 every asset of "Neo4j-Build-Sprint".
+          owner="$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          repo_lc="$(printf '%s' "$REPO" | tr '[:upper:]' '[:lower:]')"
+          if [ -n "$BASE_OVERRIDE" ]; then
+            base="$BASE_OVERRIDE"
+            chosen_from="the VITE_BASE_PATH variable"
+          elif [ "$repo_lc" = "$owner.github.io" ]; then
+            base="/"
+            chosen_from="a $owner.github.io repository"
+          else
+            base="/$REPO/"
+            chosen_from="a project-site repository"
+          fi
+          case "$base" in
+            /*/) ;;
+            /*) base="$base/" ;;
+            *) base="/$base" ;;
+          esac
+          if [ -n "$URL_OVERRIDE" ]; then
+            url="$URL_OVERRIDE"
+          else
+            path="${base%/}"
+            url="https://$owner.github.io$path"
+          fi
+          {
+            echo "base=$base"
+            echo "url=$url"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing $url with base path $base (from $chosen_from)."
+
+      # The Open Graph card is drawn from the dataset by scripts/emit-social-card.ts, so
+      # it is rendered at deploy time rather than committed as a PNG that can drift away
+      # from the numbers it advertises. Best effort, deliberately: a slow browser
+      # download must not hold up a deployment, and without the file the build simply
+      # omits og:image (see the socialCard block in vite.config.ts) instead of pointing a
+      # link preview at something that 404s.
+      - name: Render the social card
+        continue-on-error: true
+        run: |
+          npx playwright install chromium
+          npm run emit:social-card
 
       - name: Build
         # Values are optional: with no secrets the build produces a working
@@ -88,8 +165,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
+          VITE_SITE_URL: ${{ steps.target.outputs.url }}
+          VITE_BASE_PATH: ${{ steps.target.outputs.base }}
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
         run: npm run build
 
@@ -102,4 +179,18 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v4
 
-
+      # What the published site has to be able to do, checked against the artifact that
+      # was actually uploaded rather than against the source tree: the deep-link
+      # fallback a host with no rewrite rules needs, and the asset paths that must carry
+      # the base path. A deploy that fails here produced a page, just not a working one.
+      # The rules themselves are unit-tested in tests/unit/github-pages.test.ts.
+      - name: Check the published artifact
+        if: always() && steps.deploy.outcome == 'success'
+        run: |
+          base='${{ steps.target.outputs.base }}'
+          fail() { echo "::error::$1"; exit 1; }
+          test -f dist/404.html || fail 'dist/404.html is missing — deep links will show GitHub 404 page.'
+          grep -q "href=\"${base}manifest.webmanifest\"" dist/index.html \
+            || fail "index.html does not reference the manifest under $base — the base path is wrong."
+          test -s dist/icons/icon-512.png || fail 'dist/icons/icon-512.png is missing — the PWA cannot install.'
+          echo "Artifact checks passed: $(du -sh dist | cut -f1) published at ${{ steps.target.outputs.url }}"
