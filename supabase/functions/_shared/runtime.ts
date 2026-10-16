@@ -48,6 +48,15 @@ export interface RuntimeConfig {
   limits: RuntimeLimits
   /** HMAC secret for replay protection on expensive endpoints. Optional. */
   signSecret: string | null
+  /**
+   * Secret pepper for rate-limit bucket keys (`RATE_LIMIT_PEPPER`).
+   *
+   * Without it the keys are still stable and still limit correctly, but they are
+   * derived with a constant that is public in this repository, so a reader of the
+   * counter table can recover the addresses and IPs behind them. See
+   * `bucketKey` in core/rateLimit.ts and tests/security/exploit-bucket-key.test.ts.
+   */
+  rateLimitPepper: string | null
   /** When true, AI/write endpoints require a signed, single-use request. */
   requireRequestSigning: boolean
   logLevel: string
@@ -152,6 +161,7 @@ export function readRuntimeConfig(env: EnvAccessor): RuntimeConfig {
       maxJsonBodyBytes: num(env('MAX_JSON_BODY_BYTES'), 32 * 1024, 4096, 128 * 1024),
     },
     signSecret: (env('REQUEST_SIGNING_SECRET') ?? '').trim() || null,
+    rateLimitPepper: (env('RATE_LIMIT_PEPPER') ?? '').trim() || null,
     requireRequestSigning: (env('REQUIRE_REQUEST_SIGNING') ?? 'false').trim().toLowerCase() === 'true',
     logLevel: (env('LOG_LEVEL') ?? 'info').trim(),
     environment: (env('ENVIRONMENT') ?? 'production').trim(),

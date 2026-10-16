@@ -6,10 +6,11 @@
  * It never returns secrets, hostnames with credentials, or stack traces.
  */
 import type { ApiRequest, HttpResponse } from '../core/http.ts'
-import { json } from '../core/http.ts'
+import { json, readClientIpOptions } from '../core/http.ts'
 import type { GraphHealth } from '../core/types.ts'
 import { describeProvider } from '../core/aiAdapter.ts'
 import { emptyGraphHint } from '../core/neo4jReader.ts'
+import { BUCKET_KEY_UNPEPPERED } from '../core/rateLimit.ts'
 import type { Runtime } from '../runtime.ts'
 import { signingStatus } from './shared.ts'
 
@@ -29,6 +30,21 @@ export interface HealthPayload {
   security: {
     requestSigningRequired: boolean
     note: string
+    /**
+     * Whether rate-limit bucket keys are derived under a server-side secret.
+     *
+     * When false the keys are still stable and still limit correctly, but they
+     * are derived with a constant that is public in this repository, so the
+     * counter table is not the "contains no personal data" table migration 002
+     * describes. An operator needs to be able to see that from outside, because
+     * nothing else fails when it is missing.
+     */
+    rateLimitKeysPeppered: boolean
+    /** Present only when `rateLimitKeysPeppered` is false. */
+    unpepperedNote?: string
+    /** Echoed so an operator can confirm the proxy-trust settings took effect. */
+    trustedProxyHops: number
+    trustProxyHeaders: boolean
   }
   service: {
     version: string
@@ -44,6 +60,9 @@ export interface HealthPayload {
 
 export async function healthCheckHandler(runtime: Runtime, request: ApiRequest): Promise<HttpResponse> {
   const checkedAt = new Date().toISOString()
+  // The same environment-driven settings buildApiRequest uses to decide which
+  // forwarded headers to believe, reported so an operator can confirm them.
+  const clientIpOptions = readClientIpOptions(request.env)
 
   let graph: GraphHealth
   if (!runtime.reader) {
@@ -116,6 +135,10 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
     security: {
       requestSigningRequired: signing.required,
       note: signing.reason,
+      rateLimitKeysPeppered: runtime.config.rateLimitPepper !== null,
+      ...(runtime.config.rateLimitPepper === null ? { unpepperedNote: BUCKET_KEY_UNPEPPERED } : {}),
+      trustProxyHeaders: clientIpOptions.trustProxyHeaders,
+      trustedProxyHops: clientIpOptions.trustedProxyHops,
     },
     service: {
       version: '1.0.0',

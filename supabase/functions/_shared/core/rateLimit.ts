@@ -4,11 +4,11 @@
  * The store is an interface, not an in-memory map, because Edge Functions scale
  * horizontally: two requests from the same user can land on different instances.
  * Production uses a Postgres-backed fixed-window counter (atomic upsert, see
- * supabase/migrations/0004_rate_limits.sql). `MemoryFixedWindowStore` exists for
+ * supabase/migrations/002_graphmentor_rate_limit.sql). `MemoryFixedWindowStore` exists for
  * tests and for local single-process development, and it is explicitly labelled
  * as *not* suitable for a multi-instance deployment.
  */
-import type { NonceStore } from './security.ts'
+import { hmacSha256Hex, sha256Hex, type NonceStore } from './security.ts'
 import { AppError } from './errors.ts'
 
 export interface FixedWindowStore {
@@ -87,18 +87,44 @@ export async function checkRateLimit(
   }
 }
 
-/** Stable, non-reversible bucket key. Never contains a raw user id or IP. */
-export async function bucketKey(scope: string, identifier: string): Promise<string> {
-  const digest = await (globalThis.crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(`graphmentor-rate:${identifier}`),
-  ))
-  const hex = Array.from(new Uint8Array(digest))
-    .slice(0, 8)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
+/**
+ * Stable bucket key for `scope`, derived from `identifier`.
+ *
+ * **Keyed by `pepper` when one is supplied, and only then irreversible.**
+ *
+ * This used to be `sha256("graphmentor-rate:" + identifier)` with no secret. The
+ * comment above it claimed the result was "non-reversible", and migration 002
+ * claimed the counter table held "no personal data". Neither held: the salt is a
+ * string literal in a public repository, `auth.host` buckets are keyed on IPv4
+ * addresses (2^32 candidates — a full offline sweep is minutes), and `auth.addr`
+ * buckets are keyed on an unkeyed digest of an email address, which falls to the
+ * same wordlist attack as any leaked hash. Anyone who could read
+ * `public.gm_rate_limit` could recover which addresses attempted sign-in and
+ * when, from a table documented as containing nothing of the kind.
+ *
+ * With `pepper` the derivation is an HMAC under a secret that never leaves the
+ * Edge Function environment, so the stored key is only reversible by a holder of
+ * that secret — which is the property the comments were already asserting.
+ *
+ * The unpeppered path is kept deliberately: counters must not stop limiting
+ * while an operator rolls the secret out, and a deployment that loses its pepper
+ * must not silently reset every budget. It is reported through
+ * `BUCKET_KEY_UNPEPPERED` so `health-check` can say out loud that the privacy
+ * property is not in force, rather than implying it is.
+ */
+export async function bucketKey(scope: string, identifier: string, pepper?: string | null): Promise<string> {
+  const message = `graphmentor-rate:${identifier}`
+  // 8 bytes / 16 hex chars: enough to avoid collisions across the bucket
+  // population, short enough to keep the primary key of gm_rate_limit small.
+  const hex = pepper ? (await hmacSha256Hex(pepper, message)).slice(0, 16) : (await sha256Hex(message)).slice(0, 16)
   return `${scope}.${hex}`
 }
+
+/** Operator-facing note for a deployment running without `RATE_LIMIT_PEPPER`. */
+export const BUCKET_KEY_UNPEPPERED =
+  'RATE_LIMIT_PEPPER is not set, so rate-limit keys are derived with a constant that is public in this repository. ' +
+  'They are stable and they limit correctly, but anyone who can read the counter table can recover the addresses and ' +
+  'IPs behind them. Set RATE_LIMIT_PEPPER (openssl rand -hex 32) as an Edge Function secret to make them irreversible.'
 
 export class MemoryFixedWindowStore implements FixedWindowStore {
   private counters = new Map<string, number>()

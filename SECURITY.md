@@ -4,6 +4,13 @@ GraphMentor AI is a browser-first application with an optional Supabase backend.
 the short contract; `docs/security.md` is the long one, including the threat-by-threat table
 and the code and test that address each item.
 
+Two audit passes have been run against this repository, both white-box and both remediated:
+`docs/security-audit-2026-10-16.md` (A01–A11) and
+`docs/security-audit-round2-2026-10-16.md` (GM-SEC-001–005). The second pass exists because the
+first remediated two classes of defect in one of the two places each appeared; the adversarial
+tests it added live in `tests/security/`. Neither pass is a third-party penetration test, and
+neither attacked a live deployment — there was none.
+
 ## Reporting a vulnerability
 
 There is no production deployment and no hosting provider behind this repository, so there is
@@ -34,6 +41,11 @@ rule still applies to any deployment you do not control.
 | Secret management | `.env` files are git-ignored; no secrets in `localStorage`; example env documents names only | `.gitignore`, `docs/security.md` |
 | Input validation | one schema layer (zod) at every handler boundary | `tests/unit/validate.test.ts`, `tests/integration/handlers.test.ts` |
 | Rate limiting | per-route token buckets with honest responses | `supabase/functions/_shared/core/rateLimit.ts` |
+| Caller address is not caller-chosen | forwarded headers disbelieved by default; `x-forwarded-for` read from the right by `TRUSTED_PROXY_HOPS` (`clientIpFromHeaders`) | `tests/security/exploit-client-ip.test.ts` |
+| Rate-limit keys hold no recoverable identity | HMAC under `RATE_LIMIT_PEPPER`, reported as `rateLimitKeysPeppered` on `/health-check` | `tests/security/exploit-bucket-key.test.ts` |
+| Replay signatures bind the nonce | one canonical string shared by browser and Edge Function (`signClientRequest`) | `tests/security/exploit-replay-nonce.test.ts` |
+| Outbound workflow probes stay on the allow-list | one probe implementation, `redirect: 'error'` + `credentials: 'omit'` | `tests/security/exploit-workflow-probe.test.ts` |
+| CI does not hand event data to a shell | no `${{ }}` inside any `run:` block; values arrive via `env:` | `tests/security/exploit-ci-injection.test.ts` |
 | Authentication ≠ authorization | every privileged handler re-checks ownership, not just a valid session | `supabase/functions/_shared/handlers/authGuard.ts` |
 
 ## Out of scope here

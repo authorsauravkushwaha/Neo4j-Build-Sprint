@@ -17,7 +17,7 @@
  * blank that looks like a fact.
  */
 import type { GraphMentorClient, ResourceQueryInput } from './api.ts'
-import { createWorkflowServices } from '@core/workflow/services.ts'
+import { createFetchProbe, createWorkflowServices } from '@core/workflow/services.ts'
 import type { WorkflowServices } from '@core/workflow/types.ts'
 
 export interface WorkflowServiceOptions {
@@ -32,25 +32,22 @@ export interface WorkflowServiceOptions {
 /**
  * The one place a workflow may leave the app, and only after the engine has
  * checked the host against the workflow's own allow-list.
+ *
+ * This is the *shared* probe (`createFetchProbe` in core/workflow/services.ts),
+ * not a browser-local copy of one. It used to be a local copy, and the copy had
+ * drifted into `redirect: 'follow'` with no `credentials` setting — which turned
+ * the allow-list into a suggestion, because `hostAllowed()` validates the URL a
+ * workflow names and never sees the URL a redirect lands on. Any allow-listed
+ * host with an open redirect became a trampoline to a host the policy refuses,
+ * and because `credentials` defaulted to `same-origin` the probe carried the
+ * learner's cookies to wherever it ended up.
+ *
+ * Delegating means there is one outbound-probe implementation, and it is the one
+ * whose comment explains why `redirect: 'error'` and `credentials: 'omit'` are
+ * load-bearing. See tests/security/exploit-workflow-probe.test.ts.
  */
-function probeFetch(): WorkflowServices['fetch'] {
-  return async ({ url, method, timeoutMs }) => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
-    const started = Date.now()
-    try {
-      const response = await fetch(url, {
-        method,
-        redirect: 'follow',
-        signal: controller.signal,
-        referrerPolicy: 'no-referrer',
-        headers: { accept: 'text/html,application/xhtml+xml' },
-      })
-      return { ok: response.ok, status: response.status, ms: Date.now() - started }
-    } finally {
-      clearTimeout(timer)
-    }
-  }
+export function probeFetch(fetchImpl: typeof fetch = fetch): WorkflowServices['fetch'] {
+  return createFetchProbe(fetchImpl)
 }
 
 export function createClientWorkflowServices(client: GraphMentorClient, options: WorkflowServiceOptions): WorkflowServices {
