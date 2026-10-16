@@ -1817,3 +1817,96 @@
     white-space: nowrap;
   }
 }
+
+/* ==========================================================================
+ * Workflow surface (the /workflows page)
+ *
+ * Styling rules followed here, because this page shows a graph of steps and a
+ * log of what happened:
+ *   1. The step graph reads left to right, in execution order, on one line per
+ *      dependency layer. It wraps rather than scrolling sideways, because a
+ *      horizontally scrolled graph is a graph nobody sees the end of.
+ *   2. Status is carried by a word as well as a colour. Colour alone fails for
+ *      roughly one in twelve men, and "green node" is exactly the sort of thing
+ *      that ends up in a screenshot as evidence.
+ *   3. Nothing here animates. A run log that moves is a run log you cannot read.
+ * ========================================================================== */
+.gm-workflow-graph {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gm-workflow-graph > li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gm-workflow-graph ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gm-workflow-graph .gm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: 16rem;
+  text-align: left;
+}
+
+.gm-workflow-graph-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background-color: var(--gm-accent);
+  flex: 0 0 auto;
+}
+
+.gm-workflow-items {
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.gm-workflow-items code,
+.gm-code code {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--gm-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gm-code {
+  background-color: var(--gm-neu-inset-1);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--gm-neu-inset-soft);
+  padding: 0.75rem 0.875rem;
+}
+
+.gm-workflow-card .gm-card-title {
+  letter-spacing: -0.01em;
+}
+
+/* An inset focus ring on the step chips, so keyboard users can tell which step
+   they are reading without the layout shifting. */
+.gm-workflow-graph .gm-chip:focus-visible {
+  outline: 2px solid var(--gm-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  /* On a phone the layer-by-layer columns stack, and the arrow between layers
+     turns into a downward chevron so the order is still readable. */
+  .gm-workflow-graph > li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .gm-workflow-graph > li > span[aria-hidden='true'] {
+    transform: rotate(90deg);
+    margin-left: 0.5rem;
+  }
+}

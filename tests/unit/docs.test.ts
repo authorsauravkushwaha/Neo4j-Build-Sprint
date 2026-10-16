@@ -9,7 +9,9 @@
  *
  * It checks the shipped source only — code comments, user-facing copy and the
  * Supabase functions — plus a small allow-list of files this test should not
- * police: historical logs, where a stale path is part of the record.
+ * police: historical logs, where a stale path is part of the record. A `docs/x.md`
+ * path that appears *inside a URL* is ignored: it belongs to whoever's site that
+ * is, not to this repository.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
@@ -30,7 +32,15 @@ function collectReferences(dir: string, found: Array<{ file: string; ref: string
     }
     if (!/\.(ts|tsx)$/.test(entry)) continue
     const text = readFileSync(full, 'utf8')
-    for (const match of text.matchAll(/docs\/[A-Za-z0-9._-]+\.md/g)) {
+    /*
+     * The lookbehind matters: a bare `docs/security.md` is this repository
+     * pointing at its own documentation and must resolve, while a path inside a
+     * URL — `https://example.com/docs/api.md`, which the generated public-API
+     * catalogue quotes verbatim from upstream — is somebody else's path, and this
+     * test has no business policing it. Excluding generated files wholesale would
+     * have hidden both, so the distinction is made in the pattern instead.
+     */
+    for (const match of text.matchAll(/(?<![\w./-])docs\/[A-Za-z0-9._-]+\.md/g)) {
       found.push({ file: relative(root, full), ref: match[0] })
     }
   }

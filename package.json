@@ -33,6 +33,8 @@
     "audience": "npm run audience:measure && npm run audience:simulate",
     "audience:simulate": "node --import tsx scripts/audience/report.ts",
     "verify:injection": "tsx scripts/verify-injection.ts",
+    "workflow": "tsx scripts/workflow.ts",
+    "import:public-apis": "tsx scripts/import-public-apis.ts",
     "db:provision": "sh db/bin/provision.sh",
     "db:up": "sh db/bin/start.sh start",
     "db:down": "sh db/bin/start.sh stop",

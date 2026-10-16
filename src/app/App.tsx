@@ -33,6 +33,10 @@ const ResourcesPage = lazy(() => import('@/features/resources/ResourcesPage.tsx'
 const MentorPage = lazy(() => import('@/features/mentor/MentorPage.tsx').then((module) => ({ default: module.MentorPage })))
 const ProgressPage = lazy(() => import('@/features/progress/ProgressPage.tsx').then((module) => ({ default: module.ProgressPage })))
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage.tsx').then((module) => ({ default: module.SettingsPage })))
+/* The workflow page pulls the engine, the library and the n8n export, so it is
+   lazy for the same reason the graph explorer is: the landing page should not
+   pay for a page most visitors will never open. */
+const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage.tsx').then((module) => ({ default: module.WorkflowsPage })))
 
 function Lazy({ children }: { children: ReactNode }): ReactNode {
   return <Suspense fallback={<Loading label="Loading this view…" />}>{children}</Suspense>
@@ -136,6 +140,14 @@ export function App(): ReactNode {
           element={
             <Lazy>
               <SettingsPage />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/workflows"
+          element={
+            <Lazy>
+              <WorkflowsPage />
             </Lazy>
           }
         />
