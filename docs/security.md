@@ -6,7 +6,7 @@ what is defended, where the code lives, how it is tested, and **what it does not
 Run the evidence yourself:
 
 ```bash
-npm test                       # 621 tests, 41 files — security (46), hardening invariants (28),
+npm test                       # 625 tests, 42 files — security (46), hardening invariants (28),
                                # input validation (27), store authorization (17), auth (17), handlers (43),
                                # workflow engine (56), appwrite adapter (41), recommendation (31), import pipeline (6),
                                # persistence (25), frontier (25), rate limiting (10), scroll coverage (8),

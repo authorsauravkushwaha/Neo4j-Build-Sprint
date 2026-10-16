@@ -39,7 +39,11 @@ const SettingsPage = lazy(() => import('@/features/settings/SettingsPage.tsx').t
 const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage.tsx').then((module) => ({ default: module.WorkflowsPage })))
 /* The public-API catalogue imports an 84 KB generated module, so it is lazy for
    the same reason: nobody should pay for 259 imported rows to read the landing
-   page. */
+   page.
+   Note the path: `/apis` starts with `/api`, which `vite.config.ts` proxies to the
+   Edge Functions, so the dev server answered it with a 500 from a backend that is
+   not running. The route is `/public-apis` and
+   `tests/unit/route-collisions.test.ts` refuses to let that happen again. */
 const ApisPage = lazy(() => import('@/features/apis/ApisPage.tsx').then((module) => ({ default: module.ApisPage })))
 
 function Lazy({ children }: { children: ReactNode }): ReactNode {
@@ -156,7 +160,7 @@ export function App(): ReactNode {
           }
         />
         <Route
-          path="/apis"
+          path="/public-apis"
           element={
             <Lazy>
               <ApisPage />

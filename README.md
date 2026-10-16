@@ -51,7 +51,7 @@ APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 | Mentor | `/mentor` | Graph-grounded Q&A with citations. Works with **no AI key** — a deterministic rules engine over the same context answers, and the UI says which one replied. |
 | Progress | `/progress` | What you have done, without streaks, points or invented motivation mechanics. |
 | Settings | `/settings` | Accessibility, theme, data export, account deletion, feedback. |
-| Public APIs | `/apis` | 259 endpoints imported from the public-apis directory, each linked to the skills it exercises, with a "needs no key" filter and the catalogue's five caveats above the results instead of in a footnote. A filtered view is a link. |
+| Public APIs | `/public-apis` | 259 endpoints imported from the public-apis directory, each linked to the skills it exercises, with a "needs no key" filter and the catalogue's five caveats above the results instead of in a footnote. A filtered view is a link. |
 | Anywhere | Cmd/Ctrl+K | Command palette: every page, career, skill, concept, project and resource in one search, offline, with keyboard navigation and focus that returns where it was. The library's search also lives in the URL (`/resources?q=docker`), so a filtered view is a link. |
 
 **Presentation:** the interface is built on a neumorphic system (`src/styles/index.css`): one opaque
@@ -409,7 +409,7 @@ one interface (`GraphMentorClient`), so a screen cannot behave differently in th
 ## Tests and verification
 
 ```bash
-npm test                     # 621 tests in 41 files
+npm test                     # 625 tests in 42 files
 npm run typecheck            # no TypeScript errors
 npm run lint:secrets         # no credential-shaped strings
 npm run validate:seed        # 53/53 dataset, engine and Cypher checks

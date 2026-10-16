@@ -109,7 +109,7 @@ a useful list and a trap:
   `workflow:public-api-map` (`docs/workflows.md`).
 - `listPublicApis({ skillIds, category, q, limit })` — the query layer in
   `src/data/publicApis/index.ts`, callable from any feature.
-- **The catalogue page** at `/apis` (`src/features/apis/ApisPage.tsx`): search, category,
+- **The catalogue page** at `/public-apis` (`src/features/apis/ApisPage.tsx`): search, category,
   skill and "needs no key" filters — all of them in the URL, so a filtered view is a
   link — with the provenance block and all five limitations rendered above the
   results rather than in a footnote. It is lazy-loaded, because the generated

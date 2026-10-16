@@ -27,12 +27,12 @@ function LocationProbe(): React.ReactNode {
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>
 }
 
-function renderPage(path = '/apis') {
+function renderPage(path = '/public-apis') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route
-          path="/apis"
+          path="/public-apis"
           element={
             <>
               <ApisPage />
@@ -74,7 +74,7 @@ describe('the public-API catalogue page', () => {
 
   it('says which condition a key is, and never calls it free', () => {
     // Filtered to a category with a mix, so both labels are on screen at once.
-    renderPage('/apis?category=Development')
+    renderPage('/public-apis?category=Development')
     const rendered = cards()
     expect(rendered.length).toBeGreaterThan(3)
 
@@ -96,7 +96,7 @@ describe('the public-API catalogue page', () => {
     expect(plaintext.length).toBe(PUBLIC_API_SOURCE.plaintextLinks)
     expect(plaintext.length).toBeGreaterThan(0)
 
-    renderPage(`/apis?q=${encodeURIComponent(plaintext[0]!.name)}`)
+    renderPage(`/public-apis?q=${encodeURIComponent(plaintext[0]!.name)}`)
     const card = cards()[0]!
     expect(within(card).getByText(/plaintext link/i)).toBeInTheDocument()
     // And the page explains what it did about it, in the same breath.
@@ -162,7 +162,7 @@ describe('the public-API catalogue page', () => {
   })
 
   it('shows which skill a match came from, in the sentence the query layer produced', () => {
-    renderPage('/apis?skill=skill:api-design-and-integration')
+    renderPage('/public-apis?skill=skill:api-design-and-integration')
     const rendered = cards()
     expect(rendered.length).toBeGreaterThan(0)
     for (const card of rendered) {

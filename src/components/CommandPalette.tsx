@@ -52,7 +52,7 @@ const PAGES: PaletteEntry[] = [
   { id: 'page:progress', kind: 'Page', title: 'Progress', subtitle: 'Hours and completion from your log', to: '/progress', keywords: ['stats', 'hours', 'track'] },
   { id: 'page:settings', kind: 'Page', title: 'Settings and accessibility', subtitle: 'Theme, motion, data, account', to: '/settings', keywords: ['preferences', 'theme', 'dark', 'export', 'erase'] },
   { id: 'page:workflows', kind: 'Page', title: 'Workflows', subtitle: 'Readable automation, run node by node', to: '/workflows', keywords: ['automation', 'n8n', 'pipeline', 'schedule', 'cron', 'integration'] },
-  { id: 'page:apis', kind: 'Page', title: 'Public APIs to practise on', subtitle: 'Callable endpoints, linked to the skills they exercise', to: '/apis', keywords: ['api', 'practice', 'endpoint', 'public apis', 'project'] },
+  { id: 'page:apis', kind: 'Page', title: 'Public APIs to practise on', subtitle: 'Callable endpoints, linked to the skills they exercise', to: '/public-apis', keywords: ['api', 'practice', 'endpoint', 'public apis', 'project'] },
   { id: 'page:about', kind: 'Page', title: 'Features and limitations', subtitle: 'What this app does and does not do', to: '/about', keywords: ['limits', 'honesty', 'docs'] },
 ]
 

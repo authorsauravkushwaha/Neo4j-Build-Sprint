@@ -146,8 +146,37 @@ export default defineConfig(({ mode, command }) => {
   ].filter((v): v is string => Boolean(v))
 
   const appVersion = JSON.parse(readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8')).version as string
-  /** Public routes a crawler may index — the same paths `src/app/App.tsx` serves. */
-  const publicRoutes = ['/', '/onboarding', '/careers', '/gaps', '/roadmap', '/mentor', '/graph', '/library', '/projects', '/progress', '/about', '/privacy', '/accessibility']
+  /**
+   * Public routes a crawler may index — the same paths `src/app/App.tsx` serves.
+   *
+   * This list had drifted: it advertised `/library` and `/accessibility`, which the
+   * router has never served (the resource library is `/resources`), and omitted
+   * `/skills`, `/pathway`, `/workflows` and the rest. A sitemap is a promise to a
+   * crawler, so `tests/unit/route-collisions.test.ts` now fails if this list and the
+   * router disagree in either direction.
+   *
+   * Personal screens are deliberately absent: `/dashboard`, `/progress` and
+   * `/settings` are the learner's own state, `/login`, `/account` and
+   * `/reset-password` are for a person, not an index, and robots.txt disallows all
+   * six.
+   */
+  const publicRoutes = [
+    '/',
+    '/onboarding',
+    '/careers',
+    '/skills',
+    '/graph',
+    '/pathway',
+    '/gaps',
+    '/roadmap',
+    '/projects',
+    '/resources',
+    '/mentor',
+    '/workflows',
+    '/public-apis',
+    '/about',
+    '/privacy',
+  ]
 
   return {
     base,

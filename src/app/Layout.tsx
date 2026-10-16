@@ -60,7 +60,7 @@ const NAV: NavItem[] = [
   { to: '/projects', label: 'Project recommender', short: 'Projects', icon: <FolderKanban aria-hidden="true" className="h-4 w-4" /> },
   { to: '/resources', label: 'Free resource library', short: 'Resources', icon: <BookMarked aria-hidden="true" className="h-4 w-4" /> },
   { to: '/workflows', label: 'Workflows and integrations', short: 'Workflows', icon: <Workflow aria-hidden="true" className="h-4 w-4" /> },
-  { to: '/apis', label: 'Public APIs to practise on', short: 'APIs', icon: <Plug aria-hidden="true" className="h-4 w-4" /> },
+  { to: '/public-apis', label: 'Public APIs to practise on', short: 'APIs', icon: <Plug aria-hidden="true" className="h-4 w-4" /> },
   { to: '/settings', label: 'Settings and accessibility', short: 'Settings', icon: <SettingsIcon aria-hidden="true" className="h-4 w-4" /> },
 ]
 
