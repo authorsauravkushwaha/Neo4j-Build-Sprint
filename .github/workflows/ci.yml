@@ -1,0 +1,61 @@
+# Continuous integration.
+#
+# This file is a real workflow for the repository as it will be published: it runs the same
+# commands a developer runs locally, in the same order, and fails on the first disagreement.
+# Two classes of check are deliberately NOT here:
+#
+#   * Network-dependent checks (verify:resources, verify:browser) — they depend on third-party
+#     sites being up, and a red build caused by someone else's outage teaches the wrong lesson.
+#     They run on the schedule below and from a developer machine.
+#   * Infrastructure checks (verify:rls, smoke:http) — they need a Postgres database; the CI
+#     job has none, and those scripts exit with a named skip rather than a silent pass.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC: the network-dependent checks
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint:secrets
+      - run: npm run validate:seed
+      - run: npm run emit:cypher
+      - run: node -e "const a=require('./neo4j/MANIFEST.json');console.log('datasetVersion',a.datasetVersion,'nodes',a.counts.Career+a.counts.Skill+a.counts.Resource)"
+      - run: git diff --exit-code -- neo4j/ || (echo '::error::neo4j/ is stale — run npm run emit:cypher and commit' && exit 1)
+      - run: npm run typecheck
+      - run: npm run typecheck:functions
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  link-check:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run verify:resources
+      - run: git diff --exit-code -- src/data/seed/resourceVerification.json docs/resource-verification.md || (echo '::warning::resource verification changed — review and commit' && exit 0)
+
+

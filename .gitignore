@@ -1,0 +1,69 @@
+# ---- secrets: never commit real values ----
+.env
+.env.*
+!.env.example
+!.env.local.example
+supabase/.env
+supabase/.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+*.jks
+keystore.properties
+release-signing.properties
+
+# ---- dependencies / build output ----
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+.vite-pwa/
+
+# ---- tooling / OS ----
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.pnpm-debug.log*
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# ---- Capacitor / Android ----
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+android/app/release/
+android/app/debug/
+android/app/src/main/assets/public/
+android/app/src/main/res/xml/network_security_config.xml.bak
+android/key.properties
+*.apk
+*.aab
+*.ap_
+
+# ---- local data ----
+.localdata/
+tmp/
+*.sqlite
+
+# ---- database deployment: secrets, keys and dumps never enter the repo ----
+# The live copies sit in /srv/graphmentor-pg (outside the repository); these
+# rules are the second line of defence if that directory is ever relocated.
+db/secrets/
+db/backups/
+graphmentor-pg/
+*.pass
+*.dump
+server.key
+ca.key
+client-*.key
+
+

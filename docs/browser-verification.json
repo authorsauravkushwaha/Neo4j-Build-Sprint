@@ -1,0 +1,555 @@
+{
+  "generatedAt": "2026-10-15T09:48:57.944Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "engine": "Chromium (headless) with ANGLE/SwiftShader software WebGL",
+  "checks": [
+    {
+      "name": "the app follows its own capability probe rather than mounting 3D regardless",
+      "ok": true,
+      "detail": "probe reports WebGL available on this renderer (software rasteriser accepted) → 1 canvas(es) mounted"
+    },
+    {
+      "name": "the “try 3D anyway” override is a real, persisted preference",
+      "ok": true
+    },
+    {
+      "name": "the hero scene reaches the “running” state (not stuck preparing)",
+      "ok": true,
+      "detail": "status=running after 4 ms"
+    },
+    {
+      "name": "the hero 3D scene mounts a canvas in a real browser",
+      "ok": true
+    },
+    {
+      "name": "the hero copy is painted above the 3D scene, not under it",
+      "ok": true,
+      "detail": "0 of 688 samples hit the canvas"
+    },
+    {
+      "name": "a legibility scrim sits between the scene and the copy",
+      "ok": true,
+      "detail": "z-index 1"
+    },
+    {
+      "name": "the hero canvas has a real size",
+      "ok": true,
+      "detail": "871×540"
+    },
+    {
+      "name": "the hero actually draws something (not a blank or uniform surface)",
+      "ok": true,
+      "detail": "coverage 1, 99 distinct colours"
+    },
+    {
+      "name": "dragging rotates the scene (the frame changes)",
+      "ok": true,
+      "detail": "25102325:4096 → 25070252:4096"
+    },
+    {
+      "name": "wrote docs/screenshots/landing-hero.png",
+      "ok": true
+    },
+    {
+      "name": "the landing screen is one material (page, card and app bar share one colour)",
+      "ok": true,
+      "detail": "page rgb(231, 236, 244), card rgb(231, 236, 244), header rgb(231, 236, 244)"
+    },
+    {
+      "name": "a content route keeps that single material (page, card, chip and app bar)",
+      "ok": true,
+      "detail": "rgb(231, 236, 244) card / rgb(231, 236, 244) chip over rgb(231, 236, 244) page (52 chips, 21 fields)"
+    },
+    {
+      "name": "cards cast a PAIR of shadows, light up-left and dark down-right",
+      "ok": true,
+      "detail": "2 layers: rgba(151, 167, 197, 0.66) 9px 9px 20px 0px, rgba(255, 255, 255, 0.95) …"
+    },
+    {
+      "name": "chips cast the same pair, scaled down to chip size",
+      "ok": true,
+      "detail": "2 layers, blur 7px vs card 12px"
+    },
+    {
+      "name": "the .gm-panel surface resolves to the raised pair (recipe probe: no screen renders it yet)",
+      "ok": true,
+      "detail": "2 outer layers: rgba(151, 167, 197, 0.66) 9px 9px 20px 0px, rgba(255, 255, 2…"
+    },
+    {
+      "name": "form fields are pressed IN (the canonical inset surface)",
+      "ok": true,
+      "detail": "rgba(151, 167, 197, 0.66) 4px 4px 9px 0px inset, rgba(255, 2"
+    },
+    {
+      "name": "the app bar is the same material, held above the page by its own shadow",
+      "ok": true,
+      "detail": "rgba(151, 167, 197, 0.66) 0px 5px 12px 0px"
+    },
+    {
+      "name": "the accent button keeps the material's depth language",
+      "ok": true,
+      "detail": "rgba(14, 116, 144, 0.42) 5px 5px 12px 0px, rgba(255, 255, 25"
+    },
+    {
+      "name": "no backdrop blur anywhere on the chrome (this is not glass wearing a costume)",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "name": "body text passes WCAG AA on the material",
+      "ok": true,
+      "detail": "15.13:1"
+    },
+    {
+      "name": "muted text stays legible on the material (soft UI usually fails here)",
+      "ok": true,
+      "detail": "6.51:1"
+    },
+    {
+      "name": "hovering a button deepens its shadow",
+      "ok": true,
+      "detail": "rgba(151, 167, 197, 0.66) 5px 5px … → rgba(151, 167, 197, 0.66) 9px 9px …"
+    },
+    {
+      "name": "pressing a button casts the shadow inwards",
+      "ok": true,
+      "detail": "rgba(151, 167, 197, 0.66) 4px 4px 9px 0px inset, rgba(255, 2"
+    },
+    {
+      "name": "the card is the page colour in rendered pixels, not only in computed styles",
+      "ok": true,
+      "detail": "card rgb(231, 236, 244) vs page rgb(231, 236, 244)"
+    },
+    {
+      "name": "the app bar paints that same material too",
+      "ok": true,
+      "detail": "bar rgb(231, 236, 244) vs page rgb(231, 236, 244)"
+    },
+    {
+      "name": "wrote docs/screenshots/landing-hero.png",
+      "ok": true
+    },
+    {
+      "name": "choosing a career loads a bounded subgraph (the selection is not lost)",
+      "ok": true,
+      "detail": "?career=career%3Aaerospace-engineer · 60 nodes and 120 relationships"
+    },
+    {
+      "name": "the graph explorer offers a 3D tab alongside canvas and list",
+      "ok": true
+    },
+    {
+      "name": "the graph scene reaches the “running” state",
+      "ok": true,
+      "detail": "status=running after 4 ms"
+    },
+    {
+      "name": "the 3D graph view mounts in a real browser",
+      "ok": true
+    },
+    {
+      "name": "the 3D graph draws nodes and edges",
+      "ok": true,
+      "detail": "coverage 1, 35 distinct colours"
+    },
+    {
+      "name": "the 3D graph responds to dragging",
+      "ok": true,
+      "detail": "26091776:4096 → 26094411:4096"
+    },
+    {
+      "name": "the wheel zooms the scene instead of scrolling the page",
+      "ok": true,
+      "detail": "scrollY 1008 → 1008"
+    },
+    {
+      "name": "wrote docs/screenshots/graph-3d.png",
+      "ok": true
+    },
+    {
+      "name": "the selected-node panel is still available beside the 3D view",
+      "ok": true
+    },
+    {
+      "name": "/ does not overflow horizontally at 360 px",
+      "ok": true,
+      "detail": "scrollWidth 360 vs viewport 360"
+    },
+    {
+      "name": "/ has no undersized tap target (<24 px)",
+      "ok": true,
+      "detail": "0 of 56 interactive elements"
+    },
+    {
+      "name": "/dashboard does not overflow horizontally at 360 px",
+      "ok": true,
+      "detail": "scrollWidth 360 vs viewport 360"
+    },
+    {
+      "name": "/dashboard has no undersized tap target (<24 px)",
+      "ok": true,
+      "detail": "0 of 38 interactive elements"
+    },
+    {
+      "name": "/graph does not overflow horizontally at 360 px",
+      "ok": true,
+      "detail": "scrollWidth 360 vs viewport 360"
+    },
+    {
+      "name": "/graph has no undersized tap target (<24 px)",
+      "ok": true,
+      "detail": "0 of 68 interactive elements"
+    },
+    {
+      "name": "/roadmap does not overflow horizontally at 360 px",
+      "ok": true,
+      "detail": "scrollWidth 360 vs viewport 360"
+    },
+    {
+      "name": "/roadmap has no undersized tap target (<24 px)",
+      "ok": true,
+      "detail": "0 of 57 interactive elements"
+    },
+    {
+      "name": "wrote docs/screenshots/mobile-dashboard.png",
+      "ok": true
+    },
+    {
+      "name": "no console errors on mobile",
+      "ok": true
+    },
+    {
+      "name": "no 3D canvas is mounted when the visitor asked for reduced motion",
+      "ok": true,
+      "detail": "0 canvas(es)"
+    },
+    {
+      "name": "nothing animates under reduced motion",
+      "ok": true,
+      "detail": "0 animated element(s)"
+    },
+    {
+      "name": "tilt transforms are neutralised",
+      "ok": true,
+      "detail": "0 tilted element(s)"
+    },
+    {
+      "name": "no surface falls back to a backdrop blur",
+      "ok": true,
+      "detail": "0 blurred surface(s)"
+    },
+    {
+      "name": "wrote docs/screenshots/landing-reduced-motion.png",
+      "ok": true
+    },
+    {
+      "name": "no unexpected console errors across the desktop run",
+      "ok": true,
+      "detail": "only the documented blocked stylesheet (1×), which §10 proves harmless"
+    },
+    {
+      "name": "no failed network requests",
+      "ok": true
+    },
+    {
+      "name": "the library renders every resource in the dataset",
+      "ok": true,
+      "detail": "154 rows for 154 resources"
+    },
+    {
+      "name": "every row states what you can do afterwards",
+      "ok": true,
+      "detail": "154 rows, 462 outcomes listed"
+    },
+    {
+      "name": "every row states what it assumes, where it stops and how long it takes",
+      "ok": true,
+      "detail": "assumes 154, limits 154, time 154"
+    },
+    {
+      "name": "every row that is https links out",
+      "ok": true,
+      "detail": "154 rows with a link"
+    },
+    {
+      "name": "every row carries an hour estimate",
+      "ok": true,
+      "detail": "154 of 154 rows show \"≈ low–high hours\""
+    },
+    {
+      "name": "the rows that have prerequisites link them to the skills they name",
+      "ok": true,
+      "detail": "91 rows list prerequisites (dataset: 91), all labelled with skill names"
+    },
+    {
+      "name": "no row renders as a stub",
+      "ok": true,
+      "detail": "0 short rows"
+    },
+    {
+      "name": "the access filter narrows the list to that model",
+      "ok": true,
+      "detail": "2 of 154, all labelled audit"
+    },
+    {
+      "name": "searching narrows the list to matching resources",
+      "ok": true,
+      "detail": "4 rows match \"docker\""
+    },
+    {
+      "name": "search reaches the detail fields, not just titles",
+      "ok": true,
+      "detail": "1 row for \"padding oracle\""
+    },
+    {
+      "name": "Cmd/Ctrl+K opens a real dialog with focus in the search field",
+      "ok": true,
+      "detail": "label \"Search GraphMentor\", 12 options listed before typing"
+    },
+    {
+      "name": "typing a concept name finds it, including concepts no resource links",
+      "ok": true,
+      "detail": "SkillPID controlConcept · Control systems"
+    },
+    {
+      "name": "the palette is the same material: raised panel, inset active row, no blur",
+      "ok": true,
+      "detail": "panel rgba(151, 167, 197, 0.66) 15px 15px 30px… / active row inset"
+    },
+    {
+      "name": "wrote docs/screenshots/command-palette.png",
+      "ok": true
+    },
+    {
+      "name": "Enter opens the highlighted result and closes the palette",
+      "ok": true,
+      "detail": "/skills/concept:pid-control"
+    },
+    {
+      "name": "Escape closes it and returns focus to the control that opened it",
+      "ok": true,
+      "detail": "focus: \"Search everything (Control K)\""
+    },
+    {
+      "name": "a search deep link opens the filtered library (?q= in the URL)",
+      "ok": true,
+      "detail": "field \"docker\", 4 rows"
+    },
+    {
+      "name": "the served page carries a Content-Security-Policy",
+      "ok": true,
+      "detail": "366 characters"
+    },
+    {
+      "name": "script-src is exactly self — no inline, no eval, no third-party origin",
+      "ok": true,
+      "detail": "script-src 'self'"
+    },
+    {
+      "name": "the built policy refuses inline styles and injected style elements",
+      "ok": true,
+      "detail": "style-src 'self'; style-src-elem 'self'"
+    },
+    {
+      "name": "the app loads without tripping its own policy",
+      "ok": true,
+      "detail": "no violations during load"
+    },
+    {
+      "name": "an injected <style> element is refused by the browser",
+      "ok": true,
+      "detail": "rule did not apply; violation reported against style-src-elem"
+    },
+    {
+      "name": "a style attribute still applies, so the level-2 fallback is intact",
+      "ok": true,
+      "detail": "setAttribute(\"style\") took effect"
+    },
+    {
+      "name": "the graph container positions itself without the stylesheet the policy blocks",
+      "ok": true,
+      "detail": "computed position: relative — Cytoscape's injected rule was refused, so this comes from the stylesheet"
+    },
+    {
+      "name": "the graph canvas is still laid out with a real size",
+      "ok": true,
+      "detail": "571×420 px"
+    },
+    {
+      "name": "the graph view blocks nothing except the one injected rule it documents",
+      "ok": true,
+      "detail": "only style-src-elem:inline — Cytoscape's container rule, which the check above proves unnecessary"
+    },
+    {
+      "name": "the delta panel renders on the gap page",
+      "ok": true,
+      "detail": "Where to start, and what is left"
+    },
+    {
+      "name": "it leads with a plain-language count of what is left",
+      "ok": true,
+      "detail": "13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep."
+    },
+    {
+      "name": "it offers a real starting point rather than a whole curriculum",
+      "ok": true,
+      "detail": "2 startable skill(s): Programming fundamentals, Version control with Git"
+    },
+    {
+      "name": "every starting link points at a skill page and is big enough to tap",
+      "ok": true,
+      "detail": "/skills/skill%3Aprogramming-fundamentals@54px /skills/skill%3Aversion-control-git@54px"
+    },
+    {
+      "name": "the gates say how much of the route they unlock, in numbers",
+      "ok": true,
+      "detail": "Programming fundamentalsunblocks 11 | Operating systems and Linuxunblocks 4 | Computer networksunblocks 3"
+    },
+    {
+      "name": "the critical chain is an ordered list of steps, not a single warning",
+      "ok": true,
+      "detail": "1.Programming fundamentals → 2.Operating systems and Linux → 3.Computer networks → 4.Cybersecurity fundamentals → 5.Secu"
+    },
+    {
+      "name": "the two renderings of \"how much is left\" agree with each other",
+      "ok": true,
+      "detail": "summary says 13, effort footer says 13"
+    },
+    {
+      "name": "the panel states the effort as a range with the pace it assumed",
+      "ok": true,
+      "detail": "13 skill(s) left · 410–1,030 h · about 52–129 weeks at 8 h/week"
+    },
+    {
+      "name": "it discloses that some of the delta is never listed by the career itself",
+      "ok": true,
+      "detail": "2 of them are prerequisites this career never lists — they are in the route because something above needs them."
+    },
+    {
+      "name": "the stat row and the panel quote the same remaining effort",
+      "ok": true,
+      "detail": "stat \"410–1,030 h\" vs panel \"410–1,030 h\""
+    },
+    {
+      "name": "following the first suggestion really lands on that skill",
+      "ok": true,
+      "detail": "\"Programming fundamentals\" → /skills/skill%3Aprogramming-fundamentals → h1 \"Programming fundamentals\""
+    },
+    {
+      "name": "wrote docs/screenshots/frontier-delta.png",
+      "ok": true
+    },
+    {
+      "name": "no console errors on the gap page",
+      "ok": true
+    },
+    {
+      "name": "the hero action row answers a real mouse click",
+      "ok": true,
+      "detail": "all answered"
+    },
+    {
+      "name": "every link on screen answers a real mouse click (desktop 1440x900)",
+      "ok": true,
+      "detail": "all answered"
+    },
+    {
+      "name": "every link on screen answers a real mouse click (phone 360x740)",
+      "ok": true,
+      "detail": "all answered"
+    },
+    {
+      "name": "nothing silently skipped the pointer audit",
+      "ok": true,
+      "detail": "every on-screen link was on top and was clicked"
+    },
+    {
+      "name": "the hero calls to action are tappable without scrolling on a 360x667 phone",
+      "ok": true,
+      "detail": "3/3 reachable"
+    },
+    {
+      "name": "the hero calls to action are tappable without scrolling on a 360x740 phone",
+      "ok": true,
+      "detail": "3/3 reachable"
+    },
+    {
+      "name": "the landing page shows the engine's own output for both stated profiles",
+      "ok": true,
+      "detail": "from zero: \"13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep.\" · in field: \"10 skill(s) to go: 4 startable now, 3 gate(s) unblock 3, longest chain 3 deep.\""
+    },
+    {
+      "name": "the worked example starts by naming something to start with",
+      "ok": true,
+      "detail": "2 and 4 startable skill(s) linked"
+    },
+    {
+      "name": "somebody already in the field is shown a smaller delta than somebody starting cold",
+      "ok": true,
+      "detail": "13 → 10 skill(s) left, chain 5 → 3 deep, startable 2 → 4"
+    },
+    {
+      "name": "the landing example and the gap page agree, number for number",
+      "ok": true,
+      "detail": "landing \"13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep.\" vs gap page \"13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep.\""
+    },
+    {
+      "name": "no console errors while the worked example runs",
+      "ok": true
+    },
+    {
+      "name": "the served policy refuses inline <style> and inline script",
+      "ok": true,
+      "detail": "script-src 'self' · style-src 'self' · style-src-elem 'self'"
+    },
+    {
+      "name": "the only policy refusal in the app is the container rule Cytoscape injects",
+      "ok": true,
+      "detail": "style-src-elem ← inline (graph-BB4DxJjf.js) — expected, and the rule is provided by this app"
+    },
+    {
+      "name": "an injected <style> element is refused by the browser",
+      "ok": true,
+      "detail": "computed rgb(12, 23, 41); style-src-elem"
+    },
+    {
+      "name": "a style attribute still applies, so the level-2 fallback is intact",
+      "ok": true,
+      "detail": "computed rgb(4, 5, 6)"
+    },
+    {
+      "name": "the graph container is positioned by this app, not by the refused rule",
+      "ok": true,
+      "detail": "computed position: relative · same element as Cytoscape's container class: true"
+    },
+    {
+      "name": "the stored preference alone sets data-motion, with no OS preference involved",
+      "ok": true,
+      "detail": "data-motion=\"reduced\""
+    },
+    {
+      "name": "no 3D canvas mounts for somebody who asked for less motion",
+      "ok": true,
+      "detail": "0 canvas(es)"
+    },
+    {
+      "name": "the hero is still readable, as a static composition",
+      "ok": true,
+      "detail": "headline 52 chars · tilt transform none"
+    }
+  ],
+  "passed": 110,
+  "total": 110,
+  "screenshots": [
+    "landing-hero.png",
+    "graph-3d.png",
+    "mobile-dashboard.png",
+    "landing-reduced-motion.png",
+    "resources-library.png",
+    "command-palette.png",
+    "frontier-delta.png",
+    "landing-worked-example.png"
+  ]
+}
+
+

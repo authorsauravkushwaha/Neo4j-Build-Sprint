@@ -1,0 +1,9 @@
+# Set VITE_SITE_URL to publish a sitemap and canonical URLs.
+User-agent: *
+Allow: /
+Disallow: /settings
+Disallow: /account
+Disallow: /login
+Disallow: /reset-password
+
+

@@ -1,0 +1,478 @@
+{
+  "generatedAt": "2026-10-14T08:04:52.591Z",
+  "baseUrl": "http://127.0.0.1:4173",
+  "build": {
+    "entry": "index-*.js",
+    "entryKB": 1004,
+    "entryGzipKB": 293,
+    "precacheEntries": 34
+  },
+  "conditions": {
+    "desktop": "1440×900 viewport, device pixel ratio 1, no signed-in account, fresh profile",
+    "mobile": "360×740 viewport, mobile user agent, touch",
+    "network": "40 ms latency, 10 Mbit/s down / 3 Mbit/s up (regular 4G)",
+    "cpu": "4× CPU slowdown",
+    "cache": "cold — a new browser context per route, nothing cached"
+  },
+  "routes": [
+    {
+      "route": "desktop/",
+      "h1": "Plan an engineering path as a graph, not a checklist",
+      "firstScreen": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what has to come first what does this unlock what am I actually missing Browse careers first The scene behind this text is a fixed composition drawn from the same node vocabulary as the real graph — it is not live data and it is not a screenshot. Drag it to spin it. The real, queryable graph is one link away, and it has a keyboard-and-screen-reader equivalent (a list view) on every screen where it appears. What it answers, before you make an account two runs of the same engine, with the inputs written down Never studied the field nothing rated yet · 8 h/week 13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep. Prog",
+      "firstCta": {
+        "text": "Start (guest, no account)",
+        "href": "/onboarding"
+      },
+      "domContentLoadedMs": 130,
+      "loadMs": 130,
+      "firstContentfulPaintMs": 388,
+      "transferKB": 507,
+      "scriptKB": 497,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 0,
+      "smallTapTargets": 22,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 388,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/careers",
+      "h1": "Engineering directions you can build towards",
+      "firstScreen": "Career explorer Engineering directions you can build towards Each career lists the skills the curriculum treats as essential, the ones that are optional, the branches it sits in, and projects that prove the skills. Search Branch Curriculum level 13 careers match. Aerospace engineer Advanced Analyses flight vehicles: aerodynamics, structures, propulsion and control. Aerospace engineering Mechanical engineering 11 skills Details Graph Gap analysis Set as goal AI and machine learning engineer Advanced Trains, evaluates and deploys models that make predictions or generate content. Artificial intelligence and machine learning Computer science 12 skills Details Graph Gap analysis Set as goal Civil and structural engineer Intermediate Designs structures and infrastructure that must not fail. Civil engineering 8 skills Cloud and DevOps engineer Intermediate Automates building, deploying and oper",
+      "firstCta": {
+        "text": "Open the graph explorer",
+        "href": "/graph"
+      },
+      "domContentLoadedMs": 135,
+      "loadMs": 135,
+      "firstContentfulPaintMs": 224,
+      "transferKB": 320,
+      "scriptKB": 309,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 1,
+      "smallTapTargets": 34,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 224,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/gaps",
+      "h1": "What is actually missing — and what is not required",
+      "firstScreen": "Skill-gap analyzer What is actually missing — and what is not required Rate your current level for the skills this career needs. The engine separates genuine prerequisites you are missing from optional specialisations you may never need. Plan this gap Career Display Optional skills stay in the list when this is off, clearly labelled — they are breadth, not requirements. Skills assessed 11 0 already familiar Missing prerequisites 9 Must come first Recommended next 1 Ready once prerequisites are met Remaining effort 390–965 h ≈ about 49–121 weeks at 8 h/week, including prerequisites the career does not list Where to start, and what is left computed from the prerequisite graph, not from a course catalogue 12 skill(s) to go: 2 startable now, 3 gate(s) unblock 8, longest chain 4 deep. Engineering mathematics Beginner CAD 3D modelling Beginner Nothing else in the route has to come first for an",
+      "firstCta": {
+        "text": "Clear my ratings",
+        "href": ""
+      },
+      "domContentLoadedMs": 129,
+      "loadMs": 129,
+      "firstContentfulPaintMs": 200,
+      "transferKB": 325,
+      "scriptKB": 315,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 1,
+      "smallTapTargets": 30,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 492,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/roadmap",
+      "h1": "Roadmap: Aerospace engineer",
+      "firstScreen": "Personalised roadmap Roadmap: Aerospace engineer Scheduled in dependency order, sized to the hours you actually have. Every estimate is a curriculum range, and you can re-plan at any time. Career Hours per week Pace Plan title (optional) Used in the exported file and in the saved roadmap name. Tasks 16 12 weeks Completed 0 0% of the plan Logged hours 0 h From your own entries Needs review 0 You flagged these Plan progress 0 of 16 tasks Estimated total 392–971 h · at 8 h/week this is about 49–122 weeks. Weeks and hours are planning estimates that assume the weekly study time you entered. Life happens — reschedule tasks instead of abandoning the plan. Week 1 ≈ 70 h of work Engineering mathematics Beginner 40–100 h Essential Engineering mathematics is listed as an essential skill for this career in the graph. 10 other skills in this route depend on it, so it unlocks later work. Ranking scor",
+      "firstCta": {
+        "text": "Export Markdown",
+        "href": ""
+      },
+      "domContentLoadedMs": 136,
+      "loadMs": 136,
+      "firstContentfulPaintMs": 220,
+      "transferKB": 326,
+      "scriptKB": 315,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 2,
+      "smallTapTargets": 22,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 520,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/mentor",
+      "h1": "Ask about the graph, get answers that cite it",
+      "firstScreen": "Graph-grounded mentor Ask about the graph, get answers that cite it Answers are built from the same knowledge graph the rest of the app uses: specific skills, specific relationships, specific resources. When the graph does not cover something, the answer says so. Open the graph instead Ask a question affects length, not honesty Career context Answers resolve pronouns and vague references to this career. Answer style Your question Up to 1200 characters. Questions that mention a skill, career or project get the best answers. 0/1200 · rate limited per minute and per hour Try one of these Why do I need mathematics before machine learning? What should I build next for a robotics portfolio? Which skills am I missing for an embedded role? Conversation answers stay on this screen until you leave it No questions yet Ask something specific. The mentor answers from the graph: prerequisite chains, s",
+      "firstCta": {
+        "text": "Open the graph instead",
+        "href": "/graph"
+      },
+      "domContentLoadedMs": 124,
+      "loadMs": 125,
+      "firstContentfulPaintMs": 208,
+      "transferKB": 324,
+      "scriptKB": 314,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 1,
+      "smallTapTargets": 24,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 468,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/library",
+      "h1": "That page does not exist",
+      "firstScreen": "404 That page does not exist The link may be out of date, or the item it pointed at was removed. Nothing is broken — pick a destination below. Where to go instead most useful pages Dashboard Your current plan and next actions Explore careers All curated directions with their skills Knowledge graph See how skills depend on each other Your roadmap Week-by-week learning plan",
+      "firstCta": {
+        "text": "DashboardYour current plan and next actions",
+        "href": "/"
+      },
+      "domContentLoadedMs": 114,
+      "loadMs": 115,
+      "firstContentfulPaintMs": 180,
+      "transferKB": 320,
+      "scriptKB": 309,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 0,
+      "smallTapTargets": 25,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 180,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/progress",
+      "h1": "What you have recorded, and what to do about it",
+      "firstScreen": "Progress What you have recorded, and what to do about it Self-reported skill levels, roadmap statuses, logged hours and bookmarks. All of it is editable, exportable and erasable. Skills rated 0 0 confident Tasks completed 0 of 0 tracked Hours logged 0 h Your own entries Bookmarks 0 Across all types Self-rated skills what the planner sees No skills rated yet Rating skills takes a minute and makes every recommendation in the app specific to you. Run a gap analysis Task progress from your roadmaps No roadmap progress yet Statuses you set on roadmap tasks appear here. Open your roadmap Bookmarks skills, projects and resources you saved Nothing bookmarked. Use the save button on a skill, project or resource to keep it here. Nothing here is shared or ranked There are no leaderboards, no study streaks and no comparison with other people. Progress exists so the planner can schedule realistically",
+      "firstCta": {
+        "text": "Export JSON",
+        "href": ""
+      },
+      "domContentLoadedMs": 134,
+      "loadMs": 135,
+      "firstContentfulPaintMs": 204,
+      "transferKB": 324,
+      "scriptKB": 313,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 0,
+      "smallTapTargets": 22,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 484,
+      "consoleErrors": []
+    },
+    {
+      "route": "desktop/settings",
+      "h1": "Accessibility, account and your data",
+      "firstScreen": "Settings Accessibility, account and your data Nothing here is required to use the app. Every control works offline and takes effect immediately. Appearance and motion applies to the whole app Theme System follows your operating system setting. Motion and graph behaviour Reduce motion Removes graph layout animation and transition effects. Also respected when your operating system asks for it. Animate graph layouts Turn off on low-powered devices; the layout is identical, it just appears at once. Show inline hints Small explanatory notes next to controls and ratings. Try the 3D views on this device anyway The app skips 3D when the browser reports a slow or software-only GPU. That check is a guess about your hardware — this overrides it. If the scenes stutter, turn it back off; the 2D canvas and the list view are identical in content. Contrast, focus outlines and minimum tap sizes come from",
+      "firstCta": null,
+      "domContentLoadedMs": 126,
+      "loadMs": 127,
+      "firstContentfulPaintMs": 192,
+      "transferKB": 327,
+      "scriptKB": 317,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 9,
+      "smallTapTargets": 26,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 484,
+      "consoleErrors": []
+    },
+    {
+      "route": "mobile/",
+      "h1": "Plan an engineering path as a graph, not a checklist",
+      "firstScreen": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what comes first what this unlocks what you are missing Browse careers first The scene behind this text is a fixed composition drawn from the same node vocabulary as the real graph — it is not live data and it is not a screenshot. Drag it to spin it. The real, queryable graph is one link away, and it has a keyboard-and-screen-reader equivalent (a list view) on every screen where it appears.",
+      "firstCta": {
+        "text": "Start (guest, no account)",
+        "href": "/onboarding"
+      },
+      "domContentLoadedMs": 122,
+      "loadMs": 122,
+      "firstContentfulPaintMs": 240,
+      "transferKB": 507,
+      "scriptKB": 497,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 0,
+      "smallTapTargets": 4,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 240,
+      "consoleErrors": []
+    },
+    {
+      "route": "mobile/gaps",
+      "h1": "What is actually missing — and what is not required",
+      "firstScreen": "Skill-gap analyzer What is actually missing — and what is not required Rate your current level for the skills this career needs. The engine separates genuine prerequisites you are missing from optional specialisations you may never need. Plan this gap Career Display Optional skills stay in the list when this is off, clearly labelled — they are breadth, not requirements.",
+      "firstCta": {
+        "text": "Clear my ratings",
+        "href": ""
+      },
+      "domContentLoadedMs": 113,
+      "loadMs": 114,
+      "firstContentfulPaintMs": 156,
+      "transferKB": 325,
+      "scriptKB": 315,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 1,
+      "smallTapTargets": 5,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 476,
+      "consoleErrors": []
+    },
+    {
+      "route": "slow-mobile/",
+      "h1": "Plan an engineering path as a graph, not a checklist",
+      "firstScreen": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what comes first what this unlocks what you are missing Browse careers first The scene behind this text is a fixed composition drawn from the same node vocabulary as the real graph — it is not live data and it is not a screenshot. Drag it to spin it. The real, queryable graph is one link away, and it has a keyboard-and-screen-reader equivalent (a list view) on every screen where it appears.",
+      "firstCta": {
+        "text": "Start (guest, no account)",
+        "href": "/onboarding"
+      },
+      "domContentLoadedMs": 1942,
+      "loadMs": 1943,
+      "firstContentfulPaintMs": 2048,
+      "transferKB": 507,
+      "scriptKB": 497,
+      "imageWithoutAlt": 0,
+      "unnamedControls": 0,
+      "smallTapTargets": 4,
+      "htmlLang": "en",
+      "largestContentfulPaintMs": 2048,
+      "consoleErrors": []
+    }
+  ],
+  "facts": {
+    "landing.firstScreen": {
+      "id": "landing.firstScreen",
+      "label": "What a stranger reads above the fold on the landing page",
+      "value": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what has to come first what does this unlock what am I actually missing Browse careers first The scene behind this text is a fixed composition drawn",
+      "how": "Rendered text of leaf elements intersecting the 1440×900 first screen, whitespace collapsed",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "landing.firstCta": {
+      "id": "landing.firstCta",
+      "label": "The first interactive element in the landing first screen",
+      "value": "Start (guest, no account) → /onboarding",
+      "how": "First anchor/button intersecting the first screen of <main>",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "landing.h1": {
+      "id": "landing.h1",
+      "label": "Landing page headline",
+      "value": "Plan an engineering path as a graph, not a checklist",
+      "how": "textContent of the first <h1>",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "landing.mobileFirstScreen": {
+      "id": "landing.mobileFirstScreen",
+      "label": "What a phone user reads above the fold (360×740)",
+      "value": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what comes first what this unlocks what you are missing Browse careers first The scene behind this text is a fixed composition drawn from the same n",
+      "how": "Same extraction at a 360×740 viewport with a mobile user agent",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "landing.slowFirstScreen": {
+      "id": "landing.slowFirstScreen",
+      "label": "What a phone user on a 1.6 Mbit/s link reads above the fold",
+      "value": "Engineering career navigator Plan an engineering path as a graph, not a checklist Explore engineering careers as a knowledge graph: trace prerequisites, find skill gaps and build a dependency-aware roadmap. Engineering career navigator not a checklist what comes first what this unlocks what you are missing Browse careers first The scene behind this text is a fixed composition drawn from the same n",
+      "how": "Same extraction at 360×740 with 150 ms latency and 1.6 Mbit/s download",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "perf.landingLcpDesktop": {
+      "id": "perf.landingLcpDesktop",
+      "label": "Largest Contentful Paint, landing page, 4G + 4× CPU slowdown, cold cache",
+      "value": 388,
+      "unit": "ms",
+      "how": "PerformanceObserver (largest-contentful-paint), buffered, after a 2.5 s settle window",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "perf.landingLcpSlow": {
+      "id": "perf.landingLcpSlow",
+      "label": "Largest Contentful Paint on a slow phone link",
+      "value": 2048,
+      "unit": "ms",
+      "how": "Same observer at 1.6 Mbit/s / 150 ms latency / 4× CPU slowdown",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "perf.landingJsKB": {
+      "id": "perf.landingJsKB",
+      "label": "Script bytes transferred before the landing page settles",
+      "value": 497,
+      "unit": "KB",
+      "how": "Sum of PerformanceResourceTiming.transferSize for initiatorType \"script\"",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "perf.gapsLcpDesktop": {
+      "id": "perf.gapsLcpDesktop",
+      "label": "Largest Contentful Paint on the gap page",
+      "value": 492,
+      "unit": "ms",
+      "how": "Same observer on /gaps after the analysis renders",
+      "source": "audience-run",
+      "route": "/gaps"
+    },
+    "value.interactionsToAnswer": {
+      "id": "value.interactionsToAnswer",
+      "label": "Interactions needed before a stranger sees their own answer",
+      "value": "with a career in the URL: 0 — bare /gaps: 0",
+      "how": "Counting click/change/keydown events between arrival and the delta panel rendering (-1 = never rendered)",
+      "source": "audience-run",
+      "route": "/gaps"
+    },
+    "value.clicksLandingToAnswer": {
+      "id": "value.clicksLandingToAnswer",
+      "label": "Interactions from the landing page to a stranger's own answer, following the page's own CTAs",
+      "value": 3,
+      "how": "Headless Chromium walked the journey and counted clicks: / | Start (guest, no account) → /onboarding | Skill-gap analyzer → /gaps | delta panel visible. Every attempt, including the ones it refused to count: 1. \"Start (guest, no account)\" → /onboarding — 2. \"Dashboard\" → /onboarding (no navigation) — 3. \"Skill-gap analyzer\" → /gaps",
+      "source": "audience-run",
+      "route": "/ → /gaps"
+    },
+    "value.landingExampleNumbers": {
+      "id": "value.landingExampleNumbers",
+      "label": "Concrete worked numbers shown on the landing page (hours, weeks, \"skill(s) to go\")",
+      "value": "above the fold: 2 — anywhere on the page: 6 — example found: 410–1,030 h",
+      "how": "Regex count of real product output shapes over the rendered text, plus a viewport-aware count",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "value.answerNeedsAccount": {
+      "id": "value.answerNeedsAccount",
+      "label": "Whether the first real answer requires an account",
+      "value": false,
+      "how": "The delta panel rendered in a fresh context with no session; if it renders, no account was needed",
+      "source": "audience-run",
+      "route": "/gaps"
+    },
+    "value.roadmapFirstScreen": {
+      "id": "value.roadmapFirstScreen",
+      "label": "What the roadmap screen shows before any account exists",
+      "value": "Personalised roadmap Roadmap: Aerospace engineer Scheduled in dependency order, sized to the hours you actually have. Every estimate is a curriculum range, and you can re-plan at any time. Career Hours per week Pace Plan title (optional) Used in the exported file and in the saved roadmap name. Tasks",
+      "how": "Same first-screen extraction on /roadmap",
+      "source": "audience-run",
+      "route": "/roadmap"
+    },
+    "value.libraryCount": {
+      "id": "value.libraryCount",
+      "label": "How many resources the library exposes with outcomes and limits",
+      "value": "count not in first screen",
+      "how": "First-screen text of /library",
+      "source": "audience-run",
+      "route": "/library"
+    },
+    "value.mentorFirstScreen": {
+      "id": "value.mentorFirstScreen",
+      "label": "What the mentor screen offers without an AI key",
+      "value": "Graph-grounded mentor Ask about the graph, get answers that cite it Answers are built from the same knowledge graph the rest of the app uses: specific skills, specific relationships, specific resources. When the graph does not cover something, the answer says so. Open the graph instead Ask a questio",
+      "how": "First-screen text of /mentor",
+      "source": "audience-run",
+      "route": "/mentor"
+    },
+    "offline.shell": {
+      "id": "offline.shell",
+      "label": "Works offline after the first visit",
+      "value": true,
+      "how": "Measured in this run: load /, wait for a service worker to take control, cut the network, reload. service worker registered and controlled the page after one reload, then the network was cut: main rendered \"ENGINEERING CAREER NAVIGATOR Plan an engineering path as a graph, not a checklist Explore \"",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "a11y.reducedMotion": {
+      "id": "a11y.reducedMotion",
+      "label": "Prefers-reduced-motion is honoured: no 3D canvas, no tilt transform, and the flag is declared",
+      "value": true,
+      "how": "Measured in this run with a reduced-motion browser context: data-motion=\"reduced\", 0 canvas(es), 0 tilted element(s) still transformed",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "trust.noFakeSocialProof": {
+      "id": "trust.noFakeSocialProof",
+      "label": "Social-proof claims on the landing page that this build cannot back up (testimonials, ratings, user counts, stars)",
+      "value": 0,
+      "how": "Scanned the rendered landing page for \"trusted by\", user/download counts, x/5 ratings, stars, testimonials and reviews: none found",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "trust.settingsFirstScreen": {
+      "id": "trust.settingsFirstScreen",
+      "label": "What the settings screen tells a stranger about their data",
+      "value": "Settings Accessibility, account and your data Nothing here is required to use the app. Every control works offline and takes effect immediately. Appearance and motion applies to the whole app Theme System follows your operating system setting. Motion and graph behaviour Reduce motion Removes graph l",
+      "how": "First-screen text of /settings",
+      "source": "audience-run",
+      "route": "/settings"
+    },
+    "a11y.landingSmallTargets": {
+      "id": "a11y.landingSmallTargets",
+      "label": "Undersized interactive targets in the landing first screen (desktop)",
+      "value": 22,
+      "how": "Interactive elements in the first screen with a rendered height or width under 36 px",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "a11y.landingUnnamedControls": {
+      "id": "a11y.landingUnnamedControls",
+      "label": "Interactive elements in the landing first screen with no accessible name",
+      "value": 0,
+      "how": "No text content, aria-label, aria-labelledby or title",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "a11y.htmlLang": {
+      "id": "a11y.htmlLang",
+      "label": "Language declared on the document",
+      "value": "en",
+      "how": "document.documentElement.lang",
+      "source": "audience-run",
+      "route": "/"
+    },
+    "a11y.imagesWithoutAlt": {
+      "id": "a11y.imagesWithoutAlt",
+      "label": "Images rendered anywhere without alt text",
+      "value": 0,
+      "how": "Summed across all measured routes",
+      "source": "audience-run"
+    },
+    "trust.consoleErrors": {
+      "id": "trust.consoleErrors",
+      "label": "Console errors across every route in a cold browser",
+      "value": 0,
+      "how": "Summed console error messages across all measured routes",
+      "source": "audience-run"
+    },
+    "product.dataIsBundled": {
+      "id": "product.dataIsBundled",
+      "label": "Whether the graph shown is a live database or a bundled curriculum",
+      "value": true,
+      "how": "The app states \"not connected to a Neo4j database\" in its own banner; docs/verification.md §5 lists what is unverified",
+      "source": "source-tree"
+    },
+    "product.provenance": {
+      "id": "product.provenance",
+      "label": "Whether every resource link, hour estimate and outcome is documented",
+      "value": true,
+      "how": "docs/resource-verification.md (measured links) and the dataset fields cited by tests/unit/resources.test.ts",
+      "source": "source-tree"
+    },
+    "perf.entryBundleKB": {
+      "id": "perf.entryBundleKB",
+      "label": "Main JavaScript bundle shipped to every visitor",
+      "value": 1004,
+      "unit": "kB",
+      "how": "docs/verification.md §1 (measured after the last build), 293 kB gzipped",
+      "source": "source-tree"
+    },
+    "a11y.mobileTargets": {
+      "id": "a11y.mobileTargets",
+      "label": "No undersized tap targets or overflow at 360 px",
+      "value": true,
+      "how": "docs/browser-verification.json (2026-10-14T08:03:55.937Z) — \"/ does not overflow horizontally at 360 px\": scrollWidth 360 vs viewport 360",
+      "source": "browser-suite"
+    },
+    "trust.csp": {
+      "id": "trust.csp",
+      "label": "A strict Content-Security-Policy is actually enforced in the browser",
+      "value": true,
+      "how": "docs/browser-verification.json (2026-10-14T08:03:55.937Z) — \"the served page carries a Content-Security-Policy\": 366 characters",
+      "source": "browser-suite"
+    }
+  }
+}
+
+

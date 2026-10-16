@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      Content-Security-Policy is generated at build time by vite.config.ts.
+      __CSP_CONNECT_SRC__ becomes the allow-list of API hosts you configured, and
+      __CSP_STYLE_SRC__ becomes the style policy for the mode being built: the
+      production build denies injected <style> elements outright, while the dev
+      server keeps 'unsafe-inline' because Tailwind's HMR runtime injects them.
+
+      No inline <script> is used anywhere in this app, so script-src stays 'self'.
+      There is likewise no literal style="" attribute anywhere in this file: every
+      dynamic style in the app is applied through the CSSOM, which CSP does not
+      govern, so production does not need inline styles at all.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; __CSP_STYLE_SRC__; img-src 'self' data: blob:; font-src 'self' data:; connect-src __CSP_CONNECT_SRC__; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="color-scheme" content="dark light" />
+    <title>GraphMentor AI — The Engineering Career Navigator</title>
+    <meta
+      name="description"
+      content="GraphMentor AI turns engineering careers into a navigable knowledge graph: trace prerequisites, find skill gaps, build a dependency-aware learning roadmap, and find practical projects and free resources."
+    />
+    <!-- Replaced at build time with an absolute canonical URL when VITE_SITE_URL is set. -->
+    <!-- __CANONICAL__ -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="GraphMentor" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GraphMentor AI" />
+    <meta property="og:locale" content="en" />
+    <meta property="og:title" content="GraphMentor AI — The Engineering Career Navigator" />
+    <meta
+      property="og:description"
+      content="An interactive engineering knowledge graph with skill-gap analysis, dependency-aware roadmaps, projects and free resources."
+    />
+    <!-- __OG_IMAGE__ becomes an absolute URL when VITE_SITE_URL is set, so a link
+         pasted into a chat or a social feed renders a card instead of bare text. -->
+    <meta property="og:image" content="__OG_IMAGE__" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="GraphMentor AI: engineering careers as a knowledge graph" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GraphMentor AI — The Engineering Career Navigator" />
+    <meta
+      name="twitter:description"
+      content="Skill-gap analysis over an engineering prerequisite graph: what to learn first, what it unblocks, and how long the route takes."
+    />
+    <meta name="twitter:image" content="__OG_IMAGE__" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "GraphMentor AI",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any (web), installable as a PWA",
+        "isAccessibleForFree": true,
+        "description": "An engineering career navigator: skill-gap analysis, prerequisite-aware roadmaps and free resource links over an open knowledge graph.",
+        "featureList": [
+          "Skill-gap analysis against a career's prerequisites",
+          "Dependency-aware roadmap with a startable-first ordering",
+          "Offline use after the first visit",
+          "No account required"
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div class="gm-noscript">
+        <h1>GraphMentor AI</h1>
+        <p>
+          This application needs JavaScript to render the interactive knowledge graph. The learning content itself is
+          open: see the <code>neo4j/seed.cypher</code> file and <code>src/data/seed</code> in the source repository.
+        </p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+

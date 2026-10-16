@@ -1,0 +1,928 @@
+{
+  "resource:3d-slicer": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://slicer.readthedocs.io/en/latest/"
+  },
+  "resource:adafruit-learn": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learn.adafruit.com/"
+  },
+  "resource:all-about-circuits-textbook": {
+    "outcome": "blocked",
+    "status": 403,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.allaboutcircuits.com/textbook/"
+  },
+  "resource:apmonitor-process-control": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://apmonitor.com/pdc"
+  },
+  "resource:arduino-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.arduino.cc/learn/"
+  },
+  "resource:azure-api-design": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design"
+  },
+  "resource:battery-university": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.batteryuniversity.com/"
+  },
+  "resource:bee-india": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://beeindia.gov.in/"
+  },
+  "resource:cantera": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cantera.org/"
+  },
+  "resource:circuitverse": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://circuitverse.org/"
+  },
+  "resource:coolprop": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.coolprop.org/"
+  },
+  "resource:copernicus-dataspace": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://dataspace.copernicus.eu/"
+  },
+  "resource:cosmic-python": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.cosmicpython.com/book/preface.html"
+  },
+  "resource:coursera-learning-how-to-learn": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.coursera.org/learn/learning-how-to-learn"
+  },
+  "resource:cp-algorithms": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cp-algorithms.com/"
+  },
+  "resource:cryptopals": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cryptopals.com/"
+  },
+  "resource:cs50x": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cs50.harvard.edu/x/"
+  },
+  "resource:csb-investigations": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.csb.gov/investigations/"
+  },
+  "resource:csb-video-library": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.csb.gov/videos/"
+  },
+  "resource:data-to-viz": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.data-to-viz.com/"
+  },
+  "resource:docker-get-started": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.docker.com/get-started/"
+  },
+  "resource:doitpoms": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.doitpoms.ac.uk/tlplib/index.php"
+  },
+  "resource:dsp-guide": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.dspguide.com/"
+  },
+  "resource:dwsim": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://dwsim.org/"
+  },
+  "resource:energy-gov-solar": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.energy.gov/cmei/systems/how-does-solar-work"
+  },
+  "resource:energy-star-guidelines": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.energystar.gov/buildings/benchmark"
+  },
+  "resource:engineering-toolbox": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.engineeringtoolbox.com/"
+  },
+  "resource:esa-navipedia": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://gssc.esa.int/navipedia/index.php/Main_Page"
+  },
+  "resource:esp-idf-low-power": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/low-power-mode/index.html"
+  },
+  "resource:eu-mdr-745": {
+    "outcome": "ok",
+    "status": 202,
+    "checkedAt": "2026-10-14",
+    "url": "https://eur-lex.europa.eu/eli/reg/2017/745/oj"
+  },
+  "resource:fda-device-advice": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance"
+  },
+  "resource:flutter-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.flutter.dev/"
+  },
+  "resource:freecad-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://wiki.freecad.org/Manual:Introduction"
+  },
+  "resource:freecodecamp-python": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.freecodecamp.org/learn/scientific-computing-with-python/"
+  },
+  "resource:gazebo-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://gazebosim.org/docs"
+  },
+  "resource:gdal-docs": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://gdal.org/"
+  },
+  "resource:gdt-basics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.gdandtbasics.com/gdt-symbols/"
+  },
+  "resource:geo-libretexts": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://geo.libretexts.org/"
+  },
+  "resource:geopandas-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://geopandas.org/en/stable/"
+  },
+  "resource:github-actions-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.github.com/en/actions"
+  },
+  "resource:github-student-pack": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://education.github.com/pack"
+  },
+  "resource:gitlab-ci-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.gitlab.com/ci/"
+  },
+  "resource:global-solar-atlas": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://globalsolaratlas.info/"
+  },
+  "resource:google-cloud-training": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cloud.google.com/learn/training"
+  },
+  "resource:google-machine-learning-crash-course": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://developers.google.com/machine-learning/crash-course"
+  },
+  "resource:gps-gov": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.gps.gov/"
+  },
+  "resource:hse-msd": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.hse.gov.uk/msd/"
+  },
+  "resource:iaea-human-health": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://humanhealth.iaea.org/"
+  },
+  "resource:interactive-linear-algebra": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://textbooks.math.gatech.edu/ila/"
+  },
+  "resource:isl-statistical-learning": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.statlearning.com/"
+  },
+  "resource:khan-academy-anatomy": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.khanacademy.org/science/health-and-medicine/human-anatomy-and-physiology"
+  },
+  "resource:khan-academy-calculus": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.khanacademy.org/math/calculus-1"
+  },
+  "resource:khan-academy-physics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.khanacademy.org/science/physics"
+  },
+  "resource:kicad-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.kicad.org/"
+  },
+  "resource:kubernetes-tutorials": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://kubernetes.io/docs/tutorials/"
+  },
+  "resource:learn-arcgis": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learn.arcgis.com/en/"
+  },
+  "resource:learncheme": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learncheme.com/"
+  },
+  "resource:libretexts-chemical-engineering": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://eng.libretexts.org/Bookshelves/Chemical_Engineering"
+  },
+  "resource:libretexts-process-controls": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://eng.libretexts.org/Bookshelves/Industrial_and_Systems_Engineering/Chemical_Process_Dynamics_and_Controls_(Woolf)"
+  },
+  "resource:linux-from-scratch": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.linuxfromscratch.org/"
+  },
+  "resource:linux-journey": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://linuxcommand.org/tlcl.php"
+  },
+  "resource:mdn-web-docs": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn"
+  },
+  "resource:mechanics-map": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://mechanicsmap.org/"
+  },
+  "resource:mit-course-manufacturing-processes": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://web.mit.edu/2.810/www/"
+  },
+  "resource:mit-ocw-aero": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/16-01-unified-engineering-i-ii-iii-iv-fall-2005-spring-2006/"
+  },
+  "resource:mit-ocw-biomaterials": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/3-051j-materials-for-biomedical-applications-spring-2006/"
+  },
+  "resource:mit-ocw-biomedical-signals": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/hst-582j-biomedical-signal-and-image-processing-spring-2007/"
+  },
+  "resource:mit-ocw-circuits": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/"
+  },
+  "resource:mit-ocw-design-manufacturing": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/2-007-design-and-manufacturing-i-spring-2009/"
+  },
+  "resource:mit-ocw-differential-equations": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/"
+  },
+  "resource:mit-ocw-linear-algebra": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/"
+  },
+  "resource:mit-ocw-manufacturing-systems": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/2-854-introduction-to-manufacturing-systems-fall-2016/"
+  },
+  "resource:mit-ocw-networks": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-033-computer-system-engineering-spring-2018/"
+  },
+  "resource:mit-ocw-operations-management": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/15-761-introduction-to-operations-management-spring-2013/"
+  },
+  "resource:mit-ocw-power-electronics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-334-power-electronics-spring-2007/"
+  },
+  "resource:mit-ocw-power-electronics-2023": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-622-power-electronics-spring-2023/"
+  },
+  "resource:mit-ocw-power-systems": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-061-introduction-to-electric-power-systems-spring-2011/"
+  },
+  "resource:mit-ocw-quantitative-physiology": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-021j-quantitative-physiology-cells-and-tissues-fall-2004/"
+  },
+  "resource:mit-ocw-reaction-engineering": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/10-37-chemical-and-biological-reaction-engineering-spring-2007/"
+  },
+  "resource:mit-ocw-robotics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/2-12-introduction-to-robotics-fall-2005/"
+  },
+  "resource:mit-ocw-separation-processes": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/10-32-separation-processes-spring-2005/"
+  },
+  "resource:mit-ocw-signals-systems": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/6-003-signals-and-systems-fall-2011/"
+  },
+  "resource:mit-ocw-solids": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/3-032-mechanical-behavior-of-materials-fall-2007/"
+  },
+  "resource:mit-ocw-statistics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/18-05-introduction-to-probability-and-statistics-spring-2022/"
+  },
+  "resource:mit-ocw-structures": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/1-050-solid-mechanics-fall-2004/"
+  },
+  "resource:mit-ocw-supply-chain-planning": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/15-762j-supply-chain-planning-spring-2011/"
+  },
+  "resource:mit-ocw-transport-processes": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://ocw.mit.edu/courses/10-302-transport-processes-fall-2004/"
+  },
+  "resource:model-cards-toolkit": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://arxiv.org/abs/1810.03993"
+  },
+  "resource:modern-robotics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://hades.mech.northwestern.edu/index.php/Modern_Robotics"
+  },
+  "resource:mslearn-cloud-computing": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learn.microsoft.com/en-us/training/modules/describe-cloud-compute/"
+  },
+  "resource:nasa-arset": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://appliedsciences.nasa.gov/arset"
+  },
+  "resource:nasa-glenn-aero": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/"
+  },
+  "resource:neo4j-cypher-manual": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://neo4j.com/docs/cypher-manual/current/"
+  },
+  "resource:nist-ai-rmf": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.nist.gov/itl/ai-risk-management-framework"
+  },
+  "resource:nist-csf": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.nist.gov/cyberframework"
+  },
+  "resource:nist-sematech-handbook": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.itl.nist.gov/div898/handbook/"
+  },
+  "resource:nist-sp-800-115": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://csrc.nist.gov/pubs/sp/800/115/final"
+  },
+  "resource:nist-sp-800-61": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://csrc.nist.gov/pubs/sp/800/61/r2/final"
+  },
+  "resource:nist-webbook": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://webbook.nist.gov/chemistry/"
+  },
+  "resource:noaa-ngs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.ngs.noaa.gov/"
+  },
+  "resource:nptel-embedded": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://nptel.ac.in/courses/108105057"
+  },
+  "resource:nptel-renewable": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://nptel.ac.in/courses/103107082"
+  },
+  "resource:nrel-solar-resource": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://re.jrc.ec.europa.eu/pvg_tools/en/tools.html"
+  },
+  "resource:ogc-standards": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.ogc.org/"
+  },
+  "resource:onshape-learn": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://learn.onshape.com/"
+  },
+  "resource:opencv-python-tutorials": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.opencv.org/4.13.0/d6/d00/tutorial_py_root.html"
+  },
+  "resource:opendronemap-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.opendronemap.org/"
+  },
+  "resource:opensim": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://opensim.stanford.edu/"
+  },
+  "resource:openstax-anatomy-physiology": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://openstax.org/details/books/anatomy-and-physiology-2e"
+  },
+  "resource:openstax-calculus": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://openstax.org/details/books/calculus-volume-1"
+  },
+  "resource:openstax-chemistry": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://openstax.org/details/books/chemistry-2e"
+  },
+  "resource:openstax-intro-statistics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://openstax.org/details/books/introductory-statistics-2e"
+  },
+  "resource:openstax-university-physics": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://openstax.org/details/books/university-physics-volume-1"
+  },
+  "resource:opentelemetry-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://opentelemetry.io/docs/"
+  },
+  "resource:opentopography": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://opentopography.org/"
+  },
+  "resource:osha-ergonomics": {
+    "outcome": "blocked",
+    "status": 403,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.osha.gov/ergonomics"
+  },
+  "resource:osha-machine-guarding": {
+    "outcome": "blocked",
+    "status": 403,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.osha.gov/machine-guarding"
+  },
+  "resource:osha-psm": {
+    "outcome": "blocked",
+    "status": 403,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.osha.gov/process-safety-management"
+  },
+  "resource:owasp-juice-shop": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://owasp.org/www-project-juice-shop/"
+  },
+  "resource:owasp-top-ten": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://owasp.org/www-project-top-ten/"
+  },
+  "resource:pandas-user-guide": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://pandas.pydata.org/docs/user_guide/"
+  },
+  "resource:physionet": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://physionet.org/"
+  },
+  "resource:portswigger-web-security-academy": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://portswigger.net/web-security"
+  },
+  "resource:postgresql-tutorial": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.postgresql.org/docs/current/tutorial.html"
+  },
+  "resource:practical-cryptography": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://cryptobook.nakov.com/"
+  },
+  "resource:practical-test-pyramid": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://martinfowler.com/articles/practical-test-pyramid.html"
+  },
+  "resource:pro-git": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://git-scm.com/book/en/v2"
+  },
+  "resource:proj-docs": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://proj.org/"
+  },
+  "resource:prometheus-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://prometheus.io/docs/introduction/overview/"
+  },
+  "resource:pytest-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.pytest.org/en/stable/"
+  },
+  "resource:python-for-data-analysis": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://wesmckinney.com/book/"
+  },
+  "resource:python-tutorial": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.python.org/3/tutorial/"
+  },
+  "resource:pytorch-tutorials": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://pytorch.org/tutorials/"
+  },
+  "resource:qgis-training-manual": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.qgis.org/latest/en/docs/training_manual/"
+  },
+  "resource:qgis-user-manual": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.qgis.org/latest/en/docs/user_manual/"
+  },
+  "resource:react-learn": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://react.dev/learn"
+  },
+  "resource:react-native-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://reactnative.dev/docs/getting-started"
+  },
+  "resource:refactoring-guru-patterns": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://refactoring.guru/design-patterns"
+  },
+  "resource:reliableplant": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.reliableplant.com/"
+  },
+  "resource:resna": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.resna.org/"
+  },
+  "resource:robotacademy": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://robotacademy.net.au/"
+  },
+  "resource:ros2-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://docs.ros.org/en/jazzy/Tutorials.html"
+  },
+  "resource:scikit-learn-user-guide": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://scikit-learn.org/stable/user_guide.html"
+  },
+  "resource:seeing-theory": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://seeing-theory.brown.edu/"
+  },
+  "resource:spc-for-excel-knowledge": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.spcforexcel.com/knowledge/basic-statistics/"
+  },
+  "resource:sqlite-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.sqlite.org/docs.html"
+  },
+  "resource:tensorflow-tutorials": {
+    "outcome": "redirected",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.tensorflow.org/tutorials"
+  },
+  "resource:terraform-tutorials": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://developer.hashicorp.com/terraform/tutorials"
+  },
+  "resource:the-things-network-docs": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.thethingsnetwork.org/docs/"
+  },
+  "resource:typescript-handbook": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.typescriptlang.org/docs/handbook/intro.html"
+  },
+  "resource:usgs-ngp": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.usgs.gov/programs/national-geospatial-program"
+  },
+  "resource:who-assistive-technology": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.who.int/news-room/fact-sheets/detail/assistive-technology"
+  },
+  "resource:wilke-dataviz": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://clauswilke.com/dataviz/"
+  },
+  "resource:wireshark-users-guide": {
+    "outcome": "ok",
+    "status": 200,
+    "checkedAt": "2026-10-14",
+    "url": "https://www.wireshark.org/docs/wsug_html_chunked/"
+  }
+}
+
+

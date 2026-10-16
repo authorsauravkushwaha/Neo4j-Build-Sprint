@@ -1,0 +1,2548 @@
+#GRAPHMENTOR FRONTIER ORACLE FIXTURE v1
+#Inputs are authoritative; the EXPECTED block was produced by src/../recommend.ts analyzeFrontier.
+#Do not hand-edit: regenerate with `npm run oracle:export`.
+
+#constants — declared inputs, so the oracle checks algorithms and not policy numbers
+CONST	prereqMetThreshold	0.6
+CONST	maxTraversal	4000
+CONST	maxSteps	60
+CONST	defaultHoursLow	4
+CONST	defaultHoursHigh	10
+CONST	mastery.unknown	0
+CONST	mastery.new	0.1
+CONST	mastery.learning	0.4
+CONST	mastery.practised	0.7
+CONST	mastery.confident	1
+CONST	caveat.selfReport	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.
+CONST	caveat.estimates	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.
+
+#case career:aerospace-engineer--cold (cold, 8h/week)
+CASE	career:aerospace-engineer--cold	Aerospace engineer
+TARGET	skill:aerodynamics-basics
+TARGET	skill:cad-3d-modelling
+TARGET	skill:calculus-for-engineering
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:physics-mechanics
+TARGET	skill:signal-processing-basics
+TARGET	skill:strength-of-materials
+SKILL	skill:aerodynamics-basics	Aerodynamics basics	advanced	35	90
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:aerodynamics-basics	skill:fluid-mechanics-basics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+WEEKLY	8
+#EXPECTED
+CASE	career:aerospace-engineer--cold
+COUNT	targets=11	closure=12	known=0	remaining=12	gates=3	gatesUnlock=8
+SUMMARY	12 skill(s) to go: 2 startable now, 3 gate(s) unblock 8, longest chain 4 deep.
+HOURS	390	965
+WEEKS	49	121	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|10|1	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|10|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|5|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|4|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering	skill:fluid-mechanics-basics|Fluid mechanics basics	skill:aerodynamics-basics|Aerodynamics basics
+DEPTHS	skill:aerodynamics-basics|4	skill:cad-3d-modelling|1	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:control-systems-fundamentals|4	skill:engineering-materials|3	skill:engineering-mathematics|1	skill:engineering-mechanics-statics|3	skill:fluid-mechanics-basics|3	skill:physics-mechanics|2	skill:signal-processing-basics|3	skill:strength-of-materials|4
+REMAINING	skill:engineering-mathematics|1|10|1|	skill:cad-3d-modelling|1|0|1|	skill:physics-mechanics|2|5|1|Engineering mathematics	skill:calculus-for-engineering|2|4|1|Engineering mathematics	skill:circuit-analysis|2|2|0|Engineering mathematics	skill:engineering-mechanics-statics|3|1|1|Engineering physics: mechanics	skill:fluid-mechanics-basics|3|1|1|Calculus for engineering;Engineering physics: mechanics	skill:signal-processing-basics|3|1|1|Calculus for engineering;Circuit analysis	skill:engineering-materials|3|0|1|Engineering physics: mechanics	skill:aerodynamics-basics|4|0|1|Fluid mechanics basics	skill:control-systems-fundamentals|4|0|1|Calculus for engineering;Circuit analysis;Signals and systems basics	skill:strength-of-materials|4|0|1|Statics and equilibrium
+PULLED	skill:circuit-analysis|Circuit analysis
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:aerospace-engineer--warm (warm, 12h/week)
+CASE	career:aerospace-engineer--warm	Aerospace engineer
+TARGET	skill:aerodynamics-basics
+TARGET	skill:cad-3d-modelling
+TARGET	skill:calculus-for-engineering
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:physics-mechanics
+TARGET	skill:signal-processing-basics
+TARGET	skill:strength-of-materials
+SKILL	skill:aerodynamics-basics	Aerodynamics basics	advanced	35	90
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:aerodynamics-basics	skill:fluid-mechanics-basics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+RATING	skill:aerodynamics-basics	learning	none
+RATING	skill:cad-3d-modelling	practised	none
+RATING	skill:calculus-for-engineering	learning	none
+RATING	skill:control-systems-fundamentals	practised	none
+RATING	skill:engineering-materials	learning	none
+RATING	skill:engineering-mathematics	practised	none
+RATING	skill:engineering-mechanics-statics	learning	none
+RATING	skill:fluid-mechanics-basics	practised	none
+RATING	skill:physics-mechanics	learning	none
+RATING	skill:signal-processing-basics	practised	none
+RATING	skill:strength-of-materials	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:aerospace-engineer--warm
+COUNT	targets=11	closure=12	known=5	remaining=7	gates=2	gatesUnlock=2
+SUMMARY	7 skill(s) to go: 4 startable now, 2 gate(s) unblock 2, longest chain 3 deep.
+HOURS	220	545
+WEEKS	19	46	12
+FRONTIER	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|3|1	skill:aerodynamics-basics|Aerodynamics basics|advanced|35|90|0|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|1	skill:circuit-analysis|Circuit analysis|beginner|30|75|0|0
+GATES	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|3|1	skill:engineering-mechanics-statics|Statics and equilibrium|beginner|30|70|1|1
+CHAIN	skill:physics-mechanics|Engineering physics: mechanics	skill:engineering-mechanics-statics|Statics and equilibrium	skill:strength-of-materials|Strength of materials
+DEPTHS	skill:aerodynamics-basics|1	skill:calculus-for-engineering|1	skill:circuit-analysis|1	skill:engineering-materials|2	skill:engineering-mechanics-statics|2	skill:physics-mechanics|1	skill:strength-of-materials|3
+REMAINING	skill:physics-mechanics|1|3|1|	skill:aerodynamics-basics|1|0|1|	skill:calculus-for-engineering|1|0|1|	skill:circuit-analysis|1|0|0|	skill:engineering-mechanics-statics|2|1|1|Engineering physics: mechanics	skill:engineering-materials|2|0|1|Engineering physics: mechanics	skill:strength-of-materials|3|0|1|Statics and equilibrium
+PULLED	skill:circuit-analysis|Circuit analysis
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:aerospace-engineer--hot (hot, 20h/week)
+CASE	career:aerospace-engineer--hot	Aerospace engineer
+TARGET	skill:aerodynamics-basics
+TARGET	skill:cad-3d-modelling
+TARGET	skill:calculus-for-engineering
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:physics-mechanics
+TARGET	skill:signal-processing-basics
+TARGET	skill:strength-of-materials
+SKILL	skill:aerodynamics-basics	Aerodynamics basics	advanced	35	90
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:aerodynamics-basics	skill:fluid-mechanics-basics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+RATING	skill:aerodynamics-basics	confident	none
+RATING	skill:cad-3d-modelling	confident	none
+RATING	skill:calculus-for-engineering	confident	none
+RATING	skill:control-systems-fundamentals	confident	none
+RATING	skill:engineering-materials	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:engineering-mechanics-statics	confident	none
+RATING	skill:fluid-mechanics-basics	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:signal-processing-basics	practised	0.8
+RATING	skill:strength-of-materials	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:aerospace-engineer--hot
+COUNT	targets=11	closure=12	known=11	remaining=1	gates=0	gatesUnlock=0
+SUMMARY	1 skill(s) to go: 1 startable now, no gates left, longest chain 1 deep.
+HOURS	30	75
+WEEKS	2	4	20
+FRONTIER	skill:circuit-analysis|Circuit analysis|beginner|30|75|0|0
+GATES	
+CHAIN	skill:circuit-analysis|Circuit analysis
+DEPTHS	skill:circuit-analysis|1
+REMAINING	skill:circuit-analysis|1|0|0|
+PULLED	skill:circuit-analysis|Circuit analysis
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:ai-ml-engineer--cold (cold, 8h/week)
+CASE	career:ai-ml-engineer--cold	AI and machine learning engineer
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:deep-learning-basics
+TARGET	skill:engineering-mathematics
+TARGET	skill:linear-algebra
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:programming-fundamentals
+TARGET	skill:python-programming
+TARGET	skill:responsible-ai-practices
+TARGET	skill:statistical-modelling
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:responsible-ai-practices	Responsible AI practices	intermediate	15	40
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:responsible-ai-practices	skill:machine-learning-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+WEEKLY	8
+#EXPECTED
+CASE	career:ai-ml-engineer--cold
+COUNT	targets=12	closure=15	known=0	remaining=15	gates=3	gatesUnlock=12
+SUMMARY	15 skill(s) to go: 2 startable now, 3 gate(s) unblock 12, longest chain 5 deep.
+HOURS	470	1200
+WEEKS	59	150	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|9|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|9|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|9|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|9|1	skill:probability-statistics|Probability and statistics|intermediate|30|80|6|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:probability-statistics|Probability and statistics	skill:data-analysis-and-pandas|Data analysis and pandas	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:deep-learning-basics|Deep learning basics
+DEPTHS	skill:calculus-for-engineering|2	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:data-analysis-and-pandas|3	skill:data-visualization|4	skill:deep-learning-basics|5	skill:engineering-mathematics|1	skill:linear-algebra|2	skill:machine-learning-fundamentals|4	skill:operating-systems-and-linux|2	skill:probability-statistics|2	skill:programming-fundamentals|1	skill:python-programming|2	skill:responsible-ai-practices|5	skill:statistical-modelling|3
+REMAINING	skill:engineering-mathematics|1|9|1|	skill:programming-fundamentals|1|9|1|	skill:probability-statistics|2|6|1|Engineering mathematics	skill:python-programming|2|5|1|Programming fundamentals	skill:linear-algebra|2|3|1|Engineering mathematics	skill:operating-systems-and-linux|2|2|0|Programming fundamentals	skill:calculus-for-engineering|2|1|0|Engineering mathematics	skill:data-analysis-and-pandas|3|4|1|Probability and statistics;Python programming	skill:computer-networks|3|1|0|Operating systems and Linux	skill:statistical-modelling|3|0|1|Probability and statistics	skill:machine-learning-fundamentals|4|2|1|Data analysis and pandas;Linear algebra;Probability and statistics;Python programming	skill:cloud-fundamentals|4|0|1|Computer networks;Operating systems and Linux	skill:data-visualization|4|0|1|Data analysis and pandas	skill:deep-learning-basics|5|0|1|Calculus for engineering;Linear algebra;Machine learning fundamentals	skill:responsible-ai-practices|5|0|1|Machine learning fundamentals
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:computer-networks|Computer networks	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:ai-ml-engineer--warm (warm, 12h/week)
+CASE	career:ai-ml-engineer--warm	AI and machine learning engineer
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:deep-learning-basics
+TARGET	skill:engineering-mathematics
+TARGET	skill:linear-algebra
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:programming-fundamentals
+TARGET	skill:python-programming
+TARGET	skill:responsible-ai-practices
+TARGET	skill:statistical-modelling
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:responsible-ai-practices	Responsible AI practices	intermediate	15	40
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:responsible-ai-practices	skill:machine-learning-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:cloud-fundamentals	learning	none
+RATING	skill:data-analysis-and-pandas	practised	none
+RATING	skill:data-visualization	learning	none
+RATING	skill:deep-learning-basics	practised	none
+RATING	skill:engineering-mathematics	learning	none
+RATING	skill:linear-algebra	practised	none
+RATING	skill:machine-learning-fundamentals	learning	none
+RATING	skill:probability-statistics	practised	none
+RATING	skill:programming-fundamentals	learning	none
+RATING	skill:python-programming	practised	none
+RATING	skill:responsible-ai-practices	learning	none
+RATING	skill:statistical-modelling	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:ai-ml-engineer--warm
+COUNT	targets=12	closure=15	known=6	remaining=9	gates=3	gatesUnlock=1
+SUMMARY	9 skill(s) to go: 4 startable now, 3 gate(s) unblock 1, longest chain 4 deep.
+HOURS	265	680
+WEEKS	23	57	12
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|3|1	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|1	skill:machine-learning-fundamentals|Machine learning fundamentals|advanced|50|130|1|1	skill:data-visualization|Data visualisation and communication|beginner|15|40|0|1
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|3|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|2|0	skill:computer-networks|Computer networks|intermediate|30|80|1|0
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cloud-fundamentals|Cloud fundamentals
+DEPTHS	skill:calculus-for-engineering|2	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:data-visualization|1	skill:engineering-mathematics|1	skill:machine-learning-fundamentals|1	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:responsible-ai-practices|2
+REMAINING	skill:programming-fundamentals|1|3|1|	skill:engineering-mathematics|1|1|1|	skill:machine-learning-fundamentals|1|1|1|	skill:data-visualization|1|0|1|	skill:operating-systems-and-linux|2|2|0|Programming fundamentals	skill:calculus-for-engineering|2|0|0|Engineering mathematics	skill:responsible-ai-practices|2|0|1|Machine learning fundamentals	skill:computer-networks|3|1|0|Operating systems and Linux	skill:cloud-fundamentals|4|0|1|Computer networks;Operating systems and Linux
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:computer-networks|Computer networks	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:ai-ml-engineer--hot (hot, 20h/week)
+CASE	career:ai-ml-engineer--hot	AI and machine learning engineer
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:deep-learning-basics
+TARGET	skill:engineering-mathematics
+TARGET	skill:linear-algebra
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:programming-fundamentals
+TARGET	skill:python-programming
+TARGET	skill:responsible-ai-practices
+TARGET	skill:statistical-modelling
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:responsible-ai-practices	Responsible AI practices	intermediate	15	40
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:responsible-ai-practices	skill:machine-learning-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:cloud-fundamentals	confident	none
+RATING	skill:data-analysis-and-pandas	confident	none
+RATING	skill:data-visualization	confident	none
+RATING	skill:deep-learning-basics	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:linear-algebra	confident	none
+RATING	skill:machine-learning-fundamentals	confident	none
+RATING	skill:probability-statistics	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:python-programming	confident	none
+RATING	skill:responsible-ai-practices	practised	0.8
+RATING	skill:statistical-modelling	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:ai-ml-engineer--hot
+COUNT	targets=12	closure=15	known=12	remaining=3	gates=1	gatesUnlock=1
+SUMMARY	3 skill(s) to go: 2 startable now, 1 gate(s) unblock 1, longest chain 2 deep.
+HOURS	90	230
+WEEKS	5	12	20
+FRONTIER	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|1|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0
+GATES	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|1|0
+CHAIN	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks
+DEPTHS	skill:calculus-for-engineering|1	skill:computer-networks|2	skill:operating-systems-and-linux|1
+REMAINING	skill:operating-systems-and-linux|1|1|0|	skill:calculus-for-engineering|1|0|0|	skill:computer-networks|2|0|0|Operating systems and Linux
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:computer-networks|Computer networks	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:civil-structural-engineer--cold (cold, 8h/week)
+CASE	career:civil-structural-engineer--cold	Civil and structural engineer
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:structural-analysis
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:structural-analysis	Structural analysis	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:structural-analysis	skill:strength-of-materials
+EDGE	skill:structural-analysis	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+WEEKLY	8
+#EXPECTED
+CASE	career:civil-structural-engineer--cold
+COUNT	targets=8	closure=10	known=0	remaining=10	gates=3	gatesUnlock=6
+SUMMARY	10 skill(s) to go: 2 startable now, 3 gate(s) unblock 6, longest chain 5 deep.
+HOURS	310	770
+WEEKS	39	97	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|1	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|1|0
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|6|1	skill:engineering-mechanics-statics|Statics and equilibrium|beginner|30|70|2|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:physics-mechanics|Engineering physics: mechanics	skill:engineering-mechanics-statics|Statics and equilibrium	skill:strength-of-materials|Strength of materials	skill:structural-analysis|Structural analysis
+DEPTHS	skill:cad-3d-modelling|1	skill:calculus-for-engineering|2	skill:engineering-materials|3	skill:engineering-mathematics|1	skill:engineering-mechanics-statics|3	skill:fluid-mechanics-basics|3	skill:manufacturing-and-tolerances|4	skill:physics-mechanics|2	skill:strength-of-materials|4	skill:structural-analysis|5
+REMAINING	skill:engineering-mathematics|1|8|1|	skill:cad-3d-modelling|1|1|0|	skill:physics-mechanics|2|6|1|Engineering mathematics	skill:calculus-for-engineering|2|1|0|Engineering mathematics	skill:engineering-mechanics-statics|3|2|1|Engineering physics: mechanics	skill:engineering-materials|3|1|1|Engineering physics: mechanics	skill:fluid-mechanics-basics|3|0|1|Calculus for engineering;Engineering physics: mechanics	skill:strength-of-materials|4|1|1|Statics and equilibrium	skill:manufacturing-and-tolerances|4|0|1|CAD 3D modelling;Engineering materials	skill:structural-analysis|5|0|1|Statics and equilibrium;Strength of materials
+PULLED	skill:cad-3d-modelling|CAD 3D modelling	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:civil-structural-engineer--warm (warm, 12h/week)
+CASE	career:civil-structural-engineer--warm	Civil and structural engineer
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:structural-analysis
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:structural-analysis	Structural analysis	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:structural-analysis	skill:strength-of-materials
+EDGE	skill:structural-analysis	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+RATING	skill:engineering-materials	learning	none
+RATING	skill:engineering-mathematics	practised	none
+RATING	skill:engineering-mechanics-statics	learning	none
+RATING	skill:fluid-mechanics-basics	practised	none
+RATING	skill:manufacturing-and-tolerances	learning	none
+RATING	skill:physics-mechanics	practised	none
+RATING	skill:strength-of-materials	learning	none
+RATING	skill:structural-analysis	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:civil-structural-engineer--warm
+COUNT	targets=8	closure=10	known=4	remaining=6	gates=3	gatesUnlock=2
+SUMMARY	6 skill(s) to go: 4 startable now, 3 gate(s) unblock 2, longest chain 2 deep.
+HOURS	170	430
+WEEKS	15	36	12
+FRONTIER	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|1|0	skill:engineering-materials|Engineering materials|intermediate|25|60|1|1	skill:engineering-mechanics-statics|Statics and equilibrium|beginner|30|70|1|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0
+GATES	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|1|0	skill:engineering-materials|Engineering materials|intermediate|25|60|1|1	skill:engineering-mechanics-statics|Statics and equilibrium|beginner|30|70|1|1
+CHAIN	skill:cad-3d-modelling|CAD 3D modelling	skill:manufacturing-and-tolerances|Manufacturing and tolerances
+DEPTHS	skill:cad-3d-modelling|1	skill:calculus-for-engineering|1	skill:engineering-materials|1	skill:engineering-mechanics-statics|1	skill:manufacturing-and-tolerances|2	skill:strength-of-materials|2
+REMAINING	skill:cad-3d-modelling|1|1|0|	skill:engineering-materials|1|1|1|	skill:engineering-mechanics-statics|1|1|1|	skill:calculus-for-engineering|1|0|0|	skill:manufacturing-and-tolerances|2|0|1|CAD 3D modelling;Engineering materials	skill:strength-of-materials|2|0|1|Statics and equilibrium
+PULLED	skill:cad-3d-modelling|CAD 3D modelling	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:civil-structural-engineer--hot (hot, 20h/week)
+CASE	career:civil-structural-engineer--hot	Civil and structural engineer
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:structural-analysis
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:structural-analysis	Structural analysis	intermediate	35	90
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:structural-analysis	skill:strength-of-materials
+EDGE	skill:structural-analysis	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+RATING	skill:engineering-materials	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:engineering-mechanics-statics	confident	none
+RATING	skill:fluid-mechanics-basics	confident	none
+RATING	skill:manufacturing-and-tolerances	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:strength-of-materials	practised	0.8
+RATING	skill:structural-analysis	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:civil-structural-engineer--hot
+COUNT	targets=8	closure=10	known=8	remaining=2	gates=0	gatesUnlock=0
+SUMMARY	2 skill(s) to go: 2 startable now, no gates left, longest chain 1 deep.
+HOURS	55	150
+WEEKS	3	8	20
+FRONTIER	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|0|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0
+GATES	
+CHAIN	skill:cad-3d-modelling|CAD 3D modelling
+DEPTHS	skill:cad-3d-modelling|1	skill:calculus-for-engineering|1
+REMAINING	skill:cad-3d-modelling|1|0|0|	skill:calculus-for-engineering|1|0|0|
+PULLED	skill:cad-3d-modelling|CAD 3D modelling	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cloud-devops-engineer--cold (cold, 8h/week)
+CASE	career:cloud-devops-engineer--cold	Cloud and DevOps engineer
+TARGET	skill:ci-cd-pipelines
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:containers-and-docker
+TARGET	skill:infrastructure-as-code
+TARGET	skill:monitoring-and-observability
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:version-control-git
+SKILL	skill:ci-cd-pipelines	CI/CD pipelines	intermediate	20	50
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:containers-and-docker	Containers and Docker	intermediate	20	50
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:infrastructure-as-code	Infrastructure as code	advanced	30	70
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:containers-and-docker	skill:operating-systems-and-linux
+EDGE	skill:ci-cd-pipelines	skill:version-control-git
+EDGE	skill:ci-cd-pipelines	skill:testing-and-debugging
+EDGE	skill:ci-cd-pipelines	skill:containers-and-docker
+EDGE	skill:infrastructure-as-code	skill:cloud-fundamentals
+EDGE	skill:infrastructure-as-code	skill:ci-cd-pipelines
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+WEEKLY	8
+#EXPECTED
+CASE	career:cloud-devops-engineer--cold
+COUNT	targets=10	closure=12	known=0	remaining=12	gates=3	gatesUnlock=8
+SUMMARY	12 skill(s) to go: 2 startable now, 3 gate(s) unblock 8, longest chain 5 deep.
+HOURS	305	760
+WEEKS	39	95	8
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|10|1	skill:version-control-git|Version control with Git|beginner|10|30|2|1
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|10|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|8|1	skill:computer-networks|Computer networks|intermediate|30|80|5|1
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:containers-and-docker|Containers and Docker	skill:ci-cd-pipelines|CI/CD pipelines	skill:infrastructure-as-code|Infrastructure as code
+DEPTHS	skill:ci-cd-pipelines|4	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:containers-and-docker|3	skill:cybersecurity-fundamentals|4	skill:infrastructure-as-code|5	skill:monitoring-and-observability|5	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:secure-coding|5	skill:testing-and-debugging|2	skill:version-control-git|1
+REMAINING	skill:programming-fundamentals|1|10|1|	skill:version-control-git|1|2|1|	skill:operating-systems-and-linux|2|8|1|Programming fundamentals	skill:testing-and-debugging|2|2|0|Programming fundamentals	skill:computer-networks|3|5|1|Operating systems and Linux	skill:containers-and-docker|3|2|1|Operating systems and Linux	skill:cloud-fundamentals|4|2|1|Computer networks;Operating systems and Linux	skill:ci-cd-pipelines|4|1|1|Containers and Docker;Testing and debugging;Version control with Git	skill:cybersecurity-fundamentals|4|1|0|Computer networks;Operating systems and Linux	skill:infrastructure-as-code|5|0|1|CI/CD pipelines;Cloud fundamentals	skill:monitoring-and-observability|5|0|1|Cloud fundamentals;Operating systems and Linux	skill:secure-coding|5|0|1|Cybersecurity fundamentals;Programming fundamentals
+PULLED	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:testing-and-debugging|Testing and debugging
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cloud-devops-engineer--warm (warm, 12h/week)
+CASE	career:cloud-devops-engineer--warm	Cloud and DevOps engineer
+TARGET	skill:ci-cd-pipelines
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:containers-and-docker
+TARGET	skill:infrastructure-as-code
+TARGET	skill:monitoring-and-observability
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:version-control-git
+SKILL	skill:ci-cd-pipelines	CI/CD pipelines	intermediate	20	50
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:containers-and-docker	Containers and Docker	intermediate	20	50
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:infrastructure-as-code	Infrastructure as code	advanced	30	70
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:containers-and-docker	skill:operating-systems-and-linux
+EDGE	skill:ci-cd-pipelines	skill:version-control-git
+EDGE	skill:ci-cd-pipelines	skill:testing-and-debugging
+EDGE	skill:ci-cd-pipelines	skill:containers-and-docker
+EDGE	skill:infrastructure-as-code	skill:cloud-fundamentals
+EDGE	skill:infrastructure-as-code	skill:ci-cd-pipelines
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+RATING	skill:ci-cd-pipelines	learning	none
+RATING	skill:cloud-fundamentals	practised	none
+RATING	skill:computer-networks	learning	none
+RATING	skill:containers-and-docker	practised	none
+RATING	skill:infrastructure-as-code	learning	none
+RATING	skill:monitoring-and-observability	practised	none
+RATING	skill:operating-systems-and-linux	learning	none
+RATING	skill:programming-fundamentals	practised	none
+RATING	skill:secure-coding	learning	none
+RATING	skill:version-control-git	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:cloud-devops-engineer--warm
+COUNT	targets=10	closure=12	known=5	remaining=7	gates=3	gatesUnlock=4
+SUMMARY	7 skill(s) to go: 2 startable now, 3 gate(s) unblock 4, longest chain 4 deep.
+HOURS	200	490
+WEEKS	17	41	12
+FRONTIER	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|3|1	skill:testing-and-debugging|Testing and debugging|intermediate|30|70|2|0
+GATES	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|3|1	skill:computer-networks|Computer networks|intermediate|30|80|2|1	skill:testing-and-debugging|Testing and debugging|intermediate|30|70|2|0
+CHAIN	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:secure-coding|Secure coding practices
+DEPTHS	skill:ci-cd-pipelines|2	skill:computer-networks|2	skill:cybersecurity-fundamentals|3	skill:infrastructure-as-code|3	skill:operating-systems-and-linux|1	skill:secure-coding|4	skill:testing-and-debugging|1
+REMAINING	skill:operating-systems-and-linux|1|3|1|	skill:testing-and-debugging|1|2|0|	skill:computer-networks|2|2|1|Operating systems and Linux	skill:ci-cd-pipelines|2|1|1|Testing and debugging	skill:cybersecurity-fundamentals|3|1|0|Computer networks;Operating systems and Linux	skill:infrastructure-as-code|3|0|1|CI/CD pipelines	skill:secure-coding|4|0|1|Cybersecurity fundamentals
+PULLED	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:testing-and-debugging|Testing and debugging
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cloud-devops-engineer--hot (hot, 20h/week)
+CASE	career:cloud-devops-engineer--hot	Cloud and DevOps engineer
+TARGET	skill:ci-cd-pipelines
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:containers-and-docker
+TARGET	skill:infrastructure-as-code
+TARGET	skill:monitoring-and-observability
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:version-control-git
+SKILL	skill:ci-cd-pipelines	CI/CD pipelines	intermediate	20	50
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:containers-and-docker	Containers and Docker	intermediate	20	50
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:infrastructure-as-code	Infrastructure as code	advanced	30	70
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:containers-and-docker	skill:operating-systems-and-linux
+EDGE	skill:ci-cd-pipelines	skill:version-control-git
+EDGE	skill:ci-cd-pipelines	skill:testing-and-debugging
+EDGE	skill:ci-cd-pipelines	skill:containers-and-docker
+EDGE	skill:infrastructure-as-code	skill:cloud-fundamentals
+EDGE	skill:infrastructure-as-code	skill:ci-cd-pipelines
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+RATING	skill:ci-cd-pipelines	confident	none
+RATING	skill:cloud-fundamentals	confident	none
+RATING	skill:computer-networks	confident	none
+RATING	skill:containers-and-docker	confident	none
+RATING	skill:infrastructure-as-code	confident	none
+RATING	skill:monitoring-and-observability	confident	none
+RATING	skill:operating-systems-and-linux	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:secure-coding	practised	0.8
+RATING	skill:version-control-git	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:cloud-devops-engineer--hot
+COUNT	targets=10	closure=12	known=10	remaining=2	gates=0	gatesUnlock=0
+SUMMARY	2 skill(s) to go: 2 startable now, no gates left, longest chain 1 deep.
+HOURS	60	150
+WEEKS	3	8	20
+FRONTIER	skill:cybersecurity-fundamentals|Cybersecurity fundamentals|intermediate|30|80|0|0	skill:testing-and-debugging|Testing and debugging|intermediate|30|70|0|0
+GATES	
+CHAIN	skill:cybersecurity-fundamentals|Cybersecurity fundamentals
+DEPTHS	skill:cybersecurity-fundamentals|1	skill:testing-and-debugging|1
+REMAINING	skill:cybersecurity-fundamentals|1|0|0|	skill:testing-and-debugging|1|0|0|
+PULLED	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:testing-and-debugging|Testing and debugging
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cybersecurity-analyst--cold (cold, 8h/week)
+CASE	career:cybersecurity-analyst--cold	Cybersecurity analyst
+TARGET	skill:applied-cryptography
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:cybersecurity-fundamentals
+TARGET	skill:incident-response-basics
+TARGET	skill:network-security-and-monitoring
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+SKILL	skill:applied-cryptography	Applied cryptography	advanced	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:incident-response-basics	Incident response basics	intermediate	15	45
+SKILL	skill:network-security-and-monitoring	Network security and monitoring	advanced	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:network-security-and-monitoring	skill:computer-networks
+EDGE	skill:network-security-and-monitoring	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:engineering-mathematics
+EDGE	skill:incident-response-basics	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+WEEKLY	8
+#EXPECTED
+CASE	career:cybersecurity-analyst--cold
+COUNT	targets=9	closure=10	known=0	remaining=10	gates=3	gatesUnlock=6
+SUMMARY	10 skill(s) to go: 2 startable now, 3 gate(s) unblock 6, longest chain 5 deep.
+HOURS	285	725
+WEEKS	36	91	8
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|8|1	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|0
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|8|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|7|1	skill:computer-networks|Computer networks|intermediate|30|80|6|1
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:applied-cryptography|Applied cryptography
+DEPTHS	skill:applied-cryptography|5	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:cybersecurity-fundamentals|4	skill:engineering-mathematics|1	skill:incident-response-basics|5	skill:network-security-and-monitoring|5	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:secure-coding|5
+REMAINING	skill:programming-fundamentals|1|8|1|	skill:engineering-mathematics|1|1|0|	skill:operating-systems-and-linux|2|7|1|Programming fundamentals	skill:computer-networks|3|6|1|Operating systems and Linux	skill:cybersecurity-fundamentals|4|4|1|Computer networks;Operating systems and Linux	skill:cloud-fundamentals|4|0|1|Computer networks;Operating systems and Linux	skill:applied-cryptography|5|0|1|Cybersecurity fundamentals;Engineering mathematics	skill:incident-response-basics|5|0|1|Cybersecurity fundamentals	skill:network-security-and-monitoring|5|0|1|Computer networks;Cybersecurity fundamentals	skill:secure-coding|5|0|1|Cybersecurity fundamentals;Programming fundamentals
+PULLED	skill:engineering-mathematics|Engineering mathematics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cybersecurity-analyst--warm (warm, 12h/week)
+CASE	career:cybersecurity-analyst--warm	Cybersecurity analyst
+TARGET	skill:applied-cryptography
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:cybersecurity-fundamentals
+TARGET	skill:incident-response-basics
+TARGET	skill:network-security-and-monitoring
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+SKILL	skill:applied-cryptography	Applied cryptography	advanced	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:incident-response-basics	Incident response basics	intermediate	15	45
+SKILL	skill:network-security-and-monitoring	Network security and monitoring	advanced	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:network-security-and-monitoring	skill:computer-networks
+EDGE	skill:network-security-and-monitoring	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:engineering-mathematics
+EDGE	skill:incident-response-basics	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:applied-cryptography	learning	none
+RATING	skill:cloud-fundamentals	practised	none
+RATING	skill:computer-networks	learning	none
+RATING	skill:cybersecurity-fundamentals	practised	none
+RATING	skill:incident-response-basics	learning	none
+RATING	skill:network-security-and-monitoring	practised	none
+RATING	skill:operating-systems-and-linux	learning	none
+RATING	skill:programming-fundamentals	practised	none
+RATING	skill:secure-coding	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:cybersecurity-analyst--warm
+COUNT	targets=9	closure=10	known=4	remaining=6	gates=2	gatesUnlock=2
+SUMMARY	6 skill(s) to go: 4 startable now, 2 gate(s) unblock 2, longest chain 2 deep.
+HOURS	170	425
+WEEKS	15	36	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|0	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|1|1	skill:incident-response-basics|Incident response basics|intermediate|15|45|0|1	skill:secure-coding|Secure coding practices|intermediate|30|70|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|0	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|1|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:applied-cryptography|Applied cryptography
+DEPTHS	skill:applied-cryptography|2	skill:computer-networks|2	skill:engineering-mathematics|1	skill:incident-response-basics|1	skill:operating-systems-and-linux|1	skill:secure-coding|1
+REMAINING	skill:engineering-mathematics|1|1|0|	skill:operating-systems-and-linux|1|1|1|	skill:incident-response-basics|1|0|1|	skill:secure-coding|1|0|1|	skill:applied-cryptography|2|0|1|Engineering mathematics	skill:computer-networks|2|0|1|Operating systems and Linux
+PULLED	skill:engineering-mathematics|Engineering mathematics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:cybersecurity-analyst--hot (hot, 20h/week)
+CASE	career:cybersecurity-analyst--hot	Cybersecurity analyst
+TARGET	skill:applied-cryptography
+TARGET	skill:cloud-fundamentals
+TARGET	skill:computer-networks
+TARGET	skill:cybersecurity-fundamentals
+TARGET	skill:incident-response-basics
+TARGET	skill:network-security-and-monitoring
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+SKILL	skill:applied-cryptography	Applied cryptography	advanced	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:incident-response-basics	Incident response basics	intermediate	15	45
+SKILL	skill:network-security-and-monitoring	Network security and monitoring	advanced	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:network-security-and-monitoring	skill:computer-networks
+EDGE	skill:network-security-and-monitoring	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:cybersecurity-fundamentals
+EDGE	skill:applied-cryptography	skill:engineering-mathematics
+EDGE	skill:incident-response-basics	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:applied-cryptography	confident	none
+RATING	skill:cloud-fundamentals	confident	none
+RATING	skill:computer-networks	confident	none
+RATING	skill:cybersecurity-fundamentals	confident	none
+RATING	skill:incident-response-basics	confident	none
+RATING	skill:network-security-and-monitoring	confident	none
+RATING	skill:operating-systems-and-linux	confident	none
+RATING	skill:programming-fundamentals	practised	0.8
+RATING	skill:secure-coding	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:cybersecurity-analyst--hot
+COUNT	targets=9	closure=10	known=9	remaining=1	gates=0	gatesUnlock=0
+SUMMARY	1 skill(s) to go: 1 startable now, no gates left, longest chain 1 deep.
+HOURS	40	100
+WEEKS	2	5	20
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|0|0
+GATES	
+CHAIN	skill:engineering-mathematics|Engineering mathematics
+DEPTHS	skill:engineering-mathematics|1
+REMAINING	skill:engineering-mathematics|1|0|0|
+PULLED	skill:engineering-mathematics|Engineering mathematics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:data-analyst--cold (cold, 8h/week)
+CASE	career:data-analyst--cold	Data scientist and analyst
+TARGET	skill:api-design-and-integration
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:databases-and-sql
+TARGET	skill:engineering-mathematics
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:python-programming
+TARGET	skill:statistical-modelling
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+WEEKLY	8
+#EXPECTED
+CASE	career:data-analyst--cold
+COUNT	targets=9	closure=11	known=0	remaining=11	gates=3	gatesUnlock=8
+SUMMARY	11 skill(s) to go: 2 startable now, 3 gate(s) unblock 8, longest chain 4 deep.
+HOURS	345	880
+WEEKS	44	110	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|6|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|6|0
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|6|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|6|0	skill:probability-statistics|Probability and statistics|intermediate|30|80|4|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:probability-statistics|Probability and statistics	skill:data-analysis-and-pandas|Data analysis and pandas	skill:data-visualization|Data visualisation and communication
+DEPTHS	skill:api-design-and-integration|3	skill:data-analysis-and-pandas|3	skill:data-visualization|4	skill:databases-and-sql|2	skill:engineering-mathematics|1	skill:linear-algebra|2	skill:machine-learning-fundamentals|4	skill:probability-statistics|2	skill:programming-fundamentals|1	skill:python-programming|2	skill:statistical-modelling|3
+REMAINING	skill:engineering-mathematics|1|6|1|	skill:programming-fundamentals|1|6|0|	skill:probability-statistics|2|4|1|Engineering mathematics	skill:python-programming|2|3|1|Programming fundamentals	skill:databases-and-sql|2|1|1|Programming fundamentals	skill:linear-algebra|2|1|0|Engineering mathematics	skill:data-analysis-and-pandas|3|2|1|Probability and statistics;Python programming	skill:api-design-and-integration|3|0|1|Databases and SQL;Programming fundamentals	skill:statistical-modelling|3|0|1|Probability and statistics	skill:data-visualization|4|0|1|Data analysis and pandas	skill:machine-learning-fundamentals|4|0|1|Data analysis and pandas;Linear algebra;Probability and statistics;Python programming
+PULLED	skill:linear-algebra|Linear algebra	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:data-analyst--warm (warm, 12h/week)
+CASE	career:data-analyst--warm	Data scientist and analyst
+TARGET	skill:api-design-and-integration
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:databases-and-sql
+TARGET	skill:engineering-mathematics
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:python-programming
+TARGET	skill:statistical-modelling
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+RATING	skill:api-design-and-integration	learning	none
+RATING	skill:data-analysis-and-pandas	practised	none
+RATING	skill:data-visualization	learning	none
+RATING	skill:databases-and-sql	practised	none
+RATING	skill:engineering-mathematics	learning	none
+RATING	skill:machine-learning-fundamentals	practised	none
+RATING	skill:probability-statistics	learning	none
+RATING	skill:python-programming	practised	none
+RATING	skill:statistical-modelling	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:data-analyst--warm
+COUNT	targets=9	closure=11	known=4	remaining=7	gates=3	gatesUnlock=3
+SUMMARY	7 skill(s) to go: 3 startable now, 3 gate(s) unblock 3, longest chain 3 deep.
+HOURS	205	520
+WEEKS	18	44	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|3|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0	skill:data-visualization|Data visualisation and communication|beginner|15|40|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|3|1	skill:probability-statistics|Probability and statistics|intermediate|30|80|1|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:probability-statistics|Probability and statistics	skill:statistical-modelling|Statistical modelling and inference
+DEPTHS	skill:api-design-and-integration|2	skill:data-visualization|1	skill:engineering-mathematics|1	skill:linear-algebra|2	skill:probability-statistics|2	skill:programming-fundamentals|1	skill:statistical-modelling|3
+REMAINING	skill:engineering-mathematics|1|3|1|	skill:programming-fundamentals|1|1|0|	skill:data-visualization|1|0|1|	skill:probability-statistics|2|1|1|Engineering mathematics	skill:api-design-and-integration|2|0|1|Programming fundamentals	skill:linear-algebra|2|0|0|Engineering mathematics	skill:statistical-modelling|3|0|1|Probability and statistics
+PULLED	skill:linear-algebra|Linear algebra	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:data-analyst--hot (hot, 20h/week)
+CASE	career:data-analyst--hot	Data scientist and analyst
+TARGET	skill:api-design-and-integration
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:data-visualization
+TARGET	skill:databases-and-sql
+TARGET	skill:engineering-mathematics
+TARGET	skill:machine-learning-fundamentals
+TARGET	skill:probability-statistics
+TARGET	skill:python-programming
+TARGET	skill:statistical-modelling
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:data-visualization	Data visualisation and communication	beginner	15	40
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:statistical-modelling	Statistical modelling and inference	advanced	35	90
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:data-visualization	skill:data-analysis-and-pandas
+EDGE	skill:statistical-modelling	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+RATING	skill:api-design-and-integration	confident	none
+RATING	skill:data-analysis-and-pandas	confident	none
+RATING	skill:data-visualization	confident	none
+RATING	skill:databases-and-sql	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:machine-learning-fundamentals	confident	none
+RATING	skill:probability-statistics	confident	none
+RATING	skill:python-programming	practised	0.8
+RATING	skill:statistical-modelling	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:data-analyst--hot
+COUNT	targets=9	closure=11	known=9	remaining=2	gates=0	gatesUnlock=0
+SUMMARY	2 skill(s) to go: 2 startable now, no gates left, longest chain 1 deep.
+HOURS	60	150
+WEEKS	3	8	20
+FRONTIER	skill:linear-algebra|Linear algebra|intermediate|30|70|0|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|0|0
+GATES	
+CHAIN	skill:linear-algebra|Linear algebra
+DEPTHS	skill:linear-algebra|1	skill:programming-fundamentals|1
+REMAINING	skill:linear-algebra|1|0|0|	skill:programming-fundamentals|1|0|0|
+PULLED	skill:linear-algebra|Linear algebra	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:electrical-electronics-engineer--cold (cold, 8h/week)
+CASE	career:electrical-electronics-engineer--cold	Electrical and electronics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+WEEKLY	8
+#EXPECTED
+CASE	career:electrical-electronics-engineer--cold
+COUNT	targets=10	closure=13	known=0	remaining=13	gates=3	gatesUnlock=9
+SUMMARY	13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 4 deep.
+HOURS	435	1090
+WEEKS	55	137	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|11|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|0
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|11|1	skill:circuit-analysis|Circuit analysis|beginner|30|75|8|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|2|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering	skill:signal-processing-basics|Signals and systems basics	skill:control-systems-fundamentals|Control systems fundamentals
+DEPTHS	skill:analog-electronics|3	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:control-systems-fundamentals|4	skill:digital-logic-design|3	skill:embedded-c|3	skill:engineering-mathematics|1	skill:physics-mechanics|2	skill:power-electronics-basics|4	skill:power-systems-basics|3	skill:programming-fundamentals|1	skill:sensors-and-actuators|4	skill:signal-processing-basics|3
+REMAINING	skill:engineering-mathematics|1|11|1|	skill:programming-fundamentals|1|2|0|	skill:circuit-analysis|2|8|1|Engineering mathematics	skill:calculus-for-engineering|2|2|0|Engineering mathematics	skill:physics-mechanics|2|1|1|Engineering mathematics	skill:analog-electronics|3|1|1|Circuit analysis	skill:embedded-c|3|1|0|Circuit analysis;Programming fundamentals	skill:signal-processing-basics|3|1|1|Calculus for engineering;Circuit analysis	skill:digital-logic-design|3|0|1|Circuit analysis	skill:power-systems-basics|3|0|1|Circuit analysis;Engineering physics: mechanics	skill:control-systems-fundamentals|4|0|1|Calculus for engineering;Circuit analysis;Signals and systems basics	skill:power-electronics-basics|4|0|1|Analog electronics;Circuit analysis	skill:sensors-and-actuators|4|0|1|Circuit analysis;Embedded C and microcontrollers
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:embedded-c|Embedded C and microcontrollers	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:electrical-electronics-engineer--warm (warm, 12h/week)
+CASE	career:electrical-electronics-engineer--warm	Electrical and electronics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+RATING	skill:analog-electronics	learning	none
+RATING	skill:circuit-analysis	practised	none
+RATING	skill:control-systems-fundamentals	learning	none
+RATING	skill:digital-logic-design	practised	none
+RATING	skill:engineering-mathematics	learning	none
+RATING	skill:physics-mechanics	practised	none
+RATING	skill:power-electronics-basics	learning	none
+RATING	skill:power-systems-basics	practised	none
+RATING	skill:sensors-and-actuators	learning	none
+RATING	skill:signal-processing-basics	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:electrical-electronics-engineer--warm
+COUNT	targets=10	closure=13	known=5	remaining=8	gates=3	gatesUnlock=5
+SUMMARY	8 skill(s) to go: 3 startable now, 3 gate(s) unblock 5, longest chain 3 deep.
+HOURS	275	700
+WEEKS	23	59	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|2|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|0	skill:analog-electronics|Analog electronics|intermediate|35|90|1|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|2|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|0	skill:analog-electronics|Analog electronics|intermediate|35|90|1|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering	skill:control-systems-fundamentals|Control systems fundamentals
+DEPTHS	skill:analog-electronics|1	skill:calculus-for-engineering|2	skill:control-systems-fundamentals|3	skill:embedded-c|2	skill:engineering-mathematics|1	skill:power-electronics-basics|2	skill:programming-fundamentals|1	skill:sensors-and-actuators|3
+REMAINING	skill:engineering-mathematics|1|2|1|	skill:programming-fundamentals|1|2|0|	skill:analog-electronics|1|1|1|	skill:calculus-for-engineering|2|1|0|Engineering mathematics	skill:embedded-c|2|1|0|Programming fundamentals	skill:power-electronics-basics|2|0|1|Analog electronics	skill:control-systems-fundamentals|3|0|1|Calculus for engineering	skill:sensors-and-actuators|3|0|1|Embedded C and microcontrollers
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:embedded-c|Embedded C and microcontrollers	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:electrical-electronics-engineer--hot (hot, 20h/week)
+CASE	career:electrical-electronics-engineer--hot	Electrical and electronics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+RATING	skill:analog-electronics	confident	none
+RATING	skill:circuit-analysis	confident	none
+RATING	skill:control-systems-fundamentals	confident	none
+RATING	skill:digital-logic-design	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:power-electronics-basics	confident	none
+RATING	skill:power-systems-basics	confident	none
+RATING	skill:sensors-and-actuators	practised	0.8
+RATING	skill:signal-processing-basics	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:electrical-electronics-engineer--hot
+COUNT	targets=10	closure=13	known=10	remaining=3	gates=1	gatesUnlock=1
+SUMMARY	3 skill(s) to go: 2 startable now, 1 gate(s) unblock 1, longest chain 2 deep.
+HOURS	100	260
+WEEKS	5	13	20
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:embedded-c|Embedded C and microcontrollers
+DEPTHS	skill:calculus-for-engineering|1	skill:embedded-c|2	skill:programming-fundamentals|1
+REMAINING	skill:programming-fundamentals|1|1|0|	skill:calculus-for-engineering|1|0|0|	skill:embedded-c|2|0|0|Programming fundamentals
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:embedded-c|Embedded C and microcontrollers	skill:programming-fundamentals|Programming fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:embedded-iot-engineer--cold (cold, 8h/week)
+CASE	career:embedded-iot-engineer--cold	Embedded systems and IoT engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-networks
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:embedded-iot-connectivity
+TARGET	skill:low-power-design
+TARGET	skill:programming-fundamentals
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+TARGET	skill:testing-and-debugging
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:embedded-iot-connectivity	IoT connectivity and protocols	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:low-power-design	Low-power design	advanced	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:computer-networks
+EDGE	skill:low-power-design	skill:embedded-iot-connectivity
+EDGE	skill:low-power-design	skill:circuit-analysis
+WEEKLY	8
+#EXPECTED
+CASE	career:embedded-iot-engineer--cold
+COUNT	targets=10	closure=13	known=0	remaining=13	gates=3	gatesUnlock=10
+SUMMARY	13 skill(s) to go: 2 startable now, 3 gate(s) unblock 10, longest chain 5 deep.
+HOURS	400	990
+WEEKS	50	124	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|7|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|7|1	skill:circuit-analysis|Circuit analysis|beginner|30|75|6|1
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:embedded-iot-connectivity|IoT connectivity and protocols	skill:low-power-design|Low-power design
+DEPTHS	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:computer-networks|3	skill:digital-logic-design|3	skill:embedded-c|3	skill:embedded-iot-connectivity|4	skill:engineering-mathematics|1	skill:low-power-design|5	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:sensors-and-actuators|4	skill:signal-processing-basics|3	skill:testing-and-debugging|2
+REMAINING	skill:engineering-mathematics|1|8|0|	skill:programming-fundamentals|1|7|1|	skill:circuit-analysis|2|6|1|Engineering mathematics	skill:operating-systems-and-linux|2|3|0|Programming fundamentals	skill:calculus-for-engineering|2|1|0|Engineering mathematics	skill:testing-and-debugging|2|0|1|Programming fundamentals	skill:embedded-c|3|3|1|Circuit analysis;Programming fundamentals	skill:computer-networks|3|2|1|Operating systems and Linux	skill:digital-logic-design|3|0|1|Circuit analysis	skill:signal-processing-basics|3|0|1|Calculus for engineering;Circuit analysis	skill:embedded-iot-connectivity|4|1|1|Computer networks;Embedded C and microcontrollers	skill:sensors-and-actuators|4|0|1|Circuit analysis;Embedded C and microcontrollers	skill:low-power-design|5|0|1|Circuit analysis;IoT connectivity and protocols
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:engineering-mathematics|Engineering mathematics	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:embedded-iot-engineer--warm (warm, 12h/week)
+CASE	career:embedded-iot-engineer--warm	Embedded systems and IoT engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-networks
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:embedded-iot-connectivity
+TARGET	skill:low-power-design
+TARGET	skill:programming-fundamentals
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+TARGET	skill:testing-and-debugging
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:embedded-iot-connectivity	IoT connectivity and protocols	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:low-power-design	Low-power design	advanced	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:computer-networks
+EDGE	skill:low-power-design	skill:embedded-iot-connectivity
+EDGE	skill:low-power-design	skill:circuit-analysis
+RATING	skill:circuit-analysis	learning	none
+RATING	skill:computer-networks	practised	none
+RATING	skill:digital-logic-design	learning	none
+RATING	skill:embedded-c	practised	none
+RATING	skill:embedded-iot-connectivity	learning	none
+RATING	skill:low-power-design	practised	none
+RATING	skill:programming-fundamentals	learning	none
+RATING	skill:sensors-and-actuators	practised	none
+RATING	skill:signal-processing-basics	learning	none
+RATING	skill:testing-and-debugging	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:embedded-iot-engineer--warm
+COUNT	targets=10	closure=13	known=5	remaining=8	gates=3	gatesUnlock=2
+SUMMARY	8 skill(s) to go: 3 startable now, 3 gate(s) unblock 2, longest chain 3 deep.
+HOURS	250	620
+WEEKS	21	52	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|4|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|1	skill:embedded-iot-connectivity|IoT connectivity and protocols|intermediate|25|60|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|4|0	skill:circuit-analysis|Circuit analysis|beginner|30|75|2|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|1|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:circuit-analysis|Circuit analysis	skill:digital-logic-design|Digital logic design
+DEPTHS	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:digital-logic-design|3	skill:embedded-iot-connectivity|1	skill:engineering-mathematics|1	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:signal-processing-basics|3
+REMAINING	skill:engineering-mathematics|1|4|0|	skill:programming-fundamentals|1|1|1|	skill:embedded-iot-connectivity|1|0|1|	skill:circuit-analysis|2|2|1|Engineering mathematics	skill:calculus-for-engineering|2|1|0|Engineering mathematics	skill:operating-systems-and-linux|2|0|0|Programming fundamentals	skill:digital-logic-design|3|0|1|Circuit analysis	skill:signal-processing-basics|3|0|1|Calculus for engineering;Circuit analysis
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:engineering-mathematics|Engineering mathematics	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:embedded-iot-engineer--hot (hot, 20h/week)
+CASE	career:embedded-iot-engineer--hot	Embedded systems and IoT engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-networks
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:embedded-iot-connectivity
+TARGET	skill:low-power-design
+TARGET	skill:programming-fundamentals
+TARGET	skill:sensors-and-actuators
+TARGET	skill:signal-processing-basics
+TARGET	skill:testing-and-debugging
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:embedded-iot-connectivity	IoT connectivity and protocols	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:low-power-design	Low-power design	advanced	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:embedded-c
+EDGE	skill:embedded-iot-connectivity	skill:computer-networks
+EDGE	skill:low-power-design	skill:embedded-iot-connectivity
+EDGE	skill:low-power-design	skill:circuit-analysis
+RATING	skill:circuit-analysis	confident	none
+RATING	skill:computer-networks	confident	none
+RATING	skill:digital-logic-design	confident	none
+RATING	skill:embedded-c	confident	none
+RATING	skill:embedded-iot-connectivity	confident	none
+RATING	skill:low-power-design	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:sensors-and-actuators	confident	none
+RATING	skill:signal-processing-basics	practised	0.8
+RATING	skill:testing-and-debugging	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:embedded-iot-engineer--hot
+COUNT	targets=10	closure=13	known=10	remaining=3	gates=1	gatesUnlock=1
+SUMMARY	3 skill(s) to go: 2 startable now, 1 gate(s) unblock 1, longest chain 2 deep.
+HOURS	100	250
+WEEKS	5	13	20
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|0	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|0|0
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|1|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering
+DEPTHS	skill:calculus-for-engineering|2	skill:engineering-mathematics|1	skill:operating-systems-and-linux|1
+REMAINING	skill:engineering-mathematics|1|1|0|	skill:operating-systems-and-linux|1|0|0|	skill:calculus-for-engineering|2|0|0|Engineering mathematics
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:engineering-mathematics|Engineering mathematics	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	3 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:mechanical-design-engineer--cold (cold, 8h/week)
+CASE	career:mechanical-design-engineer--cold	Mechanical design engineer
+TARGET	skill:cad-3d-modelling
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:thermodynamics-basics
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+WEEKLY	8
+#EXPECTED
+CASE	career:mechanical-design-engineer--cold
+COUNT	targets=9	closure=10	known=0	remaining=10	gates=3	gatesUnlock=6
+SUMMARY	10 skill(s) to go: 2 startable now, 3 gate(s) unblock 6, longest chain 4 deep.
+HOURS	305	755
+WEEKS	39	95	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|1	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|1|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|8|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|6|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|2|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:physics-mechanics|Engineering physics: mechanics	skill:engineering-materials|Engineering materials	skill:manufacturing-and-tolerances|Manufacturing and tolerances
+DEPTHS	skill:cad-3d-modelling|1	skill:calculus-for-engineering|2	skill:engineering-materials|3	skill:engineering-mathematics|1	skill:engineering-mechanics-statics|3	skill:fluid-mechanics-basics|3	skill:manufacturing-and-tolerances|4	skill:physics-mechanics|2	skill:strength-of-materials|4	skill:thermodynamics-basics|3
+REMAINING	skill:engineering-mathematics|1|8|1|	skill:cad-3d-modelling|1|1|1|	skill:physics-mechanics|2|6|1|Engineering mathematics	skill:calculus-for-engineering|2|2|0|Engineering mathematics	skill:engineering-materials|3|1|1|Engineering physics: mechanics	skill:engineering-mechanics-statics|3|1|1|Engineering physics: mechanics	skill:fluid-mechanics-basics|3|0|1|Calculus for engineering;Engineering physics: mechanics	skill:thermodynamics-basics|3|0|1|Calculus for engineering;Engineering physics: mechanics	skill:manufacturing-and-tolerances|4|0|1|CAD 3D modelling;Engineering materials	skill:strength-of-materials|4|0|1|Statics and equilibrium
+PULLED	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:mechanical-design-engineer--warm (warm, 12h/week)
+CASE	career:mechanical-design-engineer--warm	Mechanical design engineer
+TARGET	skill:cad-3d-modelling
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:thermodynamics-basics
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+RATING	skill:cad-3d-modelling	learning	none
+RATING	skill:engineering-materials	practised	none
+RATING	skill:engineering-mathematics	learning	none
+RATING	skill:engineering-mechanics-statics	practised	none
+RATING	skill:fluid-mechanics-basics	learning	none
+RATING	skill:manufacturing-and-tolerances	practised	none
+RATING	skill:physics-mechanics	learning	none
+RATING	skill:strength-of-materials	practised	none
+RATING	skill:thermodynamics-basics	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:mechanical-design-engineer--warm
+COUNT	targets=9	closure=10	known=4	remaining=6	gates=3	gatesUnlock=2
+SUMMARY	6 skill(s) to go: 2 startable now, 3 gate(s) unblock 2, longest chain 3 deep.
+HOURS	190	475
+WEEKS	16	40	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|4|1	skill:cad-3d-modelling|CAD 3D modelling|beginner|25|70|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|4|1	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|2|0	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|2|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering	skill:fluid-mechanics-basics|Fluid mechanics basics
+DEPTHS	skill:cad-3d-modelling|1	skill:calculus-for-engineering|2	skill:engineering-mathematics|1	skill:fluid-mechanics-basics|3	skill:physics-mechanics|2	skill:thermodynamics-basics|3
+REMAINING	skill:engineering-mathematics|1|4|1|	skill:cad-3d-modelling|1|0|1|	skill:calculus-for-engineering|2|2|0|Engineering mathematics	skill:physics-mechanics|2|2|1|Engineering mathematics	skill:fluid-mechanics-basics|3|0|1|Calculus for engineering;Engineering physics: mechanics	skill:thermodynamics-basics|3|0|1|Calculus for engineering;Engineering physics: mechanics
+PULLED	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:mechanical-design-engineer--hot (hot, 20h/week)
+CASE	career:mechanical-design-engineer--hot	Mechanical design engineer
+TARGET	skill:cad-3d-modelling
+TARGET	skill:engineering-materials
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:fluid-mechanics-basics
+TARGET	skill:manufacturing-and-tolerances
+TARGET	skill:physics-mechanics
+TARGET	skill:strength-of-materials
+TARGET	skill:thermodynamics-basics
+SKILL	skill:cad-3d-modelling	CAD 3D modelling	beginner	25	70
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:engineering-materials	Engineering materials	intermediate	25	60
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:fluid-mechanics-basics	Fluid mechanics basics	intermediate	30	70
+SKILL	skill:manufacturing-and-tolerances	Manufacturing and tolerances	intermediate	25	60
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:strength-of-materials	Strength of materials	intermediate	35	90
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:strength-of-materials	skill:engineering-mechanics-statics
+EDGE	skill:engineering-materials	skill:physics-mechanics
+EDGE	skill:fluid-mechanics-basics	skill:calculus-for-engineering
+EDGE	skill:fluid-mechanics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:manufacturing-and-tolerances	skill:cad-3d-modelling
+EDGE	skill:manufacturing-and-tolerances	skill:engineering-materials
+RATING	skill:cad-3d-modelling	confident	none
+RATING	skill:engineering-materials	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:engineering-mechanics-statics	confident	none
+RATING	skill:fluid-mechanics-basics	confident	none
+RATING	skill:manufacturing-and-tolerances	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:strength-of-materials	practised	0.8
+RATING	skill:thermodynamics-basics	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:mechanical-design-engineer--hot
+COUNT	targets=9	closure=10	known=9	remaining=1	gates=0	gatesUnlock=0
+SUMMARY	1 skill(s) to go: 1 startable now, no gates left, longest chain 1 deep.
+HOURS	30	80
+WEEKS	2	4	20
+FRONTIER	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0
+GATES	
+CHAIN	skill:calculus-for-engineering|Calculus for engineering
+DEPTHS	skill:calculus-for-engineering|1
+REMAINING	skill:calculus-for-engineering|1|0|0|
+PULLED	skill:calculus-for-engineering|Calculus for engineering
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	1 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:renewable-energy-engineer--cold (cold, 8h/week)
+CASE	career:renewable-energy-engineer--cold	Renewable energy engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:energy-auditing
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:pv-system-design
+TARGET	skill:renewable-energy-systems
+TARGET	skill:thermodynamics-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:energy-auditing	Energy auditing and efficiency	intermediate	20	50
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:pv-system-design	Solar PV system design	intermediate	25	60
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:renewable-energy-systems	Renewable energy systems	intermediate	30	80
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:renewable-energy-systems	skill:thermodynamics-basics
+EDGE	skill:renewable-energy-systems	skill:circuit-analysis
+EDGE	skill:pv-system-design	skill:renewable-energy-systems
+EDGE	skill:pv-system-design	skill:power-electronics-basics
+EDGE	skill:energy-auditing	skill:renewable-energy-systems
+EDGE	skill:energy-auditing	skill:thermodynamics-basics
+WEEKLY	8
+#EXPECTED
+CASE	career:renewable-energy-engineer--cold
+COUNT	targets=10	closure=15	known=0	remaining=15	gates=3	gatesUnlock=10
+SUMMARY	15 skill(s) to go: 2 startable now, 3 gate(s) unblock 10, longest chain 5 deep.
+HOURS	455	1160
+WEEKS	57	145	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|12|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|0
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|12|1	skill:circuit-analysis|Circuit analysis|beginner|30|75|6|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|5|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:calculus-for-engineering|Calculus for engineering	skill:thermodynamics-basics|Thermodynamics and heat transfer	skill:renewable-energy-systems|Renewable energy systems	skill:energy-auditing|Energy auditing and efficiency
+DEPTHS	skill:analog-electronics|3	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:data-analysis-and-pandas|3	skill:energy-auditing|5	skill:engineering-mathematics|1	skill:physics-mechanics|2	skill:power-electronics-basics|4	skill:power-systems-basics|3	skill:probability-statistics|2	skill:programming-fundamentals|1	skill:pv-system-design|5	skill:python-programming|2	skill:renewable-energy-systems|4	skill:thermodynamics-basics|3
+REMAINING	skill:engineering-mathematics|1|12|1|	skill:programming-fundamentals|1|2|0|	skill:circuit-analysis|2|6|1|Engineering mathematics	skill:physics-mechanics|2|5|1|Engineering mathematics	skill:calculus-for-engineering|2|4|0|Engineering mathematics	skill:probability-statistics|2|1|0|Engineering mathematics	skill:python-programming|2|1|0|Programming fundamentals	skill:thermodynamics-basics|3|3|1|Calculus for engineering;Engineering physics: mechanics	skill:analog-electronics|3|2|0|Circuit analysis	skill:data-analysis-and-pandas|3|0|1|Probability and statistics;Python programming	skill:power-systems-basics|3|0|1|Circuit analysis;Engineering physics: mechanics	skill:renewable-energy-systems|4|2|1|Circuit analysis;Thermodynamics and heat transfer	skill:power-electronics-basics|4|1|1|Analog electronics;Circuit analysis	skill:energy-auditing|5|0|1|Renewable energy systems;Thermodynamics and heat transfer	skill:pv-system-design|5|0|1|Power electronics basics;Renewable energy systems
+PULLED	skill:analog-electronics|Analog electronics	skill:calculus-for-engineering|Calculus for engineering	skill:probability-statistics|Probability and statistics	skill:programming-fundamentals|Programming fundamentals	skill:python-programming|Python programming
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:renewable-energy-engineer--warm (warm, 12h/week)
+CASE	career:renewable-energy-engineer--warm	Renewable energy engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:energy-auditing
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:pv-system-design
+TARGET	skill:renewable-energy-systems
+TARGET	skill:thermodynamics-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:energy-auditing	Energy auditing and efficiency	intermediate	20	50
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:pv-system-design	Solar PV system design	intermediate	25	60
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:renewable-energy-systems	Renewable energy systems	intermediate	30	80
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:renewable-energy-systems	skill:thermodynamics-basics
+EDGE	skill:renewable-energy-systems	skill:circuit-analysis
+EDGE	skill:pv-system-design	skill:renewable-energy-systems
+EDGE	skill:pv-system-design	skill:power-electronics-basics
+EDGE	skill:energy-auditing	skill:renewable-energy-systems
+EDGE	skill:energy-auditing	skill:thermodynamics-basics
+RATING	skill:circuit-analysis	learning	none
+RATING	skill:data-analysis-and-pandas	practised	none
+RATING	skill:energy-auditing	learning	none
+RATING	skill:engineering-mathematics	practised	none
+RATING	skill:physics-mechanics	learning	none
+RATING	skill:power-electronics-basics	practised	none
+RATING	skill:power-systems-basics	learning	none
+RATING	skill:pv-system-design	practised	none
+RATING	skill:renewable-energy-systems	learning	none
+RATING	skill:thermodynamics-basics	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:renewable-energy-engineer--warm
+COUNT	targets=10	closure=15	known=5	remaining=10	gates=3	gatesUnlock=5
+SUMMARY	10 skill(s) to go: 5 startable now, 3 gate(s) unblock 5, longest chain 3 deep.
+HOURS	300	775
+WEEKS	25	65	12
+FRONTIER	skill:circuit-analysis|Circuit analysis|beginner|30|75|4|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|1|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0	skill:probability-statistics|Probability and statistics|intermediate|30|80|0|0
+GATES	skill:circuit-analysis|Circuit analysis|beginner|30|75|4|1	skill:physics-mechanics|Engineering physics: mechanics|beginner|35|80|1|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0
+CHAIN	skill:circuit-analysis|Circuit analysis	skill:renewable-energy-systems|Renewable energy systems	skill:energy-auditing|Energy auditing and efficiency
+DEPTHS	skill:analog-electronics|2	skill:calculus-for-engineering|1	skill:circuit-analysis|1	skill:energy-auditing|3	skill:physics-mechanics|1	skill:power-systems-basics|2	skill:probability-statistics|1	skill:programming-fundamentals|1	skill:python-programming|2	skill:renewable-energy-systems|2
+REMAINING	skill:circuit-analysis|1|4|1|	skill:physics-mechanics|1|1|1|	skill:programming-fundamentals|1|1|0|	skill:calculus-for-engineering|1|0|0|	skill:probability-statistics|1|0|0|	skill:renewable-energy-systems|2|1|1|Circuit analysis	skill:analog-electronics|2|0|0|Circuit analysis	skill:power-systems-basics|2|0|1|Circuit analysis;Engineering physics: mechanics	skill:python-programming|2|0|0|Programming fundamentals	skill:energy-auditing|3|0|1|Renewable energy systems
+PULLED	skill:analog-electronics|Analog electronics	skill:calculus-for-engineering|Calculus for engineering	skill:probability-statistics|Probability and statistics	skill:programming-fundamentals|Programming fundamentals	skill:python-programming|Python programming
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:renewable-energy-engineer--hot (hot, 20h/week)
+CASE	career:renewable-energy-engineer--hot	Renewable energy engineer
+TARGET	skill:circuit-analysis
+TARGET	skill:data-analysis-and-pandas
+TARGET	skill:energy-auditing
+TARGET	skill:engineering-mathematics
+TARGET	skill:physics-mechanics
+TARGET	skill:power-electronics-basics
+TARGET	skill:power-systems-basics
+TARGET	skill:pv-system-design
+TARGET	skill:renewable-energy-systems
+TARGET	skill:thermodynamics-basics
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:energy-auditing	Energy auditing and efficiency	intermediate	20	50
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:power-electronics-basics	Power electronics basics	advanced	30	80
+SKILL	skill:power-systems-basics	Power systems and machines	advanced	30	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:pv-system-design	Solar PV system design	intermediate	25	60
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:renewable-energy-systems	Renewable energy systems	intermediate	30	80
+SKILL	skill:thermodynamics-basics	Thermodynamics and heat transfer	intermediate	30	75
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:thermodynamics-basics	skill:physics-mechanics
+EDGE	skill:thermodynamics-basics	skill:calculus-for-engineering
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:power-electronics-basics	skill:analog-electronics
+EDGE	skill:power-electronics-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:circuit-analysis
+EDGE	skill:power-systems-basics	skill:physics-mechanics
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:renewable-energy-systems	skill:thermodynamics-basics
+EDGE	skill:renewable-energy-systems	skill:circuit-analysis
+EDGE	skill:pv-system-design	skill:renewable-energy-systems
+EDGE	skill:pv-system-design	skill:power-electronics-basics
+EDGE	skill:energy-auditing	skill:renewable-energy-systems
+EDGE	skill:energy-auditing	skill:thermodynamics-basics
+RATING	skill:circuit-analysis	confident	none
+RATING	skill:data-analysis-and-pandas	confident	none
+RATING	skill:energy-auditing	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:power-electronics-basics	confident	none
+RATING	skill:power-systems-basics	confident	none
+RATING	skill:pv-system-design	confident	none
+RATING	skill:renewable-energy-systems	practised	0.8
+RATING	skill:thermodynamics-basics	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:renewable-energy-engineer--hot
+COUNT	targets=10	closure=15	known=10	remaining=5	gates=1	gatesUnlock=1
+SUMMARY	5 skill(s) to go: 4 startable now, 1 gate(s) unblock 1, longest chain 2 deep.
+HOURS	155	410
+WEEKS	8	21	20
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0	skill:analog-electronics|Analog electronics|intermediate|35|90|0|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|0|0	skill:probability-statistics|Probability and statistics|intermediate|30|80|0|0
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|1|0
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:python-programming|Python programming
+DEPTHS	skill:analog-electronics|1	skill:calculus-for-engineering|1	skill:probability-statistics|1	skill:programming-fundamentals|1	skill:python-programming|2
+REMAINING	skill:programming-fundamentals|1|1|0|	skill:analog-electronics|1|0|0|	skill:calculus-for-engineering|1|0|0|	skill:probability-statistics|1|0|0|	skill:python-programming|2|0|0|Programming fundamentals
+PULLED	skill:analog-electronics|Analog electronics	skill:calculus-for-engineering|Calculus for engineering	skill:probability-statistics|Probability and statistics	skill:programming-fundamentals|Programming fundamentals	skill:python-programming|Python programming
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:robotics-engineer--cold (cold, 8h/week)
+CASE	career:robotics-engineer--cold	Robotics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-vision-basics
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:physics-mechanics
+TARGET	skill:programming-fundamentals
+TARGET	skill:robot-kinematics
+TARGET	skill:robotics-ros2
+TARGET	skill:sensors-and-actuators
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-vision-basics	Computer vision basics	advanced	35	90
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:robot-kinematics	Robot kinematics	advanced	35	90
+SKILL	skill:robotics-ros2	ROS 2 and robot software	advanced	40	100
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:computer-vision-basics	skill:deep-learning-basics
+EDGE	skill:computer-vision-basics	skill:linear-algebra
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:robot-kinematics	skill:linear-algebra
+EDGE	skill:robot-kinematics	skill:physics-mechanics
+EDGE	skill:robotics-ros2	skill:programming-fundamentals
+EDGE	skill:robotics-ros2	skill:operating-systems-and-linux
+EDGE	skill:robotics-ros2	skill:control-systems-fundamentals
+EDGE	skill:robot-kinematics	skill:engineering-mechanics-statics
+WEEKLY	8
+#EXPECTED
+CASE	career:robotics-engineer--cold
+COUNT	targets=13	closure=22	known=0	remaining=22	gates=3	gatesUnlock=19
+SUMMARY	22 skill(s) to go: 2 startable now, 3 gate(s) unblock 19, longest chain 6 deep.
+HOURS	765	1910
+WEEKS	96	239	8
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|18|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|9|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|18|1	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|9|1	skill:circuit-analysis|Circuit analysis|beginner|30|75|7|1
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:probability-statistics|Probability and statistics	skill:data-analysis-and-pandas|Data analysis and pandas	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:deep-learning-basics|Deep learning basics	skill:computer-vision-basics|Computer vision basics
+DEPTHS	skill:analog-electronics|3	skill:calculus-for-engineering|2	skill:circuit-analysis|2	skill:computer-vision-basics|6	skill:control-systems-fundamentals|4	skill:data-analysis-and-pandas|3	skill:deep-learning-basics|5	skill:digital-logic-design|3	skill:embedded-c|3	skill:engineering-mathematics|1	skill:engineering-mechanics-statics|3	skill:linear-algebra|2	skill:machine-learning-fundamentals|4	skill:operating-systems-and-linux|2	skill:physics-mechanics|2	skill:probability-statistics|2	skill:programming-fundamentals|1	skill:python-programming|2	skill:robot-kinematics|4	skill:robotics-ros2|5	skill:sensors-and-actuators|4	skill:signal-processing-basics|3
+REMAINING	skill:engineering-mathematics|1|18|1|	skill:programming-fundamentals|1|9|1|	skill:circuit-analysis|2|7|1|Engineering mathematics	skill:calculus-for-engineering|2|5|0|Engineering mathematics	skill:linear-algebra|2|4|0|Engineering mathematics	skill:probability-statistics|2|4|0|Engineering mathematics	skill:python-programming|2|4|0|Programming fundamentals	skill:physics-mechanics|2|2|1|Engineering mathematics	skill:operating-systems-and-linux|2|1|0|Programming fundamentals	skill:data-analysis-and-pandas|3|3|0|Probability and statistics;Python programming	skill:signal-processing-basics|3|2|0|Calculus for engineering;Circuit analysis	skill:embedded-c|3|1|1|Circuit analysis;Programming fundamentals	skill:engineering-mechanics-statics|3|1|1|Engineering physics: mechanics	skill:analog-electronics|3|0|1|Circuit analysis	skill:digital-logic-design|3|0|1|Circuit analysis	skill:machine-learning-fundamentals|4|2|0|Data analysis and pandas;Linear algebra;Probability and statistics;Python programming	skill:control-systems-fundamentals|4|1|1|Calculus for engineering;Circuit analysis;Signals and systems basics	skill:robot-kinematics|4|0|1|Engineering physics: mechanics;Linear algebra;Statics and equilibrium	skill:sensors-and-actuators|4|0|1|Circuit analysis;Embedded C and microcontrollers	skill:deep-learning-basics|5|1|0|Calculus for engineering;Linear algebra;Machine learning fundamentals	skill:robotics-ros2|5|0|1|Control systems fundamentals;Operating systems and Linux;Programming fundamentals	skill:computer-vision-basics|6|0|1|Deep learning basics;Linear algebra
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:data-analysis-and-pandas|Data analysis and pandas	skill:deep-learning-basics|Deep learning basics	skill:linear-algebra|Linear algebra	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:probability-statistics|Probability and statistics	skill:python-programming|Python programming	skill:signal-processing-basics|Signals and systems basics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	9 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:robotics-engineer--warm (warm, 12h/week)
+CASE	career:robotics-engineer--warm	Robotics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-vision-basics
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:physics-mechanics
+TARGET	skill:programming-fundamentals
+TARGET	skill:robot-kinematics
+TARGET	skill:robotics-ros2
+TARGET	skill:sensors-and-actuators
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-vision-basics	Computer vision basics	advanced	35	90
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:robot-kinematics	Robot kinematics	advanced	35	90
+SKILL	skill:robotics-ros2	ROS 2 and robot software	advanced	40	100
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:computer-vision-basics	skill:deep-learning-basics
+EDGE	skill:computer-vision-basics	skill:linear-algebra
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:robot-kinematics	skill:linear-algebra
+EDGE	skill:robot-kinematics	skill:physics-mechanics
+EDGE	skill:robotics-ros2	skill:programming-fundamentals
+EDGE	skill:robotics-ros2	skill:operating-systems-and-linux
+EDGE	skill:robotics-ros2	skill:control-systems-fundamentals
+EDGE	skill:robot-kinematics	skill:engineering-mechanics-statics
+RATING	skill:analog-electronics	learning	none
+RATING	skill:circuit-analysis	practised	none
+RATING	skill:computer-vision-basics	learning	none
+RATING	skill:control-systems-fundamentals	practised	none
+RATING	skill:digital-logic-design	learning	none
+RATING	skill:embedded-c	practised	none
+RATING	skill:engineering-mathematics	learning	none
+RATING	skill:engineering-mechanics-statics	practised	none
+RATING	skill:physics-mechanics	learning	none
+RATING	skill:programming-fundamentals	practised	none
+RATING	skill:robot-kinematics	learning	none
+RATING	skill:robotics-ros2	practised	none
+RATING	skill:sensors-and-actuators	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:robotics-engineer--warm
+COUNT	targets=13	closure=22	known=6	remaining=16	gates=3	gatesUnlock=8
+SUMMARY	16 skill(s) to go: 6 startable now, 3 gate(s) unblock 8, longest chain 6 deep.
+HOURS	555	1385
+WEEKS	47	116	12
+FRONTIER	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|10|1	skill:python-programming|Python programming|beginner|30|80|4|0	skill:analog-electronics|Analog electronics|intermediate|35|90|0|1	skill:digital-logic-design|Digital logic design|intermediate|30|75|0|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|0|0	skill:sensors-and-actuators|Sensors and actuators|intermediate|30|70|0|1
+GATES	skill:engineering-mathematics|Engineering mathematics|beginner|40|100|10|1	skill:linear-algebra|Linear algebra|intermediate|30|70|4|0	skill:probability-statistics|Probability and statistics|intermediate|30|80|4|0
+CHAIN	skill:engineering-mathematics|Engineering mathematics	skill:probability-statistics|Probability and statistics	skill:data-analysis-and-pandas|Data analysis and pandas	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:deep-learning-basics|Deep learning basics	skill:computer-vision-basics|Computer vision basics
+DEPTHS	skill:analog-electronics|1	skill:calculus-for-engineering|2	skill:computer-vision-basics|6	skill:data-analysis-and-pandas|3	skill:deep-learning-basics|5	skill:digital-logic-design|1	skill:engineering-mathematics|1	skill:linear-algebra|2	skill:machine-learning-fundamentals|4	skill:operating-systems-and-linux|1	skill:physics-mechanics|2	skill:probability-statistics|2	skill:python-programming|1	skill:robot-kinematics|3	skill:sensors-and-actuators|1	skill:signal-processing-basics|3
+REMAINING	skill:engineering-mathematics|1|10|1|	skill:python-programming|1|4|0|	skill:analog-electronics|1|0|1|	skill:digital-logic-design|1|0|1|	skill:operating-systems-and-linux|1|0|0|	skill:sensors-and-actuators|1|0|1|	skill:linear-algebra|2|4|0|Engineering mathematics	skill:probability-statistics|2|4|0|Engineering mathematics	skill:calculus-for-engineering|2|3|0|Engineering mathematics	skill:physics-mechanics|2|1|1|Engineering mathematics	skill:data-analysis-and-pandas|3|3|0|Probability and statistics;Python programming	skill:robot-kinematics|3|0|1|Engineering physics: mechanics;Linear algebra	skill:signal-processing-basics|3|0|0|Calculus for engineering	skill:machine-learning-fundamentals|4|2|0|Data analysis and pandas;Linear algebra;Probability and statistics;Python programming	skill:deep-learning-basics|5|1|0|Calculus for engineering;Linear algebra;Machine learning fundamentals	skill:computer-vision-basics|6|0|1|Deep learning basics;Linear algebra
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:data-analysis-and-pandas|Data analysis and pandas	skill:deep-learning-basics|Deep learning basics	skill:linear-algebra|Linear algebra	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:probability-statistics|Probability and statistics	skill:python-programming|Python programming	skill:signal-processing-basics|Signals and systems basics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	9 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:robotics-engineer--hot (hot, 20h/week)
+CASE	career:robotics-engineer--hot	Robotics engineer
+TARGET	skill:analog-electronics
+TARGET	skill:circuit-analysis
+TARGET	skill:computer-vision-basics
+TARGET	skill:control-systems-fundamentals
+TARGET	skill:digital-logic-design
+TARGET	skill:embedded-c
+TARGET	skill:engineering-mathematics
+TARGET	skill:engineering-mechanics-statics
+TARGET	skill:physics-mechanics
+TARGET	skill:programming-fundamentals
+TARGET	skill:robot-kinematics
+TARGET	skill:robotics-ros2
+TARGET	skill:sensors-and-actuators
+SKILL	skill:analog-electronics	Analog electronics	intermediate	35	90
+SKILL	skill:calculus-for-engineering	Calculus for engineering	intermediate	30	80
+SKILL	skill:circuit-analysis	Circuit analysis	beginner	30	75
+SKILL	skill:computer-vision-basics	Computer vision basics	advanced	35	90
+SKILL	skill:control-systems-fundamentals	Control systems fundamentals	advanced	40	100
+SKILL	skill:data-analysis-and-pandas	Data analysis and pandas	intermediate	30	70
+SKILL	skill:deep-learning-basics	Deep learning basics	advanced	50	130
+SKILL	skill:digital-logic-design	Digital logic design	intermediate	30	75
+SKILL	skill:embedded-c	Embedded C and microcontrollers	intermediate	40	100
+SKILL	skill:engineering-mathematics	Engineering mathematics	beginner	40	100
+SKILL	skill:engineering-mechanics-statics	Statics and equilibrium	beginner	30	70
+SKILL	skill:linear-algebra	Linear algebra	intermediate	30	70
+SKILL	skill:machine-learning-fundamentals	Machine learning fundamentals	advanced	50	130
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:physics-mechanics	Engineering physics: mechanics	beginner	35	80
+SKILL	skill:probability-statistics	Probability and statistics	intermediate	30	80
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:python-programming	Python programming	beginner	30	80
+SKILL	skill:robot-kinematics	Robot kinematics	advanced	35	90
+SKILL	skill:robotics-ros2	ROS 2 and robot software	advanced	40	100
+SKILL	skill:sensors-and-actuators	Sensors and actuators	intermediate	30	70
+SKILL	skill:signal-processing-basics	Signals and systems basics	advanced	35	80
+EDGE	skill:calculus-for-engineering	skill:engineering-mathematics
+EDGE	skill:linear-algebra	skill:engineering-mathematics
+EDGE	skill:probability-statistics	skill:engineering-mathematics
+EDGE	skill:physics-mechanics	skill:engineering-mathematics
+EDGE	skill:engineering-mechanics-statics	skill:physics-mechanics
+EDGE	skill:circuit-analysis	skill:engineering-mathematics
+EDGE	skill:analog-electronics	skill:circuit-analysis
+EDGE	skill:digital-logic-design	skill:circuit-analysis
+EDGE	skill:signal-processing-basics	skill:calculus-for-engineering
+EDGE	skill:signal-processing-basics	skill:circuit-analysis
+EDGE	skill:control-systems-fundamentals	skill:calculus-for-engineering
+EDGE	skill:control-systems-fundamentals	skill:signal-processing-basics
+EDGE	skill:control-systems-fundamentals	skill:circuit-analysis
+EDGE	skill:python-programming	skill:programming-fundamentals
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:data-analysis-and-pandas	skill:python-programming
+EDGE	skill:data-analysis-and-pandas	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:python-programming
+EDGE	skill:machine-learning-fundamentals	skill:probability-statistics
+EDGE	skill:machine-learning-fundamentals	skill:linear-algebra
+EDGE	skill:machine-learning-fundamentals	skill:data-analysis-and-pandas
+EDGE	skill:deep-learning-basics	skill:machine-learning-fundamentals
+EDGE	skill:deep-learning-basics	skill:linear-algebra
+EDGE	skill:deep-learning-basics	skill:calculus-for-engineering
+EDGE	skill:computer-vision-basics	skill:deep-learning-basics
+EDGE	skill:computer-vision-basics	skill:linear-algebra
+EDGE	skill:embedded-c	skill:programming-fundamentals
+EDGE	skill:embedded-c	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:circuit-analysis
+EDGE	skill:sensors-and-actuators	skill:embedded-c
+EDGE	skill:robot-kinematics	skill:linear-algebra
+EDGE	skill:robot-kinematics	skill:physics-mechanics
+EDGE	skill:robotics-ros2	skill:programming-fundamentals
+EDGE	skill:robotics-ros2	skill:operating-systems-and-linux
+EDGE	skill:robotics-ros2	skill:control-systems-fundamentals
+EDGE	skill:robot-kinematics	skill:engineering-mechanics-statics
+RATING	skill:analog-electronics	confident	none
+RATING	skill:circuit-analysis	confident	none
+RATING	skill:computer-vision-basics	confident	none
+RATING	skill:control-systems-fundamentals	confident	none
+RATING	skill:digital-logic-design	confident	none
+RATING	skill:embedded-c	confident	none
+RATING	skill:engineering-mathematics	confident	none
+RATING	skill:engineering-mechanics-statics	confident	none
+RATING	skill:physics-mechanics	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:robot-kinematics	confident	none
+RATING	skill:robotics-ros2	practised	0.8
+RATING	skill:sensors-and-actuators	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:robotics-engineer--hot
+COUNT	targets=13	closure=22	known=13	remaining=9	gates=3	gatesUnlock=4
+SUMMARY	9 skill(s) to go: 5 startable now, 3 gate(s) unblock 4, longest chain 4 deep.
+HOURS	315	790
+WEEKS	16	40	20
+FRONTIER	skill:probability-statistics|Probability and statistics|intermediate|30|80|3|0	skill:python-programming|Python programming|beginner|30|80|3|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|2|0	skill:linear-algebra|Linear algebra|intermediate|30|70|2|0	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|0|0
+GATES	skill:probability-statistics|Probability and statistics|intermediate|30|80|3|0	skill:python-programming|Python programming|beginner|30|80|3|0	skill:calculus-for-engineering|Calculus for engineering|intermediate|30|80|2|0
+CHAIN	skill:probability-statistics|Probability and statistics	skill:data-analysis-and-pandas|Data analysis and pandas	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:deep-learning-basics|Deep learning basics
+DEPTHS	skill:calculus-for-engineering|1	skill:data-analysis-and-pandas|2	skill:deep-learning-basics|4	skill:linear-algebra|1	skill:machine-learning-fundamentals|3	skill:operating-systems-and-linux|1	skill:probability-statistics|1	skill:python-programming|1	skill:signal-processing-basics|2
+REMAINING	skill:probability-statistics|1|3|0|	skill:python-programming|1|3|0|	skill:calculus-for-engineering|1|2|0|	skill:linear-algebra|1|2|0|	skill:operating-systems-and-linux|1|0|0|	skill:data-analysis-and-pandas|2|2|0|Probability and statistics;Python programming	skill:signal-processing-basics|2|0|0|Calculus for engineering	skill:machine-learning-fundamentals|3|1|0|Data analysis and pandas;Linear algebra;Probability and statistics;Python programming	skill:deep-learning-basics|4|0|0|Calculus for engineering;Linear algebra;Machine learning fundamentals
+PULLED	skill:calculus-for-engineering|Calculus for engineering	skill:data-analysis-and-pandas|Data analysis and pandas	skill:deep-learning-basics|Deep learning basics	skill:linear-algebra|Linear algebra	skill:machine-learning-fundamentals|Machine learning fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:probability-statistics|Probability and statistics	skill:python-programming|Python programming	skill:signal-processing-basics|Signals and systems basics
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	9 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:software-engineer--cold (cold, 8h/week)
+CASE	career:software-engineer--cold	Software engineer
+TARGET	skill:algorithms-in-practice
+TARGET	skill:api-design-and-integration
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-structures-and-algorithms
+TARGET	skill:databases-and-sql
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:software-design-patterns
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+SKILL	skill:algorithms-in-practice	Algorithms in practice	intermediate	40	100
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:data-structures-and-algorithms	Data structures and algorithms	intermediate	60	150
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:software-design-patterns	Software design and architecture	intermediate	40	100
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:data-structures-and-algorithms	skill:programming-fundamentals
+EDGE	skill:algorithms-in-practice	skill:data-structures-and-algorithms
+EDGE	skill:software-design-patterns	skill:programming-fundamentals
+EDGE	skill:software-design-patterns	skill:testing-and-debugging
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+WEEKLY	8
+#EXPECTED
+CASE	career:software-engineer--cold
+COUNT	targets=11	closure=13	known=0	remaining=13	gates=3	gatesUnlock=9
+SUMMARY	13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep.
+HOURS	410	1030
+WEEKS	52	129	8
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|11|1	skill:version-control-git|Version control with Git|beginner|10|30|0|1
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|11|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|4|1	skill:computer-networks|Computer networks|intermediate|30|80|3|0
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:secure-coding|Secure coding practices
+DEPTHS	skill:algorithms-in-practice|3	skill:api-design-and-integration|3	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:cybersecurity-fundamentals|4	skill:data-structures-and-algorithms|2	skill:databases-and-sql|2	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:secure-coding|5	skill:software-design-patterns|3	skill:testing-and-debugging|2	skill:version-control-git|1
+REMAINING	skill:programming-fundamentals|1|11|1|	skill:version-control-git|1|0|1|	skill:operating-systems-and-linux|2|4|1|Programming fundamentals	skill:data-structures-and-algorithms|2|1|1|Programming fundamentals	skill:databases-and-sql|2|1|1|Programming fundamentals	skill:testing-and-debugging|2|1|1|Programming fundamentals	skill:computer-networks|3|3|0|Operating systems and Linux	skill:algorithms-in-practice|3|0|1|Data structures and algorithms	skill:api-design-and-integration|3|0|1|Databases and SQL;Programming fundamentals	skill:software-design-patterns|3|0|1|Programming fundamentals;Testing and debugging	skill:cybersecurity-fundamentals|4|1|0|Computer networks;Operating systems and Linux	skill:cloud-fundamentals|4|0|1|Computer networks;Operating systems and Linux	skill:secure-coding|5|0|1|Cybersecurity fundamentals;Programming fundamentals
+PULLED	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:software-engineer--warm (warm, 12h/week)
+CASE	career:software-engineer--warm	Software engineer
+TARGET	skill:algorithms-in-practice
+TARGET	skill:api-design-and-integration
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-structures-and-algorithms
+TARGET	skill:databases-and-sql
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:software-design-patterns
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+SKILL	skill:algorithms-in-practice	Algorithms in practice	intermediate	40	100
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:data-structures-and-algorithms	Data structures and algorithms	intermediate	60	150
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:software-design-patterns	Software design and architecture	intermediate	40	100
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:data-structures-and-algorithms	skill:programming-fundamentals
+EDGE	skill:algorithms-in-practice	skill:data-structures-and-algorithms
+EDGE	skill:software-design-patterns	skill:programming-fundamentals
+EDGE	skill:software-design-patterns	skill:testing-and-debugging
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:algorithms-in-practice	learning	none
+RATING	skill:api-design-and-integration	practised	none
+RATING	skill:cloud-fundamentals	learning	none
+RATING	skill:data-structures-and-algorithms	practised	none
+RATING	skill:databases-and-sql	learning	none
+RATING	skill:operating-systems-and-linux	practised	none
+RATING	skill:programming-fundamentals	learning	none
+RATING	skill:secure-coding	practised	none
+RATING	skill:software-design-patterns	learning	none
+RATING	skill:testing-and-debugging	practised	none
+RATING	skill:version-control-git	learning	none
+WEEKLY	12
+#EXPECTED
+CASE	career:software-engineer--warm
+COUNT	targets=11	closure=13	known=5	remaining=8	gates=2	gatesUnlock=4
+SUMMARY	8 skill(s) to go: 4 startable now, 2 gate(s) unblock 4, longest chain 2 deep.
+HOURS	235	610
+WEEKS	20	51	12
+FRONTIER	skill:computer-networks|Computer networks|intermediate|30|80|2|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|1	skill:algorithms-in-practice|Algorithms in practice|intermediate|40|100|0|1	skill:version-control-git|Version control with Git|beginner|10|30|0|1
+GATES	skill:computer-networks|Computer networks|intermediate|30|80|2|0	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|2|1
+CHAIN	skill:computer-networks|Computer networks	skill:cloud-fundamentals|Cloud fundamentals
+DEPTHS	skill:algorithms-in-practice|1	skill:cloud-fundamentals|2	skill:computer-networks|1	skill:cybersecurity-fundamentals|2	skill:databases-and-sql|2	skill:programming-fundamentals|1	skill:software-design-patterns|2	skill:version-control-git|1
+REMAINING	skill:computer-networks|1|2|0|	skill:programming-fundamentals|1|2|1|	skill:algorithms-in-practice|1|0|1|	skill:version-control-git|1|0|1|	skill:cloud-fundamentals|2|0|1|Computer networks	skill:cybersecurity-fundamentals|2|0|0|Computer networks	skill:databases-and-sql|2|0|1|Programming fundamentals	skill:software-design-patterns|2|0|1|Programming fundamentals
+PULLED	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:software-engineer--hot (hot, 20h/week)
+CASE	career:software-engineer--hot	Software engineer
+TARGET	skill:algorithms-in-practice
+TARGET	skill:api-design-and-integration
+TARGET	skill:cloud-fundamentals
+TARGET	skill:data-structures-and-algorithms
+TARGET	skill:databases-and-sql
+TARGET	skill:operating-systems-and-linux
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:software-design-patterns
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+SKILL	skill:algorithms-in-practice	Algorithms in practice	intermediate	40	100
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:data-structures-and-algorithms	Data structures and algorithms	intermediate	60	150
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:software-design-patterns	Software design and architecture	intermediate	40	100
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:data-structures-and-algorithms	skill:programming-fundamentals
+EDGE	skill:algorithms-in-practice	skill:data-structures-and-algorithms
+EDGE	skill:software-design-patterns	skill:programming-fundamentals
+EDGE	skill:software-design-patterns	skill:testing-and-debugging
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+RATING	skill:algorithms-in-practice	confident	none
+RATING	skill:api-design-and-integration	confident	none
+RATING	skill:cloud-fundamentals	confident	none
+RATING	skill:data-structures-and-algorithms	confident	none
+RATING	skill:databases-and-sql	confident	none
+RATING	skill:operating-systems-and-linux	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:secure-coding	confident	none
+RATING	skill:software-design-patterns	confident	none
+RATING	skill:testing-and-debugging	practised	0.8
+RATING	skill:version-control-git	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:software-engineer--hot
+COUNT	targets=11	closure=13	known=11	remaining=2	gates=1	gatesUnlock=1
+SUMMARY	2 skill(s) to go: 1 startable now, 1 gate(s) unblock 1, longest chain 2 deep.
+HOURS	60	160
+WEEKS	3	8	20
+FRONTIER	skill:computer-networks|Computer networks|intermediate|30|80|1|0
+GATES	skill:computer-networks|Computer networks|intermediate|30|80|1|0
+CHAIN	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals
+DEPTHS	skill:computer-networks|1	skill:cybersecurity-fundamentals|2
+REMAINING	skill:computer-networks|1|1|0|	skill:cybersecurity-fundamentals|2|0|0|Computer networks
+PULLED	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	2 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:web-mobile-developer--cold (cold, 8h/week)
+CASE	career:web-mobile-developer--cold	Web and mobile developer
+TARGET	skill:api-design-and-integration
+TARGET	skill:mobile-app-development
+TARGET	skill:monitoring-and-observability
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+TARGET	skill:web-frontend-development
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:mobile-app-development	Mobile app development	intermediate	40	100
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+SKILL	skill:web-frontend-development	Web frontend development	intermediate	50	120
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:web-frontend-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:web-frontend-development
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+WEEKLY	8
+#EXPECTED
+CASE	career:web-mobile-developer--cold
+COUNT	targets=8	closure=13	known=0	remaining=13	gates=3	gatesUnlock=9
+SUMMARY	13 skill(s) to go: 2 startable now, 3 gate(s) unblock 9, longest chain 5 deep.
+HOURS	380	950
+WEEKS	48	119	8
+FRONTIER	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|11|1	skill:version-control-git|Version control with Git|beginner|10|30|0|1
+GATES	skill:programming-fundamentals|Programming fundamentals|beginner|30|80|11|1	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|5|0	skill:computer-networks|Computer networks|intermediate|30|80|4|0
+CHAIN	skill:programming-fundamentals|Programming fundamentals	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cloud-fundamentals|Cloud fundamentals	skill:monitoring-and-observability|Monitoring and observability
+DEPTHS	skill:api-design-and-integration|3	skill:cloud-fundamentals|4	skill:computer-networks|3	skill:cybersecurity-fundamentals|4	skill:databases-and-sql|2	skill:mobile-app-development|3	skill:monitoring-and-observability|5	skill:operating-systems-and-linux|2	skill:programming-fundamentals|1	skill:secure-coding|5	skill:testing-and-debugging|2	skill:version-control-git|1	skill:web-frontend-development|2
+REMAINING	skill:programming-fundamentals|1|11|1|	skill:version-control-git|1|0|1|	skill:operating-systems-and-linux|2|5|0|Programming fundamentals	skill:databases-and-sql|2|1|0|Programming fundamentals	skill:web-frontend-development|2|1|1|Programming fundamentals	skill:testing-and-debugging|2|0|1|Programming fundamentals	skill:computer-networks|3|4|0|Operating systems and Linux	skill:api-design-and-integration|3|0|1|Databases and SQL;Programming fundamentals	skill:mobile-app-development|3|0|1|Programming fundamentals;Web frontend development	skill:cloud-fundamentals|4|1|0|Computer networks;Operating systems and Linux	skill:cybersecurity-fundamentals|4|1|0|Computer networks;Operating systems and Linux	skill:monitoring-and-observability|5|0|1|Cloud fundamentals;Operating systems and Linux	skill:secure-coding|5|0|1|Cybersecurity fundamentals;Programming fundamentals
+PULLED	skill:cloud-fundamentals|Cloud fundamentals	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:databases-and-sql|Databases and SQL	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:web-mobile-developer--warm (warm, 12h/week)
+CASE	career:web-mobile-developer--warm	Web and mobile developer
+TARGET	skill:api-design-and-integration
+TARGET	skill:mobile-app-development
+TARGET	skill:monitoring-and-observability
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+TARGET	skill:web-frontend-development
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:mobile-app-development	Mobile app development	intermediate	40	100
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+SKILL	skill:web-frontend-development	Web frontend development	intermediate	50	120
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:web-frontend-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:web-frontend-development
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+RATING	skill:api-design-and-integration	learning	none
+RATING	skill:mobile-app-development	practised	none
+RATING	skill:monitoring-and-observability	learning	none
+RATING	skill:programming-fundamentals	practised	none
+RATING	skill:secure-coding	learning	none
+RATING	skill:testing-and-debugging	practised	none
+RATING	skill:version-control-git	learning	none
+RATING	skill:web-frontend-development	practised	none
+WEEKLY	12
+#EXPECTED
+CASE	career:web-mobile-developer--warm
+COUNT	targets=8	closure=13	known=4	remaining=9	gates=3	gatesUnlock=3
+SUMMARY	9 skill(s) to go: 3 startable now, 3 gate(s) unblock 3, longest chain 4 deep.
+HOURS	230	580
+WEEKS	20	49	12
+FRONTIER	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|5|0	skill:databases-and-sql|Databases and SQL|intermediate|30|80|1|0	skill:version-control-git|Version control with Git|beginner|10|30|0|1
+GATES	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|5|0	skill:computer-networks|Computer networks|intermediate|30|80|4|0	skill:cloud-fundamentals|Cloud fundamentals|intermediate|25|60|1|0
+CHAIN	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cloud-fundamentals|Cloud fundamentals	skill:monitoring-and-observability|Monitoring and observability
+DEPTHS	skill:api-design-and-integration|2	skill:cloud-fundamentals|3	skill:computer-networks|2	skill:cybersecurity-fundamentals|3	skill:databases-and-sql|1	skill:monitoring-and-observability|4	skill:operating-systems-and-linux|1	skill:secure-coding|4	skill:version-control-git|1
+REMAINING	skill:operating-systems-and-linux|1|5|0|	skill:databases-and-sql|1|1|0|	skill:version-control-git|1|0|1|	skill:computer-networks|2|4|0|Operating systems and Linux	skill:api-design-and-integration|2|0|1|Databases and SQL	skill:cloud-fundamentals|3|1|0|Computer networks;Operating systems and Linux	skill:cybersecurity-fundamentals|3|1|0|Computer networks;Operating systems and Linux	skill:monitoring-and-observability|4|0|1|Cloud fundamentals;Operating systems and Linux	skill:secure-coding|4|0|1|Cybersecurity fundamentals
+PULLED	skill:cloud-fundamentals|Cloud fundamentals	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:databases-and-sql|Databases and SQL	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+#case career:web-mobile-developer--hot (hot, 20h/week)
+CASE	career:web-mobile-developer--hot	Web and mobile developer
+TARGET	skill:api-design-and-integration
+TARGET	skill:mobile-app-development
+TARGET	skill:monitoring-and-observability
+TARGET	skill:programming-fundamentals
+TARGET	skill:secure-coding
+TARGET	skill:testing-and-debugging
+TARGET	skill:version-control-git
+TARGET	skill:web-frontend-development
+SKILL	skill:api-design-and-integration	API design and integration	intermediate	25	60
+SKILL	skill:cloud-fundamentals	Cloud fundamentals	intermediate	25	60
+SKILL	skill:computer-networks	Computer networks	intermediate	30	80
+SKILL	skill:cybersecurity-fundamentals	Cybersecurity fundamentals	intermediate	30	80
+SKILL	skill:databases-and-sql	Databases and SQL	intermediate	30	80
+SKILL	skill:mobile-app-development	Mobile app development	intermediate	40	100
+SKILL	skill:monitoring-and-observability	Monitoring and observability	intermediate	20	50
+SKILL	skill:operating-systems-and-linux	Operating systems and Linux	intermediate	30	70
+SKILL	skill:programming-fundamentals	Programming fundamentals	beginner	30	80
+SKILL	skill:secure-coding	Secure coding practices	intermediate	30	70
+SKILL	skill:testing-and-debugging	Testing and debugging	intermediate	30	70
+SKILL	skill:version-control-git	Version control with Git	beginner	10	30
+SKILL	skill:web-frontend-development	Web frontend development	intermediate	50	120
+EDGE	skill:testing-and-debugging	skill:programming-fundamentals
+EDGE	skill:databases-and-sql	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:programming-fundamentals
+EDGE	skill:api-design-and-integration	skill:databases-and-sql
+EDGE	skill:web-frontend-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:programming-fundamentals
+EDGE	skill:mobile-app-development	skill:web-frontend-development
+EDGE	skill:operating-systems-and-linux	skill:programming-fundamentals
+EDGE	skill:computer-networks	skill:operating-systems-and-linux
+EDGE	skill:cybersecurity-fundamentals	skill:computer-networks
+EDGE	skill:cybersecurity-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:secure-coding	skill:programming-fundamentals
+EDGE	skill:secure-coding	skill:cybersecurity-fundamentals
+EDGE	skill:cloud-fundamentals	skill:operating-systems-and-linux
+EDGE	skill:cloud-fundamentals	skill:computer-networks
+EDGE	skill:monitoring-and-observability	skill:cloud-fundamentals
+EDGE	skill:monitoring-and-observability	skill:operating-systems-and-linux
+RATING	skill:api-design-and-integration	confident	none
+RATING	skill:mobile-app-development	confident	none
+RATING	skill:monitoring-and-observability	confident	none
+RATING	skill:programming-fundamentals	confident	none
+RATING	skill:secure-coding	confident	none
+RATING	skill:testing-and-debugging	confident	none
+RATING	skill:version-control-git	practised	0.8
+RATING	skill:web-frontend-development	practised	0.8
+WEEKLY	20
+#EXPECTED
+CASE	career:web-mobile-developer--hot
+COUNT	targets=8	closure=13	known=8	remaining=5	gates=2	gatesUnlock=2
+SUMMARY	5 skill(s) to go: 2 startable now, 2 gate(s) unblock 2, longest chain 3 deep.
+HOURS	145	370
+WEEKS	8	19	20
+FRONTIER	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|3|0	skill:databases-and-sql|Databases and SQL|intermediate|30|80|0|0
+GATES	skill:operating-systems-and-linux|Operating systems and Linux|intermediate|30|70|3|0	skill:computer-networks|Computer networks|intermediate|30|80|2|0
+CHAIN	skill:operating-systems-and-linux|Operating systems and Linux	skill:computer-networks|Computer networks	skill:cloud-fundamentals|Cloud fundamentals
+DEPTHS	skill:cloud-fundamentals|3	skill:computer-networks|2	skill:cybersecurity-fundamentals|3	skill:databases-and-sql|1	skill:operating-systems-and-linux|1
+REMAINING	skill:operating-systems-and-linux|1|3|0|	skill:databases-and-sql|1|0|0|	skill:computer-networks|2|2|0|Operating systems and Linux	skill:cloud-fundamentals|3|0|0|Computer networks;Operating systems and Linux	skill:cybersecurity-fundamentals|3|0|0|Computer networks;Operating systems and Linux
+PULLED	skill:cloud-fundamentals|Cloud fundamentals	skill:computer-networks|Computer networks	skill:cybersecurity-fundamentals|Cybersecurity fundamentals	skill:databases-and-sql|Databases and SQL	skill:operating-systems-and-linux|Operating systems and Linux
+CYCLIC	
+CAVEATS	Skill levels are what you told us. Self-assessment is a planning aid, not verified proof of ability.	Time estimates are planning ranges based on typical learners, not promises. Adjust them to your own pace.	5 skill(s) in this delta are prerequisites of the career's requirements rather than requirements themselves.
+
+
+
