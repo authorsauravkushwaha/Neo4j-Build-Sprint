@@ -91,7 +91,7 @@ Everything below was run to produce [verification.md](verification.md). None of 
 ```bash
 npm ci                                   # exact pinned tree
 npx tsc -b                               # 0 TypeScript errors
-npx vitest run                           # 625 tests pass across 42 files
+npx vitest run                           # 639 tests pass across 44 files
 npm run validate:seed                    # 58/58 dataset + engine + Cypher checks
 npm run emit:cypher -- --check           # generated Cypher is current
 npm run lint:secrets                     # no credential-shaped strings in the source tree or the built bundle
@@ -120,7 +120,7 @@ BASE_URL=http://127.0.0.1:4173 CHECK_OFFLINE=1 npm run verify:browser
 
 | Command | What a correct result looks like |
 | --- | --- |
-| `npx vitest run` | `Test Files 42 passed (42)`, `Tests 625 passed (625)` |
+| `npx vitest run` | `Test Files 44 passed (44)`, `Tests 639 passed (639)` |
 | `npm run validate:seed` | `58/58 checks passed` then `Self-check passed.` |
 | `npm run emit:cypher -- --check` | `neo4j artefacts are up to date.` |
 | `npm run lint:secrets` | `Secret scan clean: <n> source file(s) checked…` plus `Built bundle clean: <n> file(s) under dist/ checked` and a `Rule canary: 14/14 fixtures classified correctly` line — the file counts grow with the repository, the canary is the assertion |

@@ -782,6 +782,8 @@ export function createDemoClient(): GraphMentorClient {
           resourcesUsed: context.resources.length,
           truncated: context.truncated,
           graphSource: 'local-sample',
+          reads: context.reads,
+          readMs: context.reads.reduce((sum, read) => sum + read.ms, 0),
         },
         limits: { requestsRemainingThisMinute: Number.POSITIVE_INFINITY, maxMessageChars: 1200 },
       }

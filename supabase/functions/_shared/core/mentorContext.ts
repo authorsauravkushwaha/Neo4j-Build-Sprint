@@ -20,7 +20,102 @@ import { buildPrereqGraph, dependentCount, type PrereqGraph } from './recommend.
 import { normalizeText, similarity, tokenize, unique } from './normalize.ts'
 import { graphBasisLine } from './graphModel.ts'
 import { screenForPromptInjection, sanitizeUntrustedText } from './security.ts'
-import type { CareerDetail } from './graphReader.ts'
+import type { CareerDetail, ProjectView, ResourceView } from './graphReader.ts'
+import type { MentorRead } from './types.ts'
+
+/** A raw, ungrouped ledger entry — one reader call. */
+export interface MentorReadEntry {
+  call: string
+  target: string
+  rows: number
+  ms: number
+  truncated: boolean
+}
+
+/**
+ * Collects one line per graph read while an answer is being assembled.
+ *
+ * It is threaded through the context builder rather than constructed inside it so
+ * the caller can record its own reads in the same ledger — the mentor handler
+ * loads a vocabulary before building context, and an operator asking "what did
+ * this answer cost?" should see that read too.
+ */
+export interface MentorReadLedger {
+  entries: MentorReadEntry[]
+  record(call: string, targets: string[], result: { ms: number; truncated?: boolean }, rows: number): void
+  /** Grouped, bounded, safe to serialise. */
+  summarize(): MentorRead[]
+}
+
+const MAX_LEDGER_TARGETS = 3
+
+export function createReadLedger(): MentorReadLedger {
+  const entries: MentorReadEntry[] = []
+  return {
+    entries,
+    record(call, targets, result, rows) {
+      entries.push({
+        call,
+        target: targets.slice(0, MAX_LEDGER_TARGETS).join(', '),
+        rows,
+        ms: result.ms,
+        truncated: Boolean(result.truncated),
+      })
+    },
+    summarize() {
+      return summarizeReads(entries)
+    },
+  }
+}
+
+/**
+ * Collapses raw per-call entries into one line per reader method.
+ *
+ * Exported and pure so the grouping rules can be tested directly: the ledger is
+ * shown to learners, so "getSkill × 5, 4 rows" has to mean exactly five calls
+ * returning four rows in total, and the target list has to say how many targets it
+ * did not print rather than silently dropping them.
+ */
+export function summarizeReads(entries: MentorReadEntry[]): MentorRead[] {
+  const grouped = new Map<string, { calls: number; targets: string[]; rows: number; ms: number; truncated: boolean }>()
+
+  for (const entry of entries) {
+    const existing = grouped.get(entry.call)
+    if (!existing) {
+      grouped.set(entry.call, {
+        calls: 1,
+        targets: entry.target ? [entry.target] : [],
+        rows: entry.rows,
+        ms: entry.ms,
+        truncated: entry.truncated,
+      })
+      continue
+    }
+    existing.calls += 1
+    existing.rows += entry.rows
+    existing.ms += entry.ms
+    existing.truncated = existing.truncated || entry.truncated
+    if (entry.target && !existing.targets.includes(entry.target)) existing.targets.push(entry.target)
+  }
+
+  return [...grouped.entries()].map(([call, group]) => {
+    const shown = group.targets.slice(0, MAX_LEDGER_TARGETS)
+    const hidden = group.targets.length - shown.length
+    return {
+      call,
+      calls: group.calls,
+      target: hidden > 0 ? [...shown, `+${hidden} more`].join(', ') : shown.join(', '),
+      rows: group.rows,
+      ms: group.ms,
+      truncated: group.truncated,
+    }
+  })
+}
+
+/** Total time spent reading the graph for one answer. */
+export function totalReadMs(reads: MentorRead[]): number {
+  return reads.reduce((sum, read) => sum + read.ms, 0)
+}
 
 export interface ContextLimits {
   maxSkills: number
@@ -70,6 +165,8 @@ export interface MentorContext {
   unknowns: string[]
   limits: ContextLimits
   truncated: boolean
+  /** Every graph read that produced this context, grouped by reader method. */
+  reads: MentorRead[]
 }
 
 export interface BuildContextInput {
@@ -82,6 +179,8 @@ export interface BuildContextInput {
   masteryStates?: Record<string, string>
   vocabulary: MentorVocabularyEntry[]
   limits?: ContextLimits
+  /** Optional shared ledger; the handler adds its vocabulary reads to the same one. */
+  ledger?: MentorReadLedger
   signal?: AbortSignal
 }
 
@@ -174,6 +273,9 @@ function charBudgetUsed(context: Omit<MentorContext, 'limits'>): number {
 
 export async function buildMentorContext(input: BuildContextInput): Promise<MentorContext> {
   const limits = input.limits ?? DEFAULT_CONTEXT_LIMITS
+  // Shared with the caller so its own reads (the vocabulary scan) land in the same
+  // ledger as the ones below.
+  const ledger = input.ledger ?? createReadLedger()
   const known = new Set(input.knownSkillIds ?? [])
   const edges: GraphEdge[] = []
   const skillMeta = new Map<string, SkillMetaRow>()
@@ -190,6 +292,7 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
 
   if (targetCareerId) {
     const result = await input.reader.getCareer(targetCareerId, { signal: input.signal })
+    ledger.record('getCareer', [targetCareerId], result, result.value ? 1 : 0)
     career = result.value
     if (!career) unknowns.push(`The graph has no career with id "${targetCareerId}".`)
   }
@@ -212,6 +315,7 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
   } else if (mentions.skills.length > 0) {
     for (const skillId of mentions.skills.slice(0, 8)) {
       const result = await input.reader.getSkill(skillId, { signal: input.signal })
+      ledger.record('getSkill', [skillId], result, result.value ? 1 : 0)
       if (!result.value) continue
       const detail = result.value
       skillMeta.set(detail.id, detail)
@@ -250,6 +354,8 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
         : Promise.resolve({ value: [] as SkillMetaRow[], ms: 0 }),
     ])
     const [skillEdges, closure] = closureResults
+    ledger.record('getSkillEdges', seedIds, skillEdges, skillEdges.value.length)
+    ledger.record('getCareerClosure', career ? [career.id] : [], closure, closure.value.length)
     edges.push(...skillEdges.value)
     truncated = truncated || Boolean(skillEdges.truncated)
     for (const meta of closure.value) if (!skillMeta.has(meta.id)) skillMeta.set(meta.id, meta)
@@ -269,6 +375,7 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
   })
   if (missingMeta.length > 0) {
     const closure = await input.reader.getSkillClosure(missingMeta[0], 1, 60, { signal: input.signal })
+    ledger.record('getSkillClosure', [missingMeta[0]], closure, closure.value.length)
     for (const meta of closure.value) if (!skillMeta.has(meta.id)) skillMeta.set(meta.id, meta)
   }
 
@@ -310,10 +417,25 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
 
   // Projects + resources for the skills under discussion.
   const limitSkills = skills.map((s) => s.id)
-  const [projects, resources] = await Promise.all([
-    input.reader.findProjects({ skillIds: limitSkills.slice(0, 12), careerId: career?.id, limit: limits.maxProjects }, { signal: input.signal }),
-    input.reader.findResources({ skillIds: limitSkills.slice(0, 12), limit: limits.maxResources }, { signal: input.signal }),
-  ])
+  // Only ask for recommendations when there is something to recommend *against*.
+  // Both readers fall back to an arbitrary slice of the catalogue when they are
+  // given nothing to match on (`localReader.findProjects`: an empty candidate set
+  // becomes every project), so a question the graph could not parse came back with
+  // five projects and six resources that looked tailored and were not. Reading
+  // nothing is the honest answer, and the ledger now shows the difference: an
+  // unanchored question lists one fruitless read instead of eleven rows of guesswork.
+  const anchored = limitSkills.length > 0 || Boolean(career)
+  const [projects, resources] = anchored
+    ? await Promise.all([
+        input.reader.findProjects({ skillIds: limitSkills.slice(0, 12), careerId: career?.id, limit: limits.maxProjects }, { signal: input.signal }),
+        input.reader.findResources({ skillIds: limitSkills.slice(0, 12), limit: limits.maxResources }, { signal: input.signal }),
+      ])
+    : [{ value: [] as ProjectView[], ms: 0 }, { value: [] as ResourceView[], ms: 0 }]
+
+  if (anchored) {
+    ledger.record('findProjects', career ? [`career ${career.id}`, `${limitSkills.length} skills`] : [`${limitSkills.length} skills`], projects, projects.value.length)
+    ledger.record('findResources', [`${limitSkills.length} skills`], resources, resources.value.length)
+  }
 
   const resourceBadge = (accessModel: string) =>
     accessModel === 'free-open'
@@ -364,6 +486,7 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
     unknowns,
     limits,
     truncated,
+    reads: [],
   }
 
   // Evidence refs: the exact graph entities the answer may cite.
@@ -399,6 +522,10 @@ export async function buildMentorContext(input: BuildContextInput): Promise<Ment
     )
   }
   if (charBudgetUsed(context) > limits.maxChars) truncated = true
+
+  // The ledger is written last, because it reports what the whole build cost.
+  context.truncated = truncated
+  context.reads = ledger.summarize()
 
   return context
 }

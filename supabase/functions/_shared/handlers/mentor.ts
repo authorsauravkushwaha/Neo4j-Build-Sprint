@@ -16,9 +16,12 @@ import type { MentorChatResponse } from '../core/contracts.ts'
 import {
   buildMentorContext,
   classifyIntent,
+  createReadLedger,
   DEFAULT_CONTEXT_LIMITS,
   serializeContextForModel,
   serializeUserQuestion,
+  totalReadMs,
+  type MentorReadLedger,
   type MentorVocabularyEntry,
 } from '../core/mentorContext.ts'
 import { MENTOR_SYSTEM_PROMPT, composeMentorAnswer, trimToBudget } from '../core/mentorAnswer.ts'
@@ -27,11 +30,24 @@ import { sanitizeUntrustedText } from '../core/security.ts'
 import type { Runtime } from '../runtime.ts'
 import { enforceRateLimit, enforceSignedRequest, metaFor, requireReader } from './shared.ts'
 
-/** Bounded vocabulary used to resolve mentions without an extra graph query. */
-async function loadVocabulary(runtime: Runtime, _request: ApiRequest, signal?: AbortSignal): Promise<MentorVocabularyEntry[]> {
+/**
+ * Bounded vocabulary used to resolve mentions without an extra graph query.
+ *
+ * Its two reads go into the same ledger as the context builder's, because they are
+ * paid for by the same answer and an operator asking what that answer cost should
+ * not have to know which module issued the query.
+ */
+async function loadVocabulary(
+  runtime: Runtime,
+  _request: ApiRequest,
+  ledger: MentorReadLedger,
+  signal?: AbortSignal,
+): Promise<MentorVocabularyEntry[]> {
   const reader = runtime.reader
   if (!reader) return []
   const [careers, branches] = await Promise.all([reader.listCareers(60, { signal }), reader.listBranches(40, { signal })])
+  ledger.record('listCareers', ['vocabulary'], careers, careers.value.length)
+  ledger.record('listBranches', ['vocabulary'], branches, branches.value.length)
   const entries: MentorVocabularyEntry[] = [
     ...careers.value.map((career) => ({ id: career.id, name: career.name, label: 'Career' as const })),
     ...branches.value.map((branch) => ({ id: branch.id, name: branch.name, label: 'EngineeringBranch' as const })),
@@ -58,7 +74,8 @@ export async function mentorChatHandler(runtime: Runtime, request: ApiRequest): 
   }
 
   const intent = input.intentHint ?? classifyIntent(question.text)
-  const vocabulary = await loadVocabulary(runtime, request)
+  const ledger = createReadLedger()
+  const vocabulary = await loadVocabulary(runtime, request, ledger)
 
   const context = await buildMentorContext({
     reader,
@@ -68,6 +85,7 @@ export async function mentorChatHandler(runtime: Runtime, request: ApiRequest): 
     knownSkillIds: input.skillIds,
     vocabulary,
     limits: { ...DEFAULT_CONTEXT_LIMITS, maxChars: runtime.config.limits.maxContextChars },
+    ledger,
   })
 
   let modelText: string | null = null
@@ -125,6 +143,8 @@ export async function mentorChatHandler(runtime: Runtime, request: ApiRequest): 
       resourcesUsed: context.resources.length,
       truncated: context.truncated,
       graphSource: reader.kind === 'neo4j' ? 'neo4j-live' : 'local-sample',
+      reads: context.reads,
+      readMs: totalReadMs(context.reads),
     },
     limits: {
       requestsRemainingThisMinute: minute.remaining,

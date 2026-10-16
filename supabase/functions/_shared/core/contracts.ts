@@ -3,14 +3,22 @@
  *
  * The frontend imports these types through the `@core` alias, so a change to a
  * response shape breaks compilation in both places instead of silently shipping a
- * mismatch. Runtime validation on the client uses the zod schemas in
- * `core/clientValidation.ts`, which mirror these types.
+ * mismatch.
+ *
+ * Be precise about where the runtime checks are, because this comment used to point
+ * at a `core/clientValidation.ts` that does not exist. Request bodies are validated
+ * on the server, in `core/validate.ts`, against zod schemas — the schemas are the
+ * gate, and these types describe what comes back through it. The client parses the
+ * envelope in `src/core/api.ts` and checks the shape it needs at the call site
+ * rather than re-validating the whole contract, because a re-validation that drifts
+ * from the server is worse than no re-validation at all.
  */
 import type {
   ApiMeta,
   Difficulty,
   GraphNeighborhood,
   MentorAnswer,
+  MentorRead,
   Pathway,
   ProgressSummary,
   Roadmap,
@@ -247,6 +255,17 @@ export interface MentorChatResponse {
     resourcesUsed: number
     truncated: boolean
     graphSource: 'neo4j-live' | 'local-sample' | 'unavailable'
+    /**
+     * Every graph read that produced this answer, grouped by reader method.
+     *
+     * The mentor claims to answer only from the graph, so the claim is auditable:
+     * a learner can see that an answer about a named career cost 7 reads and that
+     * an answer the graph could not support cost 1. Empty would mean the answer
+     * was written without touching the graph at all, which is a bug worth seeing.
+     */
+    reads: MentorRead[]
+    /** Total time inside those reads, so "slow" can be attributed rather than guessed. */
+    readMs: number
   }
   limits: {
     requestsRemainingThisMinute: number

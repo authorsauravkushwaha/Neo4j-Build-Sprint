@@ -139,7 +139,56 @@ model, which is exactly when it matters.
 - It will not keep a transcript: the conversation lives in the browser, and the server writes nothing.
 - It will not use your identity as context. The provider receives the graph excerpt and the question.
 
-## 8. Reading the code
+## 8. The read ledger
+
+Every answer carries the list of graph reads that produced it. This is the answer to a
+question the citation list cannot answer: *what did it actually look at?*
+
+Each line is one `GraphReader` method — the same method names that appear in
+`graphReader.ts`, so a line can be grepped in the source — with the number of times it
+ran, the ids it was asked for (the first three, then `+N more`), the rows that came
+back, the milliseconds spent inside it, and whether it hit its row limit. The lines are
+grouped by method, so a question that resolves five skills reads `getSkill × 5` rather
+than five near-identical rows.
+
+The UI shows the count and the total as a chip over the answer — *"7 graph reads ·
+12 ms"* — and the full table in a disclosure under it:
+
+```
+getCareer        career:robotics-engineer        1 row     3 ms
+getSkillEdges    skill:python-programming, …     22 rows   1 ms
+findProjects     career:robotics-engineer        5 rows    2 ms
+findResources    12 skills                       6 rows    1 ms
+```
+
+Three properties make it worth reading rather than decorative:
+
+1. **It is built from the reader layer's own return values**, not from a counter the
+   handler increments. If a read is skipped, it is absent; if it returns nothing, it is
+   present with zero rows. An answer with an empty ledger is therefore a visible defect,
+   and the page says so in words: *"No graph reads were needed — which means this answer
+   is not grounded in the curriculum."*
+2. **Truncation is part of the record.** A read that hit its row limit is marked, and the
+   answer says the graph may hold more than it could see. That is the difference between
+   "this is all there is" and "this is all I looked at".
+3. **It stays behind the boundary.** The context builder is handed a `GraphReader` and
+   nothing else, so the ledger is a complete account of the data the answer could reach:
+   no database handle, no filesystem, no network. The model never sees the ledger — it is
+   for the reader of the answer, not for the model — and it is not part of the context
+   block, so it costs no tokens.
+
+The ledger also changed behaviour, which is the point of having one. On its first run, a
+question the graph could not parse (`"qwertyuiop zxcvbnm"`) reported eleven rows read:
+both catalogue readers fall back to an arbitrary slice when given nothing to match on, so
+the answer arrived with five projects and six resources that looked tailored and were
+not. `buildMentorContext` now only asks for recommendations when something is anchored —
+a skill or a career — and an unanchored question reads nothing and says so. See
+[`docs/prior-art.md`](prior-art.md) for where the idea came from.
+
+Tests: `tests/unit/mentor-ledger.test.ts` (10) covers grouping, totals, unknown ids and
+the empty case; `tests/integration/mentor.test.tsx` (4) covers what the page renders.
+
+## 9. Reading the code
 
 | Piece | File |
 | --- | --- |

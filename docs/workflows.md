@@ -15,7 +15,7 @@ cron.ts        the five-field schedule parser (UTC, documented day-of-month/DOW 
 registry.ts    the 14 node implementations and the URL allow-list check
 engine.ts      ordering, retries, limits, redaction, run-log assembly
 services.ts    how capabilities are supplied per environment, and how they refuse
-library.ts     the five workflows this repository actually ships
+library.ts     the six workflows this repository actually ships (one scheduled, five run by hand)
 n8nCompat.ts   export to n8n's document format, for review rather than execution
 ```
 

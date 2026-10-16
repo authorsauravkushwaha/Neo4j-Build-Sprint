@@ -48,7 +48,7 @@ APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 | Roadmap | `/roadmap` | A week-by-week plan sized to the hours you really have, with spaced review rows and progress you control. |
 | Projects | `/projects` | 33 projects with deliverable lists and **safety notes** (mains voltage, soldering, machines, cloud cost). |
 | Resources | `/resources` | 154 free and free-to-audit resources. Every one states what you can do afterwards, what it assumes (with the prerequisites linked to the skill pages), where it stops, an hour estimate for the effort involved, what "free" means for that provider, and the date the link was last checked. Every skill in the graph is reachable from at least two of them. |
-| Mentor | `/mentor` | Graph-grounded Q&A with citations. Works with **no AI key** — a deterministic rules engine over the same context answers, and the UI says which one replied. |
+| Mentor | `/mentor` | Graph-grounded Q&A with citations. Works with **no AI key** — a deterministic rules engine over the same context answers, and the UI says which one replied. Every answer carries a **read ledger**: the graph queries behind it, with row counts and timings. |
 | Progress | `/progress` | What you have done, without streaks, points or invented motivation mechanics. |
 | Settings | `/settings` | Accessibility, theme, data export, account deletion, feedback. |
 | Public APIs | `/public-apis` | 259 endpoints imported from the public-apis directory, each linked to the skills it exercises, with a "needs no key" filter and the catalogue's five caveats above the results instead of in a footnote. A filtered view is a link. |
@@ -409,7 +409,7 @@ one interface (`GraphMentorClient`), so a screen cannot behave differently in th
 ## Tests and verification
 
 ```bash
-npm test                     # 625 tests in 42 files
+npm test                     # 639 tests in 44 files
 npm run typecheck            # no TypeScript errors
 npm run lint:secrets         # no credential-shaped strings
 npm run validate:seed        # 53/53 dataset, engine and Cypher checks
@@ -543,5 +543,10 @@ Work on the repository: [`CONTRIBUTING.md`](./CONTRIBUTING.md) ·
 [`CHANGELOG.md`](./CHANGELOG.md). The candid list of reasons somebody might not use this — and what
 happened to each — is [`docs/objections.md`](./docs/objections.md); accessibility facts and known
 exceptions are in [`docs/accessibility.md`](./docs/accessibility.md).
+
+Six repositories were named as references when this was built — Supabase, n8n, public-apis, Appwrite,
+MiroFish and PentAGI. What was taken from each, what was refused, and why, is
+[`docs/prior-art.md`](./docs/prior-art.md): a table of mechanisms with the file they live in, not a list of
+thank-yous.
 
 

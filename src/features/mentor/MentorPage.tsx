@@ -29,7 +29,7 @@ import {
   Select,
   TextArea,
 } from '@/components/ui.tsx'
-import type { MentorAnswer } from '@core/types.ts'
+import type { MentorAnswer, MentorRead } from '@core/types.ts'
 import { ApiError, type MentorInput } from '@/core/api.ts'
 import { api } from '@/core/session.ts'
 import { copyText } from '@/core/share.ts'
@@ -39,7 +39,17 @@ import { useCareerParam, useClientQuery } from '@/features/shared/hooks.ts'
 interface Turn {
   question: string
   answer: MentorAnswer | null
-  context: { intent: string; skillsUsed: number; projectsUsed: number; resourcesUsed: number; graphSource: string; truncated: boolean } | null
+  context: {
+    intent: string
+    skillsUsed: number
+    projectsUsed: number
+    resourcesUsed: number
+    graphSource: string
+    truncated: boolean
+    /** Present on answers from this build; older cached turns may not have it. */
+    reads?: MentorRead[]
+    readMs?: number
+  } | null
   error: string | null
   answeredAt: string
 }
@@ -246,6 +256,14 @@ export function MentorPage(): ReactNode {
                               {turn.context.skillsUsed} skills · {turn.context.projectsUsed} projects · {turn.context.resourcesUsed} resources
                             </Chip>
                           ) : null}
+                          {turn.context?.reads ? (
+                            <Chip
+                              title="Graph queries that produced this answer, and how long they took. The full list is under the answer."
+                              tone={turn.context.reads.length === 0 ? 'warning' : 'default'}
+                            >
+                              {turn.context.reads.length} graph read{turn.context.reads.length === 1 ? '' : 's'} · {turn.context.readMs ?? 0} ms
+                            </Chip>
+                          ) : null}
                           {turn.context?.truncated ? <Chip tone="warning">context truncated</Chip> : null}
                         </div>
 
@@ -315,6 +333,55 @@ export function MentorPage(): ReactNode {
                                 <li key={line}>{line}</li>
                               ))}
                             </ul>
+                          </details>
+                        ) : null}
+
+                        {turn.context?.reads ? (
+                          <details>
+                            <summary className="cursor-pointer text-xs text-accent">
+                              Graph reads ({turn.context.reads.length})
+                            </summary>
+                            {turn.context.reads.length === 0 ? (
+                              <p className="mt-1 text-xs text-muted">
+                                No graph reads were needed — which means this answer is not grounded in the curriculum, and you should read it
+                                as general guidance rather than as a statement about the graph.
+                              </p>
+                            ) : (
+                              <>
+                                <p className="mt-1 text-xs text-muted">
+                                  Every answer is written from the {turn.context.reads.length} query type
+                                  {turn.context.reads.length === 1 ? '' : 's'} below and nothing else. Nothing was looked up outside this list.
+                                </p>
+                                <table className="mt-1 w-full text-left text-xs text-muted">
+                                  <thead>
+                                    <tr className="text-[11px] uppercase tracking-wide">
+                                      <th className="pr-2 font-medium">Read</th>
+                                      <th className="pr-2 font-medium">What it asked for</th>
+                                      <th className="pr-2 font-medium text-right">Rows</th>
+                                      <th className="font-medium text-right">Time</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {turn.context.reads.map((read: MentorRead) => (
+                                      <tr key={read.call} className="border-t border-line align-top">
+                                        <td className="pr-2 py-1 font-mono text-[11px]">
+                                          {read.call}
+                                          {read.calls > 1 ? ` ×${read.calls}` : ''}
+                                        </td>
+                                        <td className="pr-2 py-1 font-mono text-[11px]">{read.target || '—'}</td>
+                                        <td className="py-1 text-right">{read.rows}</td>
+                                        <td className="py-1 text-right">{read.ms} ms</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                                {turn.context.reads.some((read: MentorRead) => read.truncated) ? (
+                                  <p className="mt-1 text-xs text-muted">
+                                    At least one read hit its row limit, so the answer may be missing graph content that exists.
+                                  </p>
+                                ) : null}
+                              </>
+                            )}
                           </details>
                         ) : null}
 

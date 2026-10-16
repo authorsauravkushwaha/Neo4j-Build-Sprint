@@ -89,6 +89,9 @@ Two lists, side by side, because a feature list without its limits is marketing.
   the UI says which one replied.
 - Concise and detailed modes; 9 recognised intents; hard caps on how much context is assembled
   (18 skills, 5 projects, 6 resources, 40 edges, 12 000 characters).
+- A **read ledger** on every answer: the graph queries that produced it, grouped by method, with row counts,
+  durations and truncation — shown as a chip and a table under the answer, so "it answers only from the
+  graph" is checkable rather than asserted.
 - Honest limits: it does not know your grades, cannot verify your self-ratings, will not promise outcomes,
   and never takes instructions from text inside the graph context.
 
@@ -248,6 +251,9 @@ Two lists, side by side, because a feature list without its limits is marketing.
   session.
 - It will not help with anything outside engineering learning navigation, and it is not a substitute for a
   teacher, a mentor, or a real person reading your work.
+- Its reads are bounded before it starts: 18 skills, 5 projects, 6 resources, 40 edges and 12 000 characters
+  of context. The ledger shows the reads; the budget is why a question about a whole branch gets a partial
+  answer with the truncation marked rather than a complete one that takes a minute.
 
 ### About the running software
 

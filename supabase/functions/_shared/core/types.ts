@@ -405,6 +405,35 @@ export interface MentorRequest {
   skillIds?: string[]
 }
 
+/**
+ * One line of the read ledger: what the answer was allowed to look at.
+ *
+ * The mentor may only say what it read, so every graph read behind an answer is
+ * counted here and shipped with the answer. Calls are grouped by reader method —
+ * a question that resolves five skills reports `getSkill × 5` with one row count
+ * and one duration, not five near-identical lines — and the targets are the first
+ * three distinct ids, so the ledger stays readable instead of becoming a log.
+ *
+ * This is the honest half of "citation only": the answer's citations say which
+ * graph *edges* it used, and the ledger says which *queries* produced them. A
+ * reader who wants to check the work can see that an answer about a named career
+ * cost 7 reads and 412 ms, and that an answer about nothing in the graph cost 1.
+ */
+export interface MentorRead {
+  /** The `GraphReader` method, verbatim, so it can be grepped in the source. */
+  call: string
+  /** How many times that method ran for this one answer. */
+  calls: number
+  /** First three distinct targets, then `+N more`. Empty for whole-graph reads. */
+  target: string
+  /** Total rows returned across those calls. */
+  rows: number
+  /** Total time inside those calls. */
+  ms: number
+  /** True when any call hit its row limit, which caps what the answer could know. */
+  truncated: boolean
+}
+
 export interface MentorAnswer {
   id: string
   createdAt: string
