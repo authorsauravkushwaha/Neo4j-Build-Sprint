@@ -1,0 +1,29 @@
+# Netlify / Cloudflare Pages header rules (the `_headers` file convention).
+# GitHub Pages ignores this file; see docs/security.md for the GitHub Pages
+# fallback (meta-tag CSP + documented limitations).
+#
+# Keep the connect-src host list below in sync with VITE_SUPABASE_URL and
+# VITE_API_BASE_URL. The build also injects the same list into index.html.
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=(), interest-cohort=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://*.supabase.in; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'
+
+# The service worker and manifest must always be revalidated, otherwise a stale
+# worker can pin users to an old release.
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+/offline.html
+  Cache-Control: public, max-age=300
+
+

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="GraphMentor AI">
+  <rect width="64" height="64" rx="14" fill="#0b1220"/>
+  <g stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" opacity="0.85">
+    <path d="M20 44 L32 20 M32 20 L46 40 M20 44 L46 40 M32 20 L18 26 M18 26 L20 44"/>
+  </g>
+  <circle cx="32" cy="20" r="6" fill="#22d3ee"/>
+  <circle cx="20" cy="44" r="5" fill="#a78bfa"/>
+  <circle cx="46" cy="40" r="5" fill="#34d399"/>
+  <circle cx="18" cy="26" r="3.5" fill="#fbbf24"/>
+</svg>
+
+

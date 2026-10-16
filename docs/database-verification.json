@@ -1,0 +1,484 @@
+{
+  "generatedAt": "2026-10-15T09:40:54.871Z",
+  "target": {
+    "host": "127.0.0.1",
+    "port": 5433,
+    "database": "graphmentor",
+    "dataDirectory": "/srv/graphmentor-pg/data",
+    "certificateAuthority": "private CA, clientcert=verify-full required"
+  },
+  "serverVersion": "PostgreSQL 17.11 (Debian 17.11-0+deb13u1)",
+  "passed": 70,
+  "total": 70,
+  "groups": [
+    {
+      "group": "1. Reachability and transport",
+      "passed": 10,
+      "total": 10
+    },
+    {
+      "group": "2. Authentication",
+      "passed": 11,
+      "total": 11
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "passed": 13,
+      "total": 13
+    },
+    {
+      "group": "4. Row level security",
+      "passed": 5,
+      "total": 5
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "passed": 6,
+      "total": 6
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "passed": 9,
+      "total": 9
+    },
+    {
+      "group": "7. Resource ceilings, exercised",
+      "passed": 3,
+      "total": 3
+    },
+    {
+      "group": "8. Audit trail",
+      "passed": 4,
+      "total": 4
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "passed": 9,
+      "total": 9
+    }
+  ],
+  "checks": [
+    {
+      "group": "1. Reachability and transport",
+      "name": "PostgreSQL itself is listening on loopback only",
+      "ok": true,
+      "detail": "1 socket(s) owned by uid 1000, all 127.0.0.1/::1"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "listen_addresses is 127.0.0.1",
+      "ok": true,
+      "detail": "port 5433"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "any other listener on this port is reported, not assumed harmless",
+      "ok": true,
+      "detail": "1 listener(s) owned by other uids (the sandbox port forwarder) — covered by the check below"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "a connection through the non-loopback (forwarded) path is refused without the client key",
+      "ok": true,
+      "detail": "169.254.0.21:5433 — 28000"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "a plaintext connection (sslmode=disable) is refused",
+      "ok": true,
+      "detail": "28000"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "a unix-socket connection is refused",
+      "ok": true,
+      "detail": "28000"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "the connection in use is TLS",
+      "ok": true,
+      "detail": "TLSv1.3"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "the server saw the application client certificate",
+      "ok": true,
+      "detail": "/CN=gm_app"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "TLS 1.2 handshake succeeds",
+      "ok": true,
+      "detail": "Protocol version: TLSv1.2"
+    },
+    {
+      "group": "1. Reachability and transport",
+      "name": "TLS 1.1 handshake is refused",
+      "ok": true,
+      "detail": "handshake failed, as configured"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "the correct credential is accepted (control)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "2. Authentication",
+      "name": "a wrong password is rejected",
+      "ok": true,
+      "detail": "28P01"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "a password without a client certificate is refused",
+      "ok": true,
+      "detail": "28000"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "a client certificate without the right password is refused",
+      "ok": true,
+      "detail": "28P01"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "one role's certificate cannot be used as another role",
+      "ok": true,
+      "detail": "28P01"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "the conventional \"postgres\" superuser does not exist",
+      "ok": true,
+      "detail": "28000"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "password_encryption is scram-sha-256",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "2. Authentication",
+      "name": "the stored verifier is SCRAM (not md5)",
+      "ok": true,
+      "detail": "SCRAM-SHA-256$"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "a weak password is rejected by the server",
+      "ok": true,
+      "detail": "password is too short"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "a password equal to the role name is rejected",
+      "ok": true,
+      "detail": "password is too short"
+    },
+    {
+      "group": "2. Authentication",
+      "name": "the real credential still works after the policy tests",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_admin is the only superuser",
+      "ok": true,
+      "detail": "gm_admin"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "service_role is the only BYPASSRLS role",
+      "ok": true,
+      "detail": "service_role"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app holds no administrative attribute and cannot bypass RLS",
+      "ok": true,
+      "detail": "super=f createdb=f createrole=f bypassrls=f inherit=f login=t limit=8"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_owner cannot log in (no credential to steal)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "anon, authenticated and service_role cannot log in",
+      "ok": true,
+      "detail": "0 can log in"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app is a member of nothing",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app holds zero table privileges",
+      "ok": true,
+      "detail": "0 grant(s)"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app cannot read, write or delete any table",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app cannot create objects in public",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app may execute exactly the three limiter functions",
+      "ok": true,
+      "detail": "gm_claim_nonce, gm_cleanup_rate_limit, gm_consume_rate_limit"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_app may connect and nothing more",
+      "ok": true,
+      "detail": "connect=t create=f temp=f"
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "the public pseudo-role has no CONNECT on the database",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "group": "3. Roles and privilege ceilings",
+      "name": "gm_auth (the sign-in server) can reach only the credential + sync tables, never roadmaps or feedback",
+      "ok": true,
+      "detail": "roadmap/feedback access false/false, tables: bookmarks, credentials, profiles, sessions, user_skill_progress, user_task_progress, users"
+    },
+    {
+      "group": "4. Row level security",
+      "name": "row level security is enabled on every table",
+      "ok": true,
+      "detail": "9 of 9"
+    },
+    {
+      "group": "4. Row level security",
+      "name": "FORCE row level security is on every table that holds personal data",
+      "ok": true,
+      "detail": "bookmarks, feedback, profiles, roadmap_tasks, saved_roadmaps, user_skill_progress, user_task_progress (of 6 user tables)"
+    },
+    {
+      "group": "4. Row level security",
+      "name": "the limiter tables keep RLS enabled but not forced (the SECURITY DEFINER path needs its owner)",
+      "ok": true,
+      "detail": "gm_nonce:false, gm_rate_limit:false"
+    },
+    {
+      "group": "4. Row level security",
+      "name": "every user table carries at least one policy",
+      "ok": true,
+      "detail": "18 policies over 7 tables"
+    },
+    {
+      "group": "4. Row level security",
+      "name": "every SECURITY DEFINER function pins its search_path",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "an account with a verified claim sees its own row",
+      "ok": true,
+      "detail": "1 row(s)"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "that account cannot see the other account's row",
+      "ok": true,
+      "detail": "0 row(s)"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "a session with no claim sees no rows at all (fails closed)",
+      "ok": true,
+      "detail": "0 row(s)"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "an account cannot write a row belonging to somebody else",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "the application role cannot read the profiles table at all",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "5. Cross-account isolation, live",
+      "name": "the isolation fixtures left nothing behind",
+      "ok": true,
+      "detail": "0 row(s) in profiles"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: read the password verifiers",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: create a table as the application role",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: drop a table as the application role",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: promote itself to superuser",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: switch into service_role to inherit BYPASSRLS",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: run a shell command through COPY … TO PROGRAM",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: read the rate-limit counters directly",
+      "ok": true,
+      "detail": "42501"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: SQL injection through the limiter key (string stored, table intact)",
+      "ok": true,
+      "detail": "returned 1, gm_nonce still present"
+    },
+    {
+      "group": "6. Attack battery (every attempt must fail)",
+      "name": "attack: replay a nonce that was already spent",
+      "ok": true,
+      "detail": "first true, replay false"
+    },
+    {
+      "group": "7. Resource ceilings, exercised",
+      "name": "a slow query is cancelled by statement_timeout",
+      "ok": true,
+      "detail": "57014 after 10.0s"
+    },
+    {
+      "group": "7. Resource ceilings, exercised",
+      "name": "a query that exceeds the temp-file ceiling is stopped",
+      "ok": true,
+      "detail": "53400"
+    },
+    {
+      "group": "7. Resource ceilings, exercised",
+      "name": "the connection limit for the application role is enforced",
+      "ok": true,
+      "detail": "8 opened, 3 refused — too many connections for role \"gm_app\""
+    },
+    {
+      "group": "8. Audit trail",
+      "name": "fifteen failed logins are recorded in the server log",
+      "ok": true,
+      "detail": "15 failure line(s) written"
+    },
+    {
+      "group": "8. Audit trail",
+      "name": "every configured ceiling and audit setting is live",
+      "ok": true,
+      "detail": "15 settings"
+    },
+    {
+      "group": "8. Audit trail",
+      "name": "the cluster statement and idle-transaction timeouts are the configured ones",
+      "ok": true,
+      "detail": "15000/10000 (ms, i.e. 15s/10s)"
+    },
+    {
+      "group": "8. Audit trail",
+      "name": "gm_app carries its own timeout defaults",
+      "ok": true,
+      "detail": "statement_timeout=10s, lock_timeout=3s, idle_in_transaction_session_timeout=10s, idle_session_timeout=10min, temp_file_limit=128MB, search_path=public"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "postgresql.conf on the server is byte-identical to the repository policy",
+      "ok": true,
+      "detail": "feef7d957242"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "pg_hba.conf on the server is byte-identical to the repository policy",
+      "ok": true,
+      "detail": "11fc6d6c1e6f"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "pg_hba.conf contains no trust, peer or md5 rule",
+      "ok": true,
+      "detail": "7 active rules, 3 explicit refusals"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "every accepted rule requires TLS",
+      "ok": true,
+      "detail": "4 hostssl rule(s)"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "secret files exist and are mode 600",
+      "ok": true,
+      "detail": "gm_admin.pass:600 gm_app.pass:600 pgpass:600"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "the secret directory is 700 and outside the repository",
+      "ok": true,
+      "detail": "/srv/graphmentor-pg/secrets mode 700"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "no password appears anywhere in the repository",
+      "ok": true,
+      "detail": "2 passwords searched"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": ".gitignore excludes database secrets and dumps",
+      "ok": true,
+      "detail": "db/secrets, *.pass and dump paths covered"
+    },
+    {
+      "group": "9. Configuration drift and secret hygiene",
+      "name": "the TLS key is mode 600 and the certificate names this host",
+      "ok": true,
+      "detail": "key mode 600"
+    }
+  ]
+}
+
+

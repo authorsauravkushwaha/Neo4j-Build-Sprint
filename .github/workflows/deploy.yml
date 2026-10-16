@@ -1,0 +1,105 @@
+# Build, verify and publish.
+#
+# Runs on every push to main and on pull requests (verification only).
+# Publish step needs: Settings -> Pages -> Source: GitHub Actions.
+#
+# Repository secrets (optional — the app runs with none of them set, in clearly
+# labelled demo mode):
+#   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SITE_URL
+# Repository variables (optional):
+#   VITE_BASE_PATH  e.g. /graphmentor-ai/ for a project site
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Type-check, test, validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # `npm ci` installs exactly package-lock.json, so CI cannot drift from
+      # what was tested locally.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      # Fails if any tracked file contains a credential-shaped string. Runs
+      # before the build so a leaked key stops the pipeline, not the deploy.
+      - name: Secret scan
+        run: npm run lint:secrets
+
+      - name: Validate dataset and engine
+        run: npm run validate:seed
+
+      - name: Check generated Cypher is current
+        run: npm run emit:cypher -- --check
+
+  build:
+    name: Build and deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    # Publishing only happens from main; pull requests stop after verification.
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build
+        # Values are optional: with no secrets the build produces a working
+        # demo-mode site, which is a legitimate deployment.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
+          VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+

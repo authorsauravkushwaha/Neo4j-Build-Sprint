@@ -1,0 +1,30 @@
+{
+  "generatedBy": "scripts/emit-cypher.ts",
+  "datasetVersion": "1.1.0",
+  "datasetUpdated": "2026-10-12",
+  "provenance": "Bundled GraphMentor sample curriculum v1.1.0 — stored in this app, not fetched from Neo4j. It is deliberately labelled as sample data wherever it appears.",
+  "counts": {
+    "Assessment": 16,
+    "Career": 17,
+    "Concept": 37,
+    "EngineeringBranch": 16,
+    "LearningModule": 13,
+    "ProgrammingLanguage": 8,
+    "Project": 33,
+    "Resource": 154,
+    "Skill": 89,
+    "Subject": 24,
+    "Tool": 37,
+    "edges": 1585
+  },
+  "statements": 36,
+  "seedChecksum": "4da024ddaef1316c8a7d00163e1ed671cb69901e4170f719b5f40f5161dd570d",
+  "files": [
+    "schema.cypher",
+    "seed.cypher",
+    "seed.parameters.json",
+    "sample-queries.cypher"
+  ]
+}
+
+

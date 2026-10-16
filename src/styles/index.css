@@ -1,0 +1,2151 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Theme switching.
+   The theme is an explicit attribute on <html> (set before first paint by an
+   inline-free bootstrap in src/main.tsx), never "system-only", so keyboard and
+   screen-reader users get exactly the contrast they asked for.
+--------------------------------------------------------------------------- */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  /* Light theme (default) */
+  /* The single material every surface is made of. Neumorphism only works when
+     there is exactly one base colour: cards are not a different colour from the
+     page, they are the page pushed out of itself by a pair of shadows. */
+  --gm-bg: #e7ecf4;
+  --gm-bg-elevated: #e7ecf4;
+  --gm-surface: #e7ecf4;
+  --gm-surface-2: #dde3ee;
+  --gm-border: #cfd7e6;
+  --gm-border-strong: #b3bfd4;
+  --gm-text: #0c1729;
+  --gm-text-muted: #47536b;
+  --gm-accent: #0e7490;
+  --gm-accent-hover: #155e75;
+  --gm-accent-soft: #d5e6f2;
+  --gm-accent-contrast: #ffffff;
+  --gm-violet: #6d28d9;
+  --gm-success: #046b4e;
+  --gm-warning: #9a4708;
+  --gm-danger: #a71818;
+  --gm-focus: #0b5f75;
+  --gm-grid: rgba(12, 23, 41, 0.07);
+  --gm-shadow: 6px 6px 14px var(--gm-neu-dark), -6px -6px 14px var(--gm-neu-light);
+
+  /* ---- neumorphism --------------------------------------------------------
+     One material, one light source, two shadows. A raised surface casts the
+     light shadow up-left and the dark shadow down-right; a pressed surface
+     (inputs, the active state of a button) casts both inwards. There is no
+     backdrop filter anywhere in this system: depth comes from the shadow pair
+     and from the fact that every surface is the same colour as the page.
+  ------------------------------------------------------------------------- */
+  --gm-neu-base: var(--gm-bg);
+  --gm-neu-light: rgba(255, 255, 255, 0.95);
+  --gm-neu-dark: rgba(151, 167, 197, 0.66);
+  --gm-neu-accent-dark: rgba(14, 116, 144, 0.42);
+  /* Raised: light from the top-left, shade to the bottom-right. */
+  --gm-neu-raised-1: 5px 5px 12px var(--gm-neu-dark), -5px -5px 12px var(--gm-neu-light);
+  --gm-neu-raised-2: 9px 9px 20px var(--gm-neu-dark), -9px -9px 20px var(--gm-neu-light);
+  --gm-neu-raised-3: 15px 15px 30px var(--gm-neu-dark), -15px -15px 30px var(--gm-neu-light);
+  /* Pressed: the same pair, cast inwards. */
+  --gm-neu-inset-1: inset 4px 4px 9px var(--gm-neu-dark), inset -4px -4px 9px var(--gm-neu-light);
+  --gm-neu-inset-2: inset 6px 6px 13px var(--gm-neu-dark), inset -6px -6px 13px var(--gm-neu-light);
+  --gm-neu-inset-soft: inset 2px 2px 5px var(--gm-neu-dark), inset -2px -2px 5px var(--gm-neu-light);
+  /* Kept as the depth scale the rest of the stylesheet already speaks. */
+  --gm-depth-1: var(--gm-neu-raised-1);
+  --gm-depth-2: var(--gm-neu-raised-2);
+  --gm-depth-3: var(--gm-neu-raised-3);
+  /* A soft pool of light and a soft pool of shade: the only background texture
+     the material allows, and it does not move. */
+  --gm-glow: rgba(255, 255, 255, 0.85);
+  --gm-glow-2: rgba(151, 167, 197, 0.28);
+  --gm-aurora-1: rgba(255, 255, 255, 0.75);
+  --gm-aurora-2: rgba(151, 167, 197, 0.3);
+  --gm-aurora-3: rgba(255, 255, 255, 0.5);
+  --gm-scene-accent: #0e7490;
+  /* The scene keeps one accent; the second tone is pulled back to slate so the
+     3D hero reads as the same material rather than as a second colour system. */
+  --gm-scene-accent-2: #64748b;
+  /* The scrim that keeps headline text readable over the hero scene: the page
+     material, opaque where the copy starts and clear before the right edge. */
+  --gm-scrim-1: rgba(231, 236, 244, 0.97);
+  --gm-scrim-2: rgba(231, 236, 244, 0.9);
+  --gm-scrim-3: rgba(231, 236, 244, 0.62);
+  /* The veil behind a modal: darker in the light theme, blacker in the dark one,
+     and never a blur — the material under it stays the material. */
+  --gm-veil: rgba(12, 23, 41, 0.34);
+  /* Deprecated names kept so nothing silently loses a colour if it still
+     references the old glass tokens; they now resolve to the material. */
+  --gm-glass-tint: var(--gm-neu-base);
+  --gm-glass-tint-strong: var(--gm-neu-base);
+  --gm-glass-tint-weak: var(--gm-neu-base);
+  --gm-glass-border: transparent;
+  --gm-glass-edge: var(--gm-neu-light);
+  --gm-glass-shade: var(--gm-neu-dark);
+  --gm-glass-blur: 0px;
+  --gm-glass-saturate: 100%;
+  --gm-glass-sheen: rgba(255, 255, 255, 0.75);
+}
+
+[data-theme='dark'] {
+  --gm-bg: #1b2434;
+  --gm-bg-elevated: #1b2434;
+  --gm-surface: #1b2434;
+  --gm-surface-2: #202a3c;
+  --gm-border: #2b3752;
+  --gm-border-strong: #3c4b6b;
+  --gm-text: #e9eefb;
+  --gm-text-muted: #a9b6cf;
+  --gm-accent: #22d3ee;
+  --gm-accent-hover: #67e8f9;
+  --gm-accent-soft: rgba(34, 211, 238, 0.16);
+  --gm-accent-contrast: #04202a;
+  --gm-violet: #a78bfa;
+  --gm-success: #34d399;
+  --gm-warning: #fbbf24;
+  --gm-danger: #fca5a5;
+  --gm-focus: #7dd3fc;
+  --gm-grid: rgba(148, 178, 235, 0.1);
+  --gm-shadow: 6px 6px 14px var(--gm-neu-dark), -6px -6px 14px var(--gm-neu-light);
+
+  /* Dark neumorphism: the light source is much weaker and the shade much
+     deeper, because a bright highlight on a dark material reads as a mistake. */
+  --gm-neu-base: var(--gm-bg);
+  --gm-neu-light: rgba(255, 255, 255, 0.062);
+  --gm-neu-dark: rgba(0, 0, 0, 0.62);
+  --gm-neu-accent-dark: rgba(34, 211, 238, 0.35);
+  --gm-neu-raised-1: 5px 5px 12px var(--gm-neu-dark), -5px -5px 12px var(--gm-neu-light);
+  --gm-neu-raised-2: 9px 9px 20px var(--gm-neu-dark), -9px -9px 20px var(--gm-neu-light);
+  --gm-neu-raised-3: 15px 15px 30px var(--gm-neu-dark), -15px -15px 30px var(--gm-neu-light);
+  --gm-neu-inset-1: inset 4px 4px 9px var(--gm-neu-dark), inset -4px -4px 9px var(--gm-neu-light);
+  --gm-neu-inset-2: inset 6px 6px 13px var(--gm-neu-dark), inset -6px -6px 13px var(--gm-neu-light);
+  --gm-neu-inset-soft: inset 2px 2px 5px var(--gm-neu-dark), inset -2px -2px 5px var(--gm-neu-light);
+  --gm-depth-1: var(--gm-neu-raised-1);
+  --gm-depth-2: var(--gm-neu-raised-2);
+  --gm-depth-3: var(--gm-neu-raised-3);
+  --gm-glow: rgba(233, 238, 251, 0.14);
+  --gm-glow-2: rgba(0, 0, 0, 0.4);
+  --gm-aurora-1: rgba(255, 255, 255, 0.05);
+  --gm-aurora-2: rgba(0, 0, 0, 0.4);
+  --gm-aurora-3: rgba(255, 255, 255, 0.03);
+  --gm-scene-accent: #22d3ee;
+  --gm-scene-accent-2: #94a3b8;
+  --gm-scrim-1: rgba(27, 36, 52, 0.95);
+  --gm-scrim-2: rgba(27, 36, 52, 0.86);
+  --gm-scrim-3: rgba(27, 36, 52, 0.55);
+  --gm-veil: rgba(0, 0, 0, 0.55);
+  --gm-glass-tint: var(--gm-neu-base);
+  --gm-glass-tint-strong: var(--gm-neu-base);
+  --gm-glass-tint-weak: var(--gm-neu-base);
+  --gm-glass-border: transparent;
+  --gm-glass-edge: var(--gm-neu-light);
+  --gm-glass-shade: var(--gm-neu-dark);
+  --gm-glass-blur: 0px;
+  --gm-glass-saturate: 100%;
+  --gm-glass-sheen: rgba(233, 238, 251, 0.16);
+}
+
+@theme inline {
+  --color-bg: var(--gm-bg);
+  --color-bg-elevated: var(--gm-bg-elevated);
+  --color-surface: var(--gm-surface);
+  --color-surface-2: var(--gm-surface-2);
+  --color-line: var(--gm-border);
+  --color-line-strong: var(--gm-border-strong);
+  --color-ink: var(--gm-text);
+  --color-muted: var(--gm-text-muted);
+  --color-accent: var(--gm-accent);
+  --color-accent-hover: var(--gm-accent-hover);
+  --color-accent-soft: var(--gm-accent-soft);
+  --color-accent-contrast: var(--gm-accent-contrast);
+  --color-violet: var(--gm-violet);
+  --color-success: var(--gm-success);
+  --color-warning: var(--gm-warning);
+  --color-danger: var(--gm-danger);
+  --color-focus: var(--gm-focus);
+
+  --radius-card: 0.875rem;
+  --radius-panel: 1.125rem;
+
+  --font-sans: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+--------------------------------------------------------------------------- */
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    background-color: var(--gm-bg);
+    color: var(--gm-text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-wrap: break-word;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  /* Visible, high-contrast focus for every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--gm-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Reduced-motion: no transitions, no auto-scroll animation, no pulsing. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  [data-motion='reduced'] *,
+  [data-motion='reduced'] *::before,
+  [data-motion='reduced'] *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  ::selection {
+    background: var(--gm-accent-soft);
+    color: var(--gm-text);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Components
+--------------------------------------------------------------------------- */
+@layer components {
+  /* ==========================================================================
+     NEUMORPHISM (SOFT UI)
+     ==========================================================================
+     Three surfaces: `.gm-card` (a sheet pushed out of the page), `.gm-panel`
+     (a deeper sheet for grouped controls) and `.gm-glass-raw` (the bare recipe,
+     kept under its old name for one-off surfaces such as the modal, the nav
+     rail and the scene placeholder).
+
+     Four rules keep this honest:
+       1. Every surface is `--gm-neu-base` — the same colour as the page. If a
+          card had its own fill it would stop being neumorphic and become a
+          flat panel with a drop shadow.
+       2. Depth is a PAIR of shadows (light up-left, dark down-right), never a
+          single drop shadow. Pressed states cast the same pair inwards.
+       3. Depth is never the only affordance: interactive elements keep a
+          visible focus ring, real labels, and hover/active shadow changes, so a
+          user who cannot perceive the shadows still gets every cue.
+       4. No `backdrop-filter` anywhere: the material is opaque by design, which
+          also removes the per-frame full-screen blur the glass version paid for.
+     ========================================================================== */
+
+  .gm-glass-raw {
+    position: relative;
+    background-color: var(--gm-neu-base);
+    border: 1px solid transparent;
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  /*
+     The hairline that used to be the glass rim is now the top-left lip of an
+     extrusion: a 1px inner highlight on the lit side, and a matching shade on
+     the far side, so a large sheet still reads as a moulded surface rather than
+     a flat rectangle with a shadow behind it.
+  */
+  .gm-glass-raw::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    /* A thin moulded lip — NOT a wash. The first version spread a 55%-opacity
+       gradient across the first quarter of the sheet, which turned a large card
+       into a near-white panel and broke the one-material rule the whole system
+       rests on. Painted as inset hairlines, the interior keeps the exact page
+       colour and only the edge reads as an extrusion. */
+    box-shadow:
+      inset 1px 1px 1.5px var(--gm-neu-light),
+      inset -1px -1px 1.5px var(--gm-neu-dark);
+    opacity: 0.9;
+  }
+
+  .gm-card {
+    position: relative;
+    background-color: var(--gm-neu-base);
+    border: 1px solid transparent;
+    border-radius: var(--radius-card);
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  .gm-panel {
+    position: relative;
+    background-color: var(--gm-neu-base);
+    border: 1px solid transparent;
+    border-radius: var(--radius-panel);
+    box-shadow: var(--gm-neu-raised-2);
+  }
+
+  /* A card that also floats in 3D: it lifts and tilts towards the pointer on
+     hover (see `.gm-tilt` in the utilities below) and casts a deeper shadow. */
+  .gm-card-3d {
+    transform-style: preserve-3d;
+    transition:
+      transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 320ms ease;
+    will-change: transform;
+  }
+
+  .gm-card-3d:hover,
+  .gm-card-3d:focus-within {
+    box-shadow: var(--gm-neu-raised-2);
+    transform: translateY(-2px);
+  }
+
+  /* Applied to cards that are only decorative containers: depth on hover, but no
+     movement, so a page of them does not ripple under the pointer. */
+  .gm-card-static:hover {
+    box-shadow: var(--gm-neu-raised-2);
+  }
+
+  /* Pressed: the pair cast inwards. Used by choice widgets, expanded rows and
+     any surface that represents "this is currently held down or selected". */
+  .gm-pressed {
+    box-shadow: var(--gm-neu-inset-1) !important;
+  }
+
+  /* Specular sweep: a diagonal band of light that crosses the pane on hover.
+     Purely decorative, so it is hidden from assistive technology and disabled
+     with reduced motion. */
+  .gm-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gm-sheen::after {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -120%;
+    width: 60%;
+    height: 220%;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      var(--gm-glass-sheen) 45%,
+      transparent 100%
+    );
+    opacity: 0;
+    transform: rotate(8deg);
+  }
+
+  .gm-sheen:hover::after,
+  .gm-sheen:focus-within::after {
+    opacity: 0.5;
+    animation: gm-sheen-sweep 900ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes gm-sheen-sweep {
+    from {
+      left: -120%;
+    }
+    to {
+      left: 160%;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     The page backdrop. Neumorphism needs a single, untextured material, so the
+     three drifting colour fields are gone: what is left is one static pool of
+     light in the top-left and one static pool of shade in the bottom-right —
+     the same light source every raised surface is lit by. It never moves, which
+     is also why there is nothing here for reduced-motion to disable.
+  -------------------------------------------------------------------------- */
+  .gm-aurora {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 8% -10%, var(--gm-aurora-1), transparent 55%),
+      radial-gradient(110% 85% at 105% 110%, var(--gm-aurora-2), transparent 60%);
+  }
+
+  /* (The three drifting-blob elements and the keyframes that animated them were
+     removed with the glass design they belonged to. The ambient layer is now
+     the two static pools above — light from the upper left, shade from the
+     lower right — which is what the neumorphic surfaces are lit by. No
+     `gm-aurora__blob` or `gm-drift-*` name survives in the codebase.) */
+
+  /* --------------------------------------------------------------------------
+     3D stage and tilt utilities.
+     `.gm-stage` establishes the perspective; `.gm-tilt` rotates inside it. The
+     interaction is bound in `src/components/three/useTilt.ts`, which writes the
+     two custom properties below — the CSS never has to know about the pointer.
+  -------------------------------------------------------------------------- */
+  .gm-stage {
+    perspective: 1200px;
+    perspective-origin: 50% 40%;
+  }
+
+  .gm-tilt {
+    transform-style: preserve-3d;
+    transform: rotateX(var(--gm-tilt-x, 0deg)) rotateY(var(--gm-tilt-y, 0deg))
+      translateZ(var(--gm-tilt-z, 0px)) scale(var(--gm-tilt-scale, 1));
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Children pushed forward or back inside a tilted card. */
+  .gm-layer-1 {
+    transform: translateZ(18px);
+  }
+  .gm-layer-2 {
+    transform: translateZ(36px);
+  }
+  .gm-layer-back {
+    transform: translateZ(-24px);
+  }
+
+  .gm-float {
+    animation: gm-float 7s ease-in-out infinite;
+  }
+
+  @keyframes gm-float {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -10px, 0);
+    }
+  }
+
+  /* Depth band for the hero: the copy sits forward of the scene behind it. */
+  .gm-hero-copy {
+    transform: translateZ(60px);
+    /*
+       Deliberately flat, and this must stay flat.
+
+       The copy still floats 60px forward — its own transform is resolved in the
+       card's 3D space, so the lifted-copy look is unchanged. What must not
+       happen is its *children* joining that 3D context: with `preserve-3d` here,
+       every link in the hero button row stopped responding to a mouse click at
+       1440x900. The links stayed visible, hoverable, reachable by Tab+Enter and
+       correct in `document.elementFromPoint`, but the browser's input
+       hit-testing resolved the press (and the click) to the flattened ancestor
+       instead of the link, so all three hero actions (then labelled `Start
+       (guest, no account)`, `Browse careers first` and `Open the graph in 3D`;
+       the first two have since been renamed) did nothing on click — the single
+       most expensive bug in the landing page, because it silently killed the
+       primary call to action. Flattening the copy plane fixes all three and
+       changes nothing else: nothing inside this layer relies on a nested
+       translateZ. Regression guard: `npm run verify:browser` section 12.
+    */
+    transform-style: flat;
+  }
+
+  .gm-hero-scene {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  /*
+     A legibility scrim between the 3D composition and the headline. The scene is
+     decorative but it is bright: a mid-tone node sitting behind the accent line
+     dropped that text below a readable contrast, and the scene drifts, so it
+     cannot be arranged to always avoid the copy. The scrim fades in from the
+     side the text starts on and is transparent by 78%, so the scene still reads
+     as a scene. It uses the glass tint rather than a solid colour, so it works
+     in both themes without a second rule.
+  */
+  .gm-hero-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      96deg,
+      var(--gm-scrim-1) 0%,
+      var(--gm-scrim-2) 42%,
+      var(--gm-scrim-3) 62%,
+      transparent 82%
+    );
+  }
+
+  .gm-hero-copy {
+    z-index: 2;
+  }
+
+  /* Circular, blurred light behind a headline — the "lamp" the glass bends. */
+  .gm-halo {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    background: radial-gradient(circle at 40% 40%, var(--gm-glow), var(--gm-glow-2) 55%, transparent 72%);
+    pointer-events: none;
+  }
+
+
+  .gm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    /* The project's target-size floor is 36px (2.25rem) for anything that is a
+       control rather than a word inside a sentence — the WCAG 2.5.8 "inline"
+       exception is written down in Layout's footer comment. Before this line the
+       button was 34px tall (0.55rem padding + line-height), which is why the
+       audience measurement counted two dozen controls just under the floor. One
+       rule here beats patching call sites: every button in the app inherits it. */
+    min-height: 2.25rem;
+    border-radius: 0.65rem;
+    border: 1px solid transparent;
+    padding: 0.55rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  /* Every button is a moulded key: raised at rest, deeper on hover, and pressed
+     IN on :active with the shadow pair cast inwards. That inversion is the
+     whole interaction language of soft UI, and it is why the active state is
+     an inset rather than a translate. Motion is limited to a 1px lift, and
+     reduced motion removes even that. */
+  .gm-btn {
+    background-color: var(--gm-neu-base);
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  .gm-btn:hover:not(:disabled),
+  .gm-btn:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: var(--gm-neu-raised-2);
+  }
+
+  .gm-btn:active:not(:disabled) {
+    transform: translateY(1px) scale(0.995);
+    box-shadow: var(--gm-neu-inset-1);
+  }
+
+  .gm-btn:disabled,
+  .gm-btn[aria-disabled='true'] {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+
+  .gm-btn-primary {
+    background-color: var(--gm-accent);
+    color: var(--gm-accent-contrast);
+    border-color: transparent;
+    /* The accent is the one colour the material allows. Its raised pair uses the
+       accent as the shade so the key looks cast from tinted material. */
+    box-shadow: 5px 5px 12px var(--gm-neu-accent-dark), -5px -5px 12px var(--gm-neu-light);
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      transform 140ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .gm-btn-primary:hover:not(:disabled) {
+    background-color: var(--gm-accent-hover);
+    border-color: transparent;
+    box-shadow: 8px 8px 18px var(--gm-neu-accent-dark), -8px -8px 18px var(--gm-neu-light);
+  }
+
+  .gm-btn-primary:active:not(:disabled) {
+    box-shadow: inset 4px 4px 9px rgba(3, 46, 58, 0.45), inset -4px -4px 9px rgba(255, 255, 255, 0.18);
+  }
+
+  .gm-btn-secondary {
+    background-color: var(--gm-neu-base);
+    color: var(--gm-text);
+    border-color: transparent;
+  }
+  .gm-btn-secondary:hover:not(:disabled) {
+    border-color: transparent;
+  }
+
+  /* Ghost buttons carry no depth at rest, so they do not read as raised keys;
+     hovering presses them into the material instead of lifting them out. */
+  .gm-btn-ghost {
+    background-color: transparent;
+    color: var(--gm-text);
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .gm-btn-ghost:hover:not(:disabled) {
+    background-color: var(--gm-neu-base);
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+  .gm-btn-ghost:active:not(:disabled) {
+    box-shadow: var(--gm-neu-inset-1);
+  }
+
+  /* Form fields are the canonical pressed surface: carved into the material
+     rather than laid on top of it. A focus ring is still drawn on top, because
+     an inset shadow is a poor focus indicator. */
+  .gm-input,
+  .gm-select,
+  .gm-textarea {
+    width: 100%;
+    background-color: var(--gm-neu-base);
+    color: var(--gm-text);
+    border: 1px solid transparent;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.925rem;
+    font-family: inherit;
+    box-shadow: var(--gm-neu-inset-1);
+  }
+  .gm-input:focus,
+  .gm-select:focus,
+  .gm-textarea:focus {
+    border-color: var(--gm-accent);
+    box-shadow: var(--gm-neu-inset-2);
+  }
+  .gm-input[aria-invalid='true'],
+  .gm-textarea[aria-invalid='true'] {
+    border-color: var(--gm-danger);
+  }
+
+  .gm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-color: var(--gm-neu-base);
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gm-text);
+    box-shadow: 3px 3px 7px var(--gm-neu-dark), -3px -3px 7px var(--gm-neu-light);
+  }
+
+  /* A groove: used for progress tracks and any bar that represents a channel
+     waiting to be filled. The fill sits inside it, so the accent never floats. */
+  .gm-progress {
+    background-color: var(--gm-neu-base);
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+
+  /* The app bar: raised, same colour as the page, and it keeps its shadow all
+     the way down a long page so content scrolling under it still reads as
+     *behind* it. */
+  .gm-appbar {
+    background-color: var(--gm-neu-base);
+    box-shadow: 0 5px 12px var(--gm-neu-dark);
+  }
+
+  /* Small raised keys in the nav (account chip, sign-in link). */
+  .gm-navkey {
+    border-radius: 0.5rem;
+    background-color: var(--gm-neu-base);
+    box-shadow: var(--gm-neu-raised-1);
+  }
+  .gm-navkey:hover {
+    box-shadow: var(--gm-neu-raised-2);
+  }
+
+  /* The command palette: a raised panel whose search field is its own top strip
+     (borderless and transparent, so the panel stays one material), and rows that
+     press inwards when they are the active result. */
+  .gm-cmd-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 9vh 0.75rem 0.75rem;
+    background: var(--gm-veil);
+  }
+  .gm-cmd-panel {
+    display: flex;
+    width: min(42rem, 100%);
+    max-height: 72vh;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--gm-neu-raised-3);
+  }
+  /* Focus is visible on the whole panel rather than on the borderless field. */
+  .gm-cmd-panel:focus-within {
+    outline: 2px solid var(--gm-focus);
+    outline-offset: 2px;
+  }
+  .gm-cmd-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    padding: 0.35rem 0;
+    font-size: 1rem;
+    color: var(--gm-text);
+  }
+  .gm-cmd-field:focus {
+    outline: none;
+  }
+  .gm-cmd-field::placeholder {
+    color: var(--gm-text-muted);
+  }
+  .gm-cmd-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.6rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background-color: var(--gm-neu-base);
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    color: var(--gm-text);
+    box-shadow: none;
+    cursor: pointer;
+  }
+  .gm-cmd-row[data-active='true'] {
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+
+  /* The current page is pressed in, not coloured in. Colour still carries the
+     accent as a text colour, so the state is legible without the shadow. */
+  .gm-navkey-active {
+    background-color: var(--gm-neu-base);
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+
+  .gm-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gm-text-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  /* Keyboard-only skip link */
+  .gm-skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    background: var(--gm-accent);
+    color: var(--gm-accent-contrast);
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 0.5rem 0;
+    font-weight: 600;
+  }
+  .gm-skip-link:focus {
+    left: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Knowledge graph surface
+--------------------------------------------------------------------------- */
+.gm-graph-surface {
+  /*
+     Declared here rather than left to Cytoscape. The library injects a one-rule
+     <style> element to make its container `position: relative`, and warns if the
+     computed position is static — but the production Content-Security-Policy
+     denies injected style *elements* (style-src-elem 'self'), so that injected
+     rule is blocked by design. Relying on a library to position the element its
+     canvas is drawn into was fragile anyway; the stylesheet now says it outright.
+  */
+  position: relative;
+  background-color: var(--gm-bg-elevated);
+  background-image:
+    linear-gradient(var(--gm-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gm-grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  touch-action: none;
+}
+
+.gm-graph-surface canvas {
+  outline: none;
+}
+
+/*
+   The entrance for a freshly laid-out graph. Cytoscape's own layout animation is
+   switched off in `GraphCanvas` (its animation frames outlive the component and
+   made the library throw after teardown), so the "settle" a visitor sees is this
+   fade instead. The global reduced-motion rules above neutralise animations, so
+   the preference is still respected.
+*/
+.gm-canvas-enter {
+  animation: gm-canvas-in 260ms ease-out both;
+}
+
+@keyframes gm-canvas-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Keyboard focus on a Cytoscape node is mirrored by a real ring. */
+.cy-node-focused {
+  outline: 3px solid var(--gm-focus) !important;
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Utility
+--------------------------------------------------------------------------- */
+.gm-scroll {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gm-border-strong) transparent;
+}
+.gm-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.gm-scroll::-webkit-scrollbar-thumb {
+  background: var(--gm-border-strong);
+  border-radius: 999px;
+}
+
+.gm-prose-terms a {
+  color: var(--gm-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Screen-reader-only text that keeps table structure readable. */
+.gm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media print {
+  .gm-no-print {
+    display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Graceful degradation, revisited.
+   The old build needed an `@supports not (backdrop-filter)` fallback because
+   the whole look depended on a blur. Neumorphism does not: the material is
+   opaque `background-color` plus `box-shadow`, both of which every browser
+   that can render this app supports. What is left is the one case worth
+   handling — a user agent that supports the `background-color` but drops very
+   large box-shadow blur radii. The fallback keeps a single, hard-edged shadow
+   so surfaces are still distinguishable if the soft pair is unavailable.
+--------------------------------------------------------------------------- */
+@supports not (box-shadow: 5px 5px 12px rgba(0, 0, 0, 0.2)) {
+  .gm-card,
+  .gm-panel,
+  .gm-glass-raw,
+  .gm-btn {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  .gm-input,
+  .gm-select,
+  .gm-textarea {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* The old glass cost a full-screen blur on every scroll frame. The neumorphic
+   material costs nothing per frame, so the only remaining motion to suppress
+   for low-power hardware is the button lift (handled with reduced motion
+   below). */
+@media (prefers-reduced-motion: reduce) {
+  .gm-float {
+    animation: none !important;
+  }
+
+  .gm-tilt,
+  .gm-card-3d:hover,
+  .gm-card-3d:focus-within {
+    transform: none !important;
+  }
+
+  /* New depth affordances need their own kill switch: a button that rises on
+     hover is movement, whether or not it is called an animation. */
+  .gm-btn:hover:not(:disabled),
+  .gm-btn:focus-visible,
+  .gm-btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .gm-sheen:hover::after,
+  .gm-sheen:focus-within::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+[data-motion='reduced'] .gm-float {
+  animation: none !important;
+}
+
+[data-motion='reduced'] .gm-tilt {
+  transform: none !important;
+}
+
+/* Print: glass, glows and the aurora all become ink on paper. */
+@media print {
+  .gm-aurora,
+  .gm-sheen::after,
+  .gm-tilt {
+    display: none !important;
+  }
+
+  .gm-glass-raw,
+  .gm-card,
+  .gm-panel,
+  .gm-btn,
+  .gm-chip {
+    background: #fff !important;
+    box-shadow: none !important;
+    border-color: #d0d0d0 !important;
+  }
+
+  .gm-input,
+  .gm-select,
+  .gm-textarea {
+    background: #fff !important;
+    box-shadow: none !important;
+    border-color: #d0d0d0 !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   No-JavaScript fallback
+   Lives here rather than as a literal style="" attribute in index.html, so the
+   shipped HTML carries no inline styles at all and the production policy does
+   not need to allow any.
+--------------------------------------------------------------------------- */
+.gm-noscript {
+  font-family: system-ui, sans-serif;
+  padding: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+
+
+/* ===========================================================================
+   Skiper-style motion layer
+   ---------------------------------------------------------------------------
+   Everything the scroll story is made of: pinned scenes, kinetic type, the
+   reading rail, the marquee, the card stack and the constellation. The rules
+   below are written to one contract, stated in full in src/skiper/index.ts:
+
+     * every animated effect is additive — remove the class and the element is
+       still correct, still reachable and still readable;
+     * every effect is switched off, not merely slowed, by
+       [data-motion='reduced'] (the attribute applyTheme() writes and
+       tests/unit/motion-preference.test.ts pins);
+     * no backdrop-filter anywhere: this product's material is neumorphic, and a
+       frosted panel would be a second material pretending to be the first. The
+       browser suite fails the build if one appears.
+
+   Scroll-linked components write custom properties from a rAF loop and the
+   compositor does the rest; nothing in this section triggers a layout on scroll.
+=========================================================================== */
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     Pointer attraction and parallax
+     Both write custom properties (src/skiper/motion/useMagnetic.ts). The
+     default is 0, so a component that never receives a pointer event is
+     already in its resting state.
+  ------------------------------------------------------------------------- */
+  .gm-magnet {
+    transform: translate3d(var(--gm-magnet-x, 0px), var(--gm-magnet-y, 0px), 0) rotateX(var(--gm-magnet-tilt, 0deg));
+    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-parallax {
+    transform: translate3d(var(--gm-parallax-x, 0px), var(--gm-parallax-y, 0px), 0);
+    will-change: transform;
+  }
+
+  /* -------------------------------------------------------------------------
+     Reveal-on-scroll (the CSS branch: one attribute, no Motion, no rAF)
+  ------------------------------------------------------------------------- */
+  .gm-reveal {
+    transition:
+      opacity 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-reveal-delay, 0ms),
+      transform 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+
+  .gm-reveal[data-reveal='out'] {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+
+  .gm-reveal[data-reveal='in'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     Kinetic type
+     Word-level only. `inline-block` keeps the word atomic without touching the
+     text node, so textContent stays byte-identical to the sentence.
+  ------------------------------------------------------------------------- */
+  .gm-kinetic-word {
+    display: inline-block;
+    will-change: transform, opacity, filter;
+  }
+
+  .gm-kinetic-accent {
+    color: var(--gm-accent);
+  }
+
+  .gm-wordcycle {
+    position: relative;
+    display: inline-block;
+    vertical-align: bottom;
+    min-width: 6ch;
+  }
+
+  .gm-wordcycle-word {
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate3d(0, 0.35em, 0);
+    transition:
+      opacity 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-wordcycle-word[data-active='true'] {
+    position: relative;
+    opacity: 1;
+    transform: none;
+  }
+
+  .gm-mask {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.06em;
+  }
+
+  .gm-mask-inner {
+    display: block;
+    will-change: transform;
+  }
+
+  /* -------------------------------------------------------------------------
+     Preloader
+     Never blocks the pointer, never outlives its own timer, never renders at
+     all for a reduced-motion visitor.
+  ------------------------------------------------------------------------- */
+  .gm-preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: grid;
+    place-items: center;
+    background: var(--gm-bg);
+    pointer-events: none;
+  }
+
+  .gm-preloader-words {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 2.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--gm-text);
+  }
+
+  .gm-preloader-word {
+    grid-area: 1 / 1;
+  }
+
+  .gm-preloader-bar {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: 22%;
+    height: 2px;
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--gm-accent), var(--gm-violet));
+    border-radius: 999px;
+  }
+
+  .gm-preloader-curtain {
+    position: absolute;
+    inset: 0;
+    background: var(--gm-bg);
+  }
+
+  /* -------------------------------------------------------------------------
+     Reading rail: the top hairline and the chapter list
+  ------------------------------------------------------------------------- */
+  .gm-scrollbar-track {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    z-index: 60;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  .gm-scrollbar-fill {
+    display: block;
+    height: 100%;
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--gm-accent), var(--gm-violet));
+  }
+
+  .gm-chapters {
+    position: sticky;
+    top: 5.5rem;
+    align-self: start;
+  }
+
+  .gm-chapters-list {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    border-inline-start: 1px solid var(--gm-border);
+  }
+
+  .gm-chapters-link {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--gm-text-muted);
+    text-decoration: none;
+    border-inline-start: 2px solid transparent;
+    margin-inline-start: -1px;
+    min-height: 1.75rem;
+  }
+
+  .gm-chapters-link:hover,
+  .gm-chapters-link:focus-visible {
+    color: var(--gm-text);
+  }
+
+  .gm-chapters-link[data-active='true'] {
+    color: var(--gm-accent);
+    border-inline-start-color: var(--gm-accent);
+    font-weight: 600;
+  }
+
+  .gm-chapters-index {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  /* -------------------------------------------------------------------------
+     Pinned scroll scene
+     The pinned branch is `lg` and up and is never built for a reduced-motion
+     visitor: layout, not a media query, is what selects the stacked version,
+     so a phone and a reduced-motion desktop share one code path.
+  ------------------------------------------------------------------------- */
+  .gm-scene {
+    padding-block: 2.5rem 1rem;
+  }
+
+  .gm-scene-head {
+    max-width: 46rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .gm-scene-pinned {
+    position: relative;
+    height: calc(100vh * var(--gm-scene-length, 1.8));
+    min-height: 900px;
+  }
+
+  .gm-scene-sticky {
+    position: sticky;
+    top: 4.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 1.5rem;
+    height: calc(100vh - 6rem);
+  }
+
+  .gm-scene-visual {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid var(--gm-border);
+    background: var(--gm-surface);
+    box-shadow: var(--gm-neu-inset-soft);
+  }
+
+  .gm-scene-visual-layer {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    transition-property: opacity, transform;
+    will-change: opacity, transform;
+  }
+
+  .gm-scene-visual-layer[data-active='true'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .gm-scene-panel {
+    position: absolute;
+    inset-inline-end: 0.75rem;
+    bottom: 0.75rem;
+    width: min(20rem, 62%);
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.75rem;
+    background: var(--gm-surface);
+    border: 1px solid var(--gm-border);
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  .gm-scene-progress {
+    height: 2px;
+    border-radius: 999px;
+    background: var(--gm-border);
+    overflow: hidden;
+  }
+
+  .gm-scene-progress-fill {
+    display: block;
+    height: 100%;
+    transform-origin: left center;
+    background: var(--gm-accent);
+  }
+
+  .gm-scene-rail {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .gm-scene-rail-item {
+    display: flex;
+    width: 100%;
+    gap: 0.5rem;
+    align-items: baseline;
+    padding: 0.2rem 0.25rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--gm-text-muted);
+    font: inherit;
+    font-size: 0.75rem;
+    text-align: start;
+    cursor: pointer;
+    min-height: 1.5rem;
+  }
+
+  .gm-scene-rail-item:hover,
+  .gm-scene-rail-item:focus-visible {
+    background: var(--gm-surface-2);
+    color: var(--gm-text);
+  }
+
+  .gm-scene-rail-item[data-active='true'] {
+    color: var(--gm-accent);
+    font-weight: 600;
+  }
+
+  .gm-scene-rail-index {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  .gm-scene-copy {
+    display: grid;
+    align-content: center;
+    gap: 3rem;
+    padding-block: 12vh;
+    scroll-margin-top: 6rem;
+  }
+
+  .gm-scene-copy-step {
+    max-width: 34rem;
+    opacity: 0.42;
+    transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-scene-copy-step[data-active='true'] {
+    opacity: 1;
+  }
+
+  .gm-scene-copy-foot {
+    padding-top: 1rem;
+  }
+
+  /* -------------------------------------------------------------------------
+     Stacked scene (small screens and reduced motion)
+  ------------------------------------------------------------------------- */
+  .gm-scene-stacked {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .gm-scene-step-static {
+    display: grid;
+    gap: 0.75rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .gm-scene-visual-static {
+    border-radius: 0.9rem;
+    border: 1px solid var(--gm-border);
+    background: var(--gm-surface);
+    padding: 0.75rem;
+    min-height: 12rem;
+    display: grid;
+    place-items: center;
+  }
+
+  /* -------------------------------------------------------------------------
+     Marquee
+  ------------------------------------------------------------------------- */
+  .gm-marquee {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+  }
+
+  .gm-marquee-track {
+    display: flex;
+    width: max-content;
+    animation-name: gm-marquee-scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  .gm-marquee[data-reverse='true'] .gm-marquee-track {
+    animation-direction: reverse;
+  }
+
+  .gm-marquee:hover .gm-marquee-track,
+  .gm-marquee:focus-within .gm-marquee-track {
+    animation-play-state: paused;
+  }
+
+  .gm-marquee-row {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0 0.375rem;
+    list-style: none;
+  }
+
+  .gm-marquee-static {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     Stats and meters
+  ------------------------------------------------------------------------- */
+  .gm-stat {
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.9rem;
+    background: var(--gm-surface);
+    border: 1px solid var(--gm-border);
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  .gm-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .gm-stat-label {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gm-text-muted);
+  }
+
+  .gm-stat-note {
+    margin-top: 0.35rem;
+    font-size: 0.7rem;
+    color: var(--gm-text-muted);
+  }
+
+  .gm-meter + .gm-meter {
+    margin-top: 0.75rem;
+  }
+
+  .gm-meter-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .gm-meter-value {
+    font-variant-numeric: tabular-nums;
+    color: var(--gm-text-muted);
+  }
+
+  .gm-meter-track {
+    margin-top: 0.3rem;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--gm-surface-2);
+    box-shadow: var(--gm-neu-inset-soft);
+    overflow: hidden;
+  }
+
+  .gm-meter-fill {
+    display: block;
+    height: 100%;
+    transform-origin: left center;
+    background: var(--gm-accent);
+    transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-meter[data-tone='muted'] .gm-meter-fill {
+    background: var(--gm-border-strong);
+  }
+
+  .gm-meter-note {
+    margin-top: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+  }
+
+  /* -------------------------------------------------------------------------
+     Card stack
+  ------------------------------------------------------------------------- */
+  .gm-stack-viewport {
+    overflow: hidden;
+    border-radius: 1rem;
+  }
+
+  .gm-stack-viewport:focus-visible {
+    outline: 2px solid var(--gm-focus);
+    outline-offset: 3px;
+  }
+
+  .gm-stack-track {
+    display: flex;
+    transition-property: transform;
+    will-change: transform;
+  }
+
+  .gm-stack-card {
+    flex-grow: 0;
+    flex-shrink: 0;
+    padding-inline: 0.375rem;
+  }
+
+  .gm-stack-controls {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .gm-stack-position {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--gm-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .gm-stack-current {
+    color: var(--gm-text);
+  }
+
+  .gm-stack-static {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+
+  /* -------------------------------------------------------------------------
+     Spotlight surface
+  ------------------------------------------------------------------------- */
+  .gm-spotlight {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .gm-spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      14rem 14rem at var(--gm-spot-x, 50%) var(--gm-spot-y, 0%),
+      color-mix(in srgb, var(--gm-accent) 14%, transparent),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 240ms ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .gm-spotlight:hover::before,
+  .gm-spotlight:focus-within::before {
+    opacity: 1;
+  }
+
+  /* -------------------------------------------------------------------------
+     The constellation (SVG prerequisite graph)
+  ------------------------------------------------------------------------- */
+  .gm-constellation {
+    margin: 0;
+    position: relative;
+  }
+
+  .gm-constellation-svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    max-height: min(62vh, 34rem);
+  }
+
+  .gm-constellation-node circle {
+    fill: var(--gm-accent);
+    opacity: 0;
+    transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-constellation-node[data-shown='true'] circle {
+    opacity: 1;
+  }
+
+  .gm-constellation-node[data-kind='career'] circle {
+    fill: var(--gm-violet);
+  }
+
+  .gm-constellation-node[data-kind='project'] circle {
+    fill: var(--gm-success);
+  }
+
+  .gm-constellation-node[data-kind='resource'] circle {
+    fill: var(--gm-text-muted);
+  }
+
+  .gm-constellation-node[data-state='known'] circle {
+    fill: var(--gm-border-strong);
+  }
+
+  .gm-constellation-halo {
+    fill: none !important;
+    stroke: var(--gm-accent);
+    stroke-width: 0.5;
+    opacity: 0.55 !important;
+  }
+
+  .gm-constellation-label {
+    fill: var(--gm-text-muted);
+    font-size: 2.6px;
+    font-family: inherit;
+  }
+
+  .gm-constellation-caption {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+  }
+}
+
+@keyframes gm-marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: every new effect is switched off, not shortened.
+   This block is the second half of the contract in src/skiper/index.ts, and the
+   sidebar in docs/skiper-ui.md maps each rule to the component it neutralises.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .gm-magnet,
+  .gm-parallax {
+    transform: none !important;
+  }
+
+  .gm-marquee-track {
+    animation: none !important;
+  }
+
+  .gm-scene-visual-layer {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-motion='reduced'] .gm-magnet,
+[data-motion='reduced'] .gm-parallax {
+  transform: none !important;
+}
+
+[data-motion='reduced'] .gm-marquee-track {
+  animation: none !important;
+}
+
+[data-motion='reduced'] .gm-reveal {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+[data-motion='reduced'] .gm-kinetic-word {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+[data-motion='reduced'] .gm-scene-visual-layer {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The story page
+   ---------------------------------------------------------------------------
+   The chapter bar is the horizontal navigation the story page uses (the app
+   already owns a vertical sidebar on the same screen, and two vertical columns
+   of navigation is one too many). It sticks under the header so the reader can
+   leave the scroll at any point, and it scrolls sideways on a phone rather than
+   wrapping into four lines and eating the first screen.
+--------------------------------------------------------------------------- */
+@layer components {
+  .gm-storynav {
+    position: sticky;
+    top: 3.25rem;
+    z-index: 40;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--gm-border);
+    background: var(--gm-bg);
+  }
+
+  .gm-storynav-label {
+    display: none;
+  }
+
+  .gm-storynav-list {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.25rem 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .gm-storynav-link {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: baseline;
+    white-space: nowrap;
+    padding: 0.35rem 0.55rem;
+    min-height: 2.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--gm-text-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+
+  .gm-storynav-link:hover,
+  .gm-storynav-link:focus-visible {
+    color: var(--gm-text);
+    background: var(--gm-surface-2);
+  }
+
+  .gm-storynav-link[data-active='true'] {
+    color: var(--gm-accent);
+    border-bottom-color: var(--gm-accent);
+    font-weight: 600;
+  }
+
+  .gm-storynav-index {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.65;
+  }
+
+  /* Scene helpers used by the story's visuals. */
+  .gm-scene-visual-inner {
+    display: grid;
+    gap: 0.75rem;
+    width: 100%;
+    align-content: center;
+  }
+
+  .gm-scene-caption {
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+  }
+
+  .gm-chain-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gm-chain-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--gm-border);
+    background: var(--gm-surface);
+    font-size: 0.75rem;
+    box-shadow: var(--gm-neu-raised-1);
+  }
+
+  .gm-chain-arrow {
+    color: var(--gm-text-muted);
+  }
+
+  .gm-flatlist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .gm-flatlist li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.5rem;
+    background: var(--gm-surface-2);
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+  }
+
+  .gm-flatlist-label {
+    color: var(--gm-text);
+  }
+
+  /* The integration band: what actually runs this thing. */
+  .gm-integrations {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+
+  .gm-integration-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .gm-integration-status {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gm-text-muted);
+    border: 1px solid var(--gm-border);
+    border-radius: 999px;
+    padding: 0.05rem 0.4rem;
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+ * Workflow surface (the /workflows page)
+ *
+ * Styling rules followed here, because this page shows a graph of steps and a
+ * log of what happened:
+ *   1. The step graph reads left to right, in execution order, on one line per
+ *      dependency layer. It wraps rather than scrolling sideways, because a
+ *      horizontally scrolled graph is a graph nobody sees the end of.
+ *   2. Status is carried by a word as well as a colour. Colour alone fails for
+ *      roughly one in twelve men, and "green node" is exactly the sort of thing
+ *      that ends up in a screenshot as evidence.
+ *   3. Nothing here animates. A run log that moves is a run log you cannot read.
+ * ========================================================================== */
+.gm-workflow-graph {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gm-workflow-graph > li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gm-workflow-graph ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.gm-workflow-graph .gm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  max-width: 16rem;
+  text-align: left;
+}
+
+.gm-workflow-graph-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background-color: var(--gm-accent);
+  flex: 0 0 auto;
+}
+
+.gm-workflow-items {
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.gm-workflow-items code,
+.gm-code code {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--gm-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gm-code {
+  background-color: var(--gm-neu-inset-1);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--gm-neu-inset-soft);
+  padding: 0.75rem 0.875rem;
+}
+
+.gm-workflow-card .gm-card-title {
+  letter-spacing: -0.01em;
+}
+
+/* An inset focus ring on the step chips, so keyboard users can tell which step
+   they are reading without the layout shifting. */
+.gm-workflow-graph .gm-chip:focus-visible {
+  outline: 2px solid var(--gm-focus);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  /* On a phone the layer-by-layer columns stack, and the arrow between layers
+     turns into a downward chevron so the order is still readable. */
+  .gm-workflow-graph > li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .gm-workflow-graph > li > span[aria-hidden='true'] {
+    transform: rotate(90deg);
+    margin-left: 0.5rem;
+  }
+}
+
+/* ===========================================================================
+   Site-wide scroll chrome
+   ---------------------------------------------------------------------------
+   The layer that makes every screen in the app — not only the landing story —
+   a scrolling experience: the app bar condenses, the incoming screen rises,
+   section headings stay with their content, and a list arrives in order.
+
+   One rule governs all of it: **only transform, opacity and box-shadow move.**
+   Nothing here changes a box, so scrolling never triggers a layout, and the
+   reduced-motion kill switches at the bottom are `opacity: 1 !important` rather
+   than a shorter duration — the finished state, not a faster route to it.
+=========================================================================== */
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     The app bar condensing
+     Padding is deliberately untouched: shrinking it would move every element
+     below the bar by the same few pixels on the first scroll, which is a layout
+     shift the reader sees as a twitch. The identity block compresses instead,
+     and the tagline fades — both inside a bar whose height never changes.
+  ------------------------------------------------------------------------- */
+  .gm-appbar {
+    transition:
+      box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar-identity {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar-tagline {
+    transition:
+      opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar[data-scrolled='true'] {
+    box-shadow: var(--gm-neu-raised-2);
+    border-bottom-color: var(--gm-border-strong);
+  }
+
+  .gm-appbar[data-scrolled='true'] .gm-appbar-identity {
+    transform: translateY(-1px) scale(0.97);
+  }
+
+  .gm-appbar[data-scrolled='true'] .gm-appbar-tagline {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  /* -------------------------------------------------------------------------
+     The incoming screen
+     A CSS animation with no exit twin: the old screen is already gone, and
+     delaying the new one is how a transition becomes latency.
+  ------------------------------------------------------------------------- */
+  .gm-page-enter {
+    animation: gm-page-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes gm-page-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     Sticky section headings
+     The heading bar rides with its own section. It is a sibling of the
+     revealed body — never a descendant — because a transform on an ancestor
+     makes that ancestor the sticky containing block and the heading would then
+     pin to the section instead of to the viewport.
+  ------------------------------------------------------------------------- */
+  .gm-section {
+    margin-bottom: 1.75rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .gm-section-head {
+    margin-bottom: 0.75rem;
+  }
+
+  /* The group heading pinned inside its own card. Used by `SectionTitle sticky`
+     on long grouped lists (the roadmap's weeks). Deliberately not switched off
+     under reduced motion: pinning is not movement, it is the opposite of it. */
+  .gm-sticky-title {
+    position: sticky;
+    top: 3.6rem;
+    z-index: 4;
+    background: var(--gm-neu-base);
+    padding-block: 0.3rem;
+    border-bottom: 1px solid var(--gm-border);
+  }
+
+  .gm-section-head-sticky {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 5;
+    background: var(--gm-bg);
+    padding-block: 0.35rem;
+    border-bottom: 1px solid var(--gm-border);
+  }
+
+  .gm-section-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .gm-section-hint {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+    max-width: 60ch;
+  }
+
+  .gm-section-body[data-reveal='out'] {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  .gm-section-body {
+    transition:
+      opacity 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-section-body[data-reveal='in'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     Staggered lists
+     The delay is positional, which is why the component needs no per-row
+     JavaScript and no extra wrapper elements. The cap at twelve is the token
+     clamp (`staggerDelay`) expressed in CSS: past a dozen children, everyone
+     else arrives together rather than the last row waiting four seconds.
+  ------------------------------------------------------------------------- */
+  .gm-stagger > * {
+    transition:
+      opacity 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-stagger-delay, 0ms),
+      transform 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-stagger-delay, 0ms);
+  }
+
+  .gm-stagger[data-reveal='out'] > * {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+
+  .gm-stagger[data-reveal='in'] > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .gm-stagger > *:nth-child(1) { --gm-stagger-delay: 0ms; }
+  .gm-stagger > *:nth-child(2) { --gm-stagger-delay: 70ms; }
+  .gm-stagger > *:nth-child(3) { --gm-stagger-delay: 140ms; }
+  .gm-stagger > *:nth-child(4) { --gm-stagger-delay: 210ms; }
+  .gm-stagger > *:nth-child(5) { --gm-stagger-delay: 280ms; }
+  .gm-stagger > *:nth-child(6) { --gm-stagger-delay: 350ms; }
+  .gm-stagger > *:nth-child(7) { --gm-stagger-delay: 420ms; }
+  .gm-stagger > *:nth-child(8) { --gm-stagger-delay: 490ms; }
+  .gm-stagger > *:nth-child(9) { --gm-stagger-delay: 560ms; }
+  .gm-stagger > *:nth-child(10) { --gm-stagger-delay: 630ms; }
+  .gm-stagger > *:nth-child(11) { --gm-stagger-delay: 700ms; }
+  .gm-stagger > *:nth-child(12) { --gm-stagger-delay: 770ms; }
+  .gm-stagger > *:nth-child(n + 13) { --gm-stagger-delay: 800ms; }
+
+  /* -------------------------------------------------------------------------
+     Back to top
+     Sits above the phone's fixed bottom bar, clear of the desktop sidebar's
+     column, and never over a control it could be mistaken for.
+  ------------------------------------------------------------------------- */
+  .gm-backtotop {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 4.75rem;
+    z-index: 35;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--gm-text);
+    background: var(--gm-bg-elevated);
+    border: 1px solid var(--gm-border);
+    border-radius: 999px;
+    box-shadow: var(--gm-depth-2);
+  }
+
+  .gm-backtotop:hover {
+    color: var(--gm-accent);
+  }
+
+  @media (min-width: 768px) {
+    .gm-backtotop {
+      right: 1.5rem;
+      bottom: 1.5rem;
+    }
+  }
+
+  /* The chapter rail, two-column variant: a page that wants the section list
+     beside its content on a wide screen. */
+  .gm-with-rail {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    .gm-with-rail {
+      grid-template-columns: minmax(0, 1fr) 12rem;
+      align-items: start;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: finished states, not shorter animations.
+--------------------------------------------------------------------------- */
+[data-motion='reduced'] .gm-appbar-identity,
+[data-motion='reduced'] .gm-appbar-tagline,
+[data-motion='reduced'] .gm-page-enter,
+[data-motion='reduced'] .gm-section-body,
+[data-motion='reduced'] .gm-stagger > * {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
