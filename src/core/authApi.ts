@@ -56,8 +56,8 @@ function toResult(_status: number, body: Record<string, unknown>, fallback: stri
  */
 export async function probeAccounts(): Promise<AccountsProbe> {
   try {
-    const { body } = await call('/api/auth/me', { method: 'GET' })
-    if (body['available'] !== true) return { available: false, user: null }
+    const { status, body } = await call('/api/auth/me', { method: 'GET', signal: AbortSignal.timeout(8000) })
+    if (status !== 200 || body['available'] !== true) return { available: false, user: null }
     return { available: true, user: (body['user'] as LocalUser | null) ?? null }
   } catch {
     return { available: false, user: null }

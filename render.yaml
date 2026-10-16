@@ -1,0 +1,25 @@
+# Node website + persistent server-side Postgres (PGlite).
+# Review hosting/disk charges before creating this Blueprint.
+# Static hosts such as GitHub Pages cannot run this backend.
+services:
+  - type: web
+    name: graphmentor
+    runtime: node
+    plan: starter
+    numInstances: 1
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: graphmentor-database
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: GM_DATABASE_DIR
+        value: /var/data/postgres
+      - key: VITE_BASE_PATH
+        value: /

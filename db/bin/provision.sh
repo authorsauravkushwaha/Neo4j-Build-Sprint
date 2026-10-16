@@ -105,15 +105,15 @@ gm_psql "$(gm_admin_url "$GM_DB_NAME")" \
   -c 'set role gm_owner' \
   -f "$GM_REPO/db/identity/01_credentials.sql" >/dev/null
 
-say "applying task progress (db/identity/02_task_progress.sql) as gm_owner"
-gm_psql "$(gm_admin_url "$GM_DB_NAME")" \
-  -c 'set role gm_owner' \
-  -f "$GM_REPO/db/identity/02_task_progress.sql" >/dev/null
-
 for migration in "$GM_REPO"/supabase/migrations/0*.sql; do
   say "applying $(basename "$migration") as gm_owner"
   gm_psql "$(gm_admin_url "$GM_DB_NAME")" -c 'set role gm_owner' -f "$migration" >/dev/null
 done
+
+say "applying task progress (db/identity/02_task_progress.sql) as gm_owner"
+gm_psql "$(gm_admin_url "$GM_DB_NAME")" \
+  -c 'set role gm_owner' \
+  -f "$GM_REPO/db/identity/02_task_progress.sql" >/dev/null
 
 say "applying hardening (db/security/00_hardening.sql)"
 gm_psql "$(gm_admin_url "$GM_DB_NAME")" -f "$GM_REPO/db/security/00_hardening.sql" >/dev/null

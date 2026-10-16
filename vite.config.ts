@@ -1,3 +1,4 @@
+import { accountsPlugin } from './server/vite.ts'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
@@ -253,6 +254,7 @@ export default defineConfig(({ mode, command }) => {
     // The build knows its own version; before this the footer rendered "vdev".
     define: { 'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion) },
     plugins: [
+      accountsPlugin(env),
       react(),
       tailwindcss(),
       htmlPlugin(
@@ -390,16 +392,24 @@ export default defineConfig(({ mode, command }) => {
       port: 5173,
       strictPort: true,
       allowedHosts: devAllowedHosts,
-      // The sign-in server (server/server.ts) on our own database. Browsers
-      // only ever see same-origin /api; the database stays behind two hops.
-      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false, xfwd: false } },
+      // Normally accountsPlugin serves /api in-process. An independently run
+      // account server can instead be reached through this same-origin proxy.
+      proxy: {
+        ...(env.GM_EXTERNAL_API === 'true'
+          ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
+          : {}),
+      },
     },
     preview: {
       host: true,
       port: 4173,
       strictPort: true,
       allowedHosts: devAllowedHosts,
-      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false, xfwd: false } },
+      proxy: {
+        ...(env.GM_EXTERNAL_API === 'true'
+          ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
+          : {}),
+      },
     },
   }
 })

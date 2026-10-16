@@ -29,6 +29,7 @@ import { config, hasBackend } from '@/core/env.ts'
 import { resetWebGLCache } from '@/components/three/webgl.ts'
 import { api, refreshHealth, subscribeSession, type SessionState } from '@/core/session.ts'
 import { ApiError } from '@/core/api.ts'
+import { probeAccounts, type AccountsProbe } from '@/core/authApi.ts'
 import { sendMagicLink, signOut, signOutEverywhere } from '@/core/auth.ts'
 import { formatDate, formatNumber } from '@/core/format.ts'
 import { saveLocalRoadmaps } from '@/core/persistence.ts'
@@ -99,6 +100,14 @@ export function SettingsPage(): ReactNode {
   const session = useAppStore((state) => state.session)
   const pushToast = useAppStore((state) => state.pushToast)
   const storageOk = useAppStore((state) => state.storageOk)
+
+  const [accounts, setAccounts] = useState<AccountsProbe | null>(null)
+  useEffect(() => {
+    if (hasBackend) return
+    let active = true
+    void probeAccounts().then((result) => { if (active) setAccounts(result) })
+    return () => { active = false }
+  }, [])
 
   const [email, setEmail] = useState('')
   const [signingIn, setSigningIn] = useState(false)
@@ -262,14 +271,35 @@ export function SettingsPage(): ReactNode {
         </Card>
 
         <Card>
-          <SectionTitle hint={hasBackend ? 'optional — everything works as a guest' : 'unavailable in this build'}>
+          <SectionTitle hint={hasBackend || accounts?.available ? 'database-backed accounts — guest mode is still available' : 'account connection'}>
             Account
           </SectionTitle>
           {!hasBackend ? (
-            <Callout kind="warning" title="No backend configured">
-              This build has no Supabase project, so accounts are unavailable. All features work as a guest with data stored on
-              this device. See .env.example to configure a backend.
-            </Callout>
+            accounts === null ? (
+              <p role="status" className="text-sm text-muted">Checking the account database…</p>
+            ) : accounts.available ? (
+              <div className="space-y-3">
+                <Callout kind="success" title="Account database connected">
+                  {accounts.user
+                    ? `Signed in as ${accounts.user.email}. Your account uses this website’s database.`
+                    : 'This website has its own PostgreSQL database. Create an account or sign in to save your data beyond this browser.'}
+                  {' '}Use Account to upload or download your bookmarks, skill ratings, profile and roadmap task progress.
+                  Device data stays separate until you choose to sync it.
+                </Callout>
+                <LinkButton to={accounts.user ? '/account' : '/login'} variant="primary">
+                  {accounts.user ? 'Account and database sync' : 'Sign in or create account'}
+                </LinkButton>
+              </div>
+            ) : (
+              <Callout kind="warning" title="Account database unreachable">
+                The account service could not be reached. Your device data is safe and guest mode still works.
+                Start the database-backed website with npm run dev, or npm start for a production build.
+                Static-only hosting needs a separately hosted backend.
+                <div className="mt-3">
+                  <Button variant="secondary" onClick={() => { setAccounts(null); void probeAccounts().then(setAccounts) }}>Retry connection</Button>
+                </div>
+              </Callout>
+            )
           ) : session ? (
             <div className="space-y-3">
               <p className="text-sm">

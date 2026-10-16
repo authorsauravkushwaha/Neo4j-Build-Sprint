@@ -12,6 +12,17 @@ APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 > Every screen works, and every screenshot-visible claim says "bundled sample dataset" rather than
 > pretending to be live. Add credentials later and the same UI switches to live graph data.
 
+## Website database — no Supabase setup needed
+
+`npm ci && npm run dev` now starts the website **and a disk-backed account database** together.
+For production, run `npm run build && npm start`. Open **Settings → Sign in or create account**, then
+**Account → Upload this device to my account** to store bookmarks, ratings, profile and task progress
+on the server. Sync is explicit; existing guest data is not uploaded automatically.
+
+For a public database-backed website, deploy the Node service with a **persistent disk** (a Render
+Blueprint is included). **GitHub Pages cannot run the built-in database** — uploading `dist/` alone
+only deploys the frontend. See [Database setup and deployment](docs/database.md).
+
 ---
 
 ## Contents
@@ -309,7 +320,17 @@ Accounts are **optional**, and guest mode is the default: nothing in this app is
 account adds is that your roadmap, ratings, progress and bookmarks live on the server instead of only in
 this browser.
 
-Three ways in, all handled by Supabase Auth:
+### Built-in password accounts (default Node website)
+
+The website's own PostgreSQL engine starts with `npm run dev`, `npm run preview`, or `npm start`.
+It uses the existing `server/server.ts` account/sync API, stores data on server disk, and requires no
+Supabase project. Settings detects the running service rather than assuming accounts are unavailable
+without Supabase. Password sign-in and explicit account/device sync live at `/login` and `/account`.
+See [docs/database.md](docs/database.md) for supported data, security, persistence and deployment.
+
+### Supabase accounts (optional hosted provider)
+
+With Supabase configured, these three entry points use Supabase Auth:
 
 | Route | What happens |
 | --- | --- |
@@ -331,12 +352,18 @@ Design decisions you can check in the code (`src/core/auth.ts`, `docs/security.m
 - **Deleting account data deletes rows, not the login.** Removing an auth user needs the `service_role`
   key, which never goes near a browser. The UI says exactly that.
 
-To turn accounts on, follow [Going live](#going-live-neo4j--supabase) and remember to deploy the
+To turn Supabase accounts on, follow [Going live](#going-live-neo4j--supabase) and remember to deploy the
 `auth-guard` function — without it, sign-in still works but the app has no ceiling of its own.
 
 ## Deploying
 
-The frontend is static files; the API is Supabase Edge Functions. Typical free-first options:
+**Database-backed Node website:** build with `npm run build`, serve with `npm start`, and mount a
+persistent disk at `GM_DATABASE_DIR`. `render.yaml` includes a single-instance service and disk
+(review paid hosting costs first). See [docs/database.md](docs/database.md). The server serves the
+frontend and account API at the same origin; no database credential is shipped to a browser.
+
+**Static frontend + optional Supabase Edge Functions:** the following options cannot run the built-in
+Node/database service on their own:
 
 - **GitHub Pages** — push to `main`, the workflow in `.github/workflows/deploy.yml` builds and publishes
   `dist/`. The base path and the site URL are derived from the repository (`/<repo-name>/` for project

@@ -1,6 +1,12 @@
 # Deployment
 
-Three free-first targets. Pick one; they are alternatives, not steps.
+For a **website with its own account database and no Supabase project**, deploy the Node service
+with a persistent disk: see [database.md](database.md). `render.yaml` provides a Blueprint (paid disk
+plan). Build with `npm run build`, start with `npm start`, set `GM_DATABASE_DIR` to the disk path, and
+use one replica. Publishing only `dist/` will not run that database.
+
+The rest of this document covers three static/frontend targets with an optional Supabase backend.
+Pick one; they are alternatives, not steps.
 
 Everything here assumes you already have the project cloned and `npm ci` has run once.
 Nothing in this document was executed for you — see [verification.md](verification.md#6-not-verified--read-this-before-believing-anything-else).
