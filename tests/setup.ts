@@ -12,7 +12,7 @@ import { cleanup } from '@testing-library/react'
 
 /* ---------------------------------------------------------------- matchMedia */
 
-if (!window.matchMedia) {
+if (typeof window !== 'undefined' && !window.matchMedia) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
     configurable: true,
@@ -42,7 +42,7 @@ if (!('ResizeObserver' in globalThis)) {
 
 /* ------------------------------------------------------------------- scrolling */
 
-if (!Element.prototype.scrollIntoView) {
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function scrollIntoView(): void {}
 }
 
@@ -98,7 +98,7 @@ canvasContextStub.createLinearGradient = vi.fn(() => ({ addColorStop: vi.fn() })
 canvasContextStub.getImageData = vi.fn(() => ({ data: new Uint8ClampedArray(4) }))
 canvasContextStub.canvas = { width: 800, height: 600 }
 
-Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+if (typeof HTMLCanvasElement !== 'undefined') Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   writable: true,
   configurable: true,
   value: (type: string) => (type === '2d' ? canvasContextStub : null),
@@ -116,6 +116,8 @@ if (!URL.revokeObjectURL) {
 /* ---------------------------------------------------------------- tests hooks */
 
 beforeEach(() => {
+  // Real database/HTTP tests use the Node environment, without a browser.
+  if (typeof window === 'undefined') return
   window.localStorage.clear()
   document.documentElement.dataset.theme = 'dark'
   // The attribute the app actually reads (see applyTheme in state/store.ts).

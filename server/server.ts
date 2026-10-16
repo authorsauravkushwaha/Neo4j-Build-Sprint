@@ -4,8 +4,8 @@
  * This is the whole backend behind the sign-in form. It exists because the app
  * previously only knew how to talk to a hosted Supabase project: with none
  * configured, the form was (honestly) hidden. This server is the alternative
- * the project owns: plain Node HTTP over the PostgreSQL cluster in `db/`,
- * reached by the browser only through the Vite proxy at `/api`, so the
+ * the project owns: plain Node HTTP over PostgreSQL (embedded on disk by default, or the cluster
+ * in `db/`), reached by the browser at same-origin `/api`, so the
  * database port is never exposed to a browser at all.
  *
  * Security posture, briefly (the long version is docs/database.md):
@@ -21,16 +21,15 @@
  *  - Attempts are rate-limited per address and per network; state-changing
  *    requests need the `x-gm-csrf` header and a same-host Origin when one is
  *    sent, on top of SameSite=Lax.
- *  - Bodies are capped at 16 kB, passwords at 72 bytes (rejected, never
+ *  - Auth bodies are capped at 16 kB (sync at 2 MiB), passwords at 72 bytes (rejected, never
  *    truncated), and no password or token is ever logged.
  */
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto'
-import { readFileSync, existsSync } from 'node:fs'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
-import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { Pool } from 'pg'
+import { loadServerEnv } from './env.ts'
+import { openDatabase, type Database } from './database.ts'
 
 /* ========================================================================
  * Passwords (exported for tests)
@@ -240,43 +239,13 @@ export function validateSyncPayload(body: Record<string, unknown>): { ok: true; 
 }
 
 /* ========================================================================
- * Configuration: our own database, through its least-privilege auth role
- * ====================================================================== */
-
-const GM_ROOT = process.env['GM_DB_ROOT'] ?? '/srv/graphmentor-pg'
-const PORT = Number(process.env['AUTH_PORT'] ?? 8787)
-
-function databasePool(): Pool {
-  const secrets = join(GM_ROOT, 'secrets')
-  const certs = join(GM_ROOT, 'certs')
-  const passwordPath = join(secrets, 'gm_auth.pass')
-  if (!existsSync(passwordPath)) {
-    throw new Error(`gm_auth password file missing at ${passwordPath} — run: npm run db:provision`)
-  }
-  return new Pool({
-    host: '127.0.0.1',
-    port: Number(process.env['GM_PORT'] ?? 5433),
-    database: process.env['GM_DB_NAME'] ?? 'graphmentor',
-    user: 'gm_auth',
-    password: readFileSync(passwordPath, 'utf8').trim(),
-    ssl: {
-      ca: readFileSync(join(certs, 'ca.crt')),
-      cert: readFileSync(join(certs, 'client-gm_auth.crt')),
-      key: readFileSync(join(certs, 'client-gm_auth.key')),
-      rejectUnauthorized: true,
-    },
-    max: 4,
-    connectionTimeoutMillis: 5_000,
-  })
-}
-
-/* ========================================================================
  * HTTP plumbing
  * ====================================================================== */
 
 const SESSION_COOKIE = 'gm_session'
 const SESSION_DAYS = 30
 const MAX_BODY_BYTES = 16_384
+const MAX_SYNC_BYTES = 2_097_152
 
 interface ApiResult {
   status: number
@@ -301,13 +270,13 @@ function fail(status: number, message: string, extra: Record<string, unknown> = 
   return { status, body: { ok: false, message, ...extra } }
 }
 
-async function readJson(request: IncomingMessage): Promise<Record<string, unknown> | null> {
+async function readJson(request: IncomingMessage, limit = MAX_BODY_BYTES): Promise<Record<string, unknown> | null> {
   const chunks: Buffer[] = []
   let size = 0
   for await (const chunk of request) {
     const buffer = chunk as Buffer
     size += buffer.length
-    if (size > MAX_BODY_BYTES) return null
+    if (size > limit) return null
     chunks.push(buffer)
   }
   if (chunks.length === 0) return {}
@@ -376,7 +345,7 @@ function sessionCookie(token: string, allowInsecureHttp: boolean, maxAgeSeconds:
  * The service
  * ====================================================================== */
 
-export function createAuthServer(pool: Pool, options: AuthServerOptions = {}) {
+export function createAuthServer(pool: Database, options: AuthServerOptions = {}) {
   const rateLimited = createLimiter()
   const address = (request: IncomingMessage) => clientAddress(request, options.trustProxy === true)
   const cookie = (token: string, maxAge: number) => sessionCookie(token, options.allowInsecureHttp === true, maxAge)
@@ -446,6 +415,8 @@ export function createAuthServer(pool: Pool, options: AuthServerOptions = {}) {
     }
 
     if (path === '/api/auth/me' && method === 'GET') {
+      // Do not advertise accounts when storage has failed.
+      await pool.query('select 1')
       const user = await currentUser(request)
       return { status: 200, body: { available: true, user } }
     }
@@ -612,7 +583,7 @@ export function createAuthServer(pool: Pool, options: AuthServerOptions = {}) {
     if (path === '/api/sync' && method === 'PUT') {
       const user = await currentUser(request)
       if (!user) return fail(401, 'Sign in first.')
-      const body = await readJson(request)
+      const body = await readJson(request, MAX_SYNC_BYTES)
       if (!body) return fail(400, 'The request body was not valid JSON, or was too large.')
       const validated = validateSyncPayload(body)
       if (!validated.ok) return fail(400, validated.message)
@@ -692,14 +663,19 @@ export function createAuthServer(pool: Pool, options: AuthServerOptions = {}) {
 
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false
 if (isMain) {
-  const pool = databasePool()
+  loadServerEnv()
+  const pool = await openDatabase()
   const server = createAuthServer(pool, {
     trustProxy: process.env['AUTH_TRUST_PROXY'] === 'true',
     allowInsecureHttp: process.env['AUTH_ALLOW_INSECURE_HTTP'] === 'true',
   })
-  server.listen(PORT, '127.0.0.1', () => {
-    console.log(`graphmentor auth server on 127.0.0.1:${PORT} (database: our own PostgreSQL via gm_auth)`)
+  const port = Number(process.env['AUTH_PORT'] ?? 8787)
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`GraphMentor account API ready on port ${port}`)
   })
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.once(signal, () => server.close(() => { void pool.end() }))
+  }
 }
 
 
