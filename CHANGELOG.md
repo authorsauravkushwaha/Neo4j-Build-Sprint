@@ -6,6 +6,31 @@ version (`neo4j/MANIFEST.json`). Every number below is reproducible with the com
 
 ## Unreleased
 
+- **Second-pass security audit: five defects found, demonstrated and fixed**
+  (`docs/security-audit-round2-2026-10-16.md`, `tests/security/`, 57 adversarial assertions).
+  Two of them were the first audit's own fixes surviving in a second copy of the same code —
+  which is why both are now single-implementation.
+  - The Edge Functions believed caller-supplied `cf-connecting-ip` / `x-real-ip` / the first
+    `x-forwarded-for` hop, so one client could rotate its rate-limit bucket per request: 500
+    requests produced 250 buckets, defeating the per-host ceiling on password guessing and the
+    per-minute ceiling on the paid AI endpoint. Address selection is now explicit
+    (`clientIpFromHeaders`, `TRUST_PROXY_HEADERS`, `TRUSTED_PROXY_HOPS`) and the same loop yields
+    one bucket. `server/server.ts` already had this gate; the Edge path did not.
+  - The browser carried a duplicate of the workflow HTTP probe that had drifted to
+    `redirect: 'follow'` with credentials attached, so any allow-listed host with an open redirect
+    was a trampoline to a host the policy refuses — with the learner's cookies. It now calls the
+    shared hardened probe.
+  - The browser signed a four-field canonical string against the server's five, omitting the
+    nonce: enabling `REQUIRE_REQUEST_SIGNING` would have taken the AI and save endpoints offline
+    rather than hardening them, and a captured request could have been replayed with fresh nonces.
+    Both sides now share one canonical string, and the signer receives the nonce rather than
+    inventing it.
+  - Rate-limit bucket keys were an unkeyed hash under a constant published in this repository, so
+    the table documented as holding "no personal data" could be swept offline back into email
+    addresses and IPs. They are now an HMAC under `RATE_LIMIT_PEPPER`, and `/health-check` reports
+    whether the pepper is set instead of implying a property it does not have.
+  - `deploy.yml` interpolated `${{ }}` expressions straight into a `run:` block; both now arrive
+    through `env:`, and a test fails on any expression reaching a shell in either workflow.
 - **GitHub Pages deployment is now derived, not remembered.** The Pages workflow computes the
   base path and site URL from the repository (`/<repo>/` for a project site, `/` for a
   `<owner>.github.io` repository) instead of trusting a variable to be set, because the wrong

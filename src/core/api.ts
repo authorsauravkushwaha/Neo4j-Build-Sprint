@@ -35,6 +35,7 @@ import { legend, RELATION_META, graphBasisLine } from '@core/graphModel.ts'
 import { createLocalReader } from '@core/localReader.ts'
 import type { GraphReader, CareerDetail } from '@core/graphReader.ts'
 import type { ApiMeta } from '@core/types.ts'
+import { buildRequestSignature, randomToken } from '@core/security.ts'
 
 import { knowledgeGraph } from '@/data/seed/knowledgeGraph.ts'
 import { config } from './env.ts'
@@ -978,13 +979,58 @@ export interface LiveClientOptions {
   apiBaseUrl: string
   /** Returns the current Supabase access token, or null for guests. */
   getToken: () => Promise<string | null>
-  /** Optional HMAC signer for deployments with REQUIRE_REQUEST_SIGNING=true. */
-  sign?: (payload: string) => Promise<{ signature: string; nonce: string; timestamp: number }>
+  /**
+   * Optional HMAC signer for deployments with REQUIRE_REQUEST_SIGNING=true.
+   *
+   * It receives the *complete* canonical parts — including the nonce this client
+   * generated — and returns only the signature. That shape is deliberate: when
+   * the signer owned nonce generation, the string handed to it could not contain
+   * the nonce, so the nonce was necessarily outside the signed bytes and a
+   * captured request could be replayed by swapping in a fresh one. Passing the
+   * nonce in makes omitting it impossible rather than merely unlikely.
+   *
+   * Use `signClientRequest` for the implementation; it signs with the same
+   * canonical string the Edge Function verifies.
+   */
+  sign?: (parts: ClientRequestParts) => Promise<{ signature: string }>
   /**
    * Optional fetch implementation. The default is the platform one; a shell
    * (Capacitor, a test, a proxy) may need to supply its own.
    */
   fetchImpl?: typeof fetch
+}
+
+/** The fields both sides of the request-signature contract must agree on. */
+export interface ClientRequestParts {
+  method: string
+  /** Path only, no query string — the server signs `url.pathname`. */
+  path: string
+  body: string
+  timestampMs: number
+  nonce: string
+}
+
+/**
+ * Signs a request the way the Edge Function verifies it.
+ *
+ * Both sides use `canonicalRequestString` from the shared core, so the field
+ * order and membership are defined once. The browser previously built its own
+ * four-field string (`method\npath\ntimestamp\nbody`) against the server's five
+ * (`…\nnonce\nbody`): every signed request failed as a mismatch, so turning
+ * replay protection on took the AI and save endpoints offline instead of
+ * hardening them — and the field it dropped was the nonce, the one that makes a
+ * request single-use. See tests/security/exploit-replay-nonce.test.ts.
+ */
+export async function signClientRequest(
+  secret: string,
+  parts: { method: string; path: string; body: string; timestampMs: number },
+): Promise<{ signature: string; nonce: string; timestampMs: number }> {
+  // 16 bytes of hex: inside the server's /^[0-9a-f]{16,64}$/i nonce shape and
+  // its 8-character minimum, and large enough that a fresh one never collides
+  // with a nonce still inside its replay window.
+  const nonce = randomToken(16)
+  const signature = await buildRequestSignature(secret, { ...parts, nonce })
+  return { signature, nonce, timestampMs: parts.timestampMs }
 }
 
 interface Envelope<T> {
@@ -1013,12 +1059,21 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
     if (init.body !== undefined) {
       bodyText = JSON.stringify(init.body)
       if (options.sign) {
-        // Replay protection: the signature covers method, path, timestamp and body.
-        const timestamp = Date.now()
-        const { signature, nonce } = await options.sign(`${init.method}\n${url.pathname}\n${timestamp}\n${bodyText}`)
+        // Replay protection. The nonce is generated here and handed to the
+        // signer as part of the canonical parts, so it is inside the signed
+        // bytes: a captured request cannot be replayed with a fresh nonce.
+        const timestampMs = Date.now()
+        const nonce = randomToken(16)
+        const { signature } = await options.sign({
+          method: init.method,
+          path: url.pathname,
+          body: bodyText,
+          timestampMs,
+          nonce,
+        })
         headers['x-gm-signature'] = signature
         headers['x-gm-nonce'] = nonce
-        headers['x-gm-timestamp'] = String(timestamp)
+        headers['x-gm-timestamp'] = String(timestampMs)
       }
     }
 

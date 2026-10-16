@@ -197,11 +197,20 @@ jobs:
       # The rules themselves are unit-tested in tests/unit/github-pages.test.ts.
       - name: Check the published artifact
         if: always() && steps.deploy.outcome == 'success'
+        # Values arrive through `env`, not `${{ }}` interpolation. A `${{ }}`
+        # inside `run:` is substituted into the script *before* the shell sees
+        # it, so any quote or `$( )` in the value becomes shell syntax — the
+        # standard GitHub Actions script-injection pattern. Both values here come
+        # from a step output rather than from a fork, but the safe form costs
+        # nothing and survives the next person pointing this at event data.
+        env:
+          BASE_PATH: ${{ steps.target.outputs.base }}
+          PAGE_URL: ${{ steps.target.outputs.url }}
         run: |
-          base='${{ steps.target.outputs.base }}'
+          base="$BASE_PATH"
           fail() { echo "::error::$1"; exit 1; }
           test -f dist/404.html || fail 'dist/404.html is missing — deep links will show GitHub 404 page.'
           grep -q "href=\"${base}manifest.webmanifest\"" dist/index.html \
             || fail "index.html does not reference the manifest under $base — the base path is wrong."
           test -s dist/icons/icon-512.png || fail 'dist/icons/icon-512.png is missing — the PWA cannot install.'
-          echo "Artifact checks passed: $(du -sh dist | cut -f1) published at ${{ steps.target.outputs.url }}"
+          echo "Artifact checks passed: $(du -sh dist | cut -f1) published at $PAGE_URL"

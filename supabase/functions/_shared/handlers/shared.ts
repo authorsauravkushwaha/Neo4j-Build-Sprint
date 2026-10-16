@@ -105,7 +105,9 @@ export async function enforceRateLimit(
   scope: string,
 ): Promise<{ limit: number; remaining: number; resetSeconds: number }> {
   const identifier = await limitScopeIdentifier(runtime, request)
-  const key = await bucketKey(scope, identifier)
+  // The pepper makes the stored key irreversible without a server-side secret;
+  // see bucketKey in core/rateLimit.ts.
+  const key = await bucketKey(scope, identifier, runtime.config.rateLimitPepper)
   const result = await checkRateLimit(runtime.rateLimit, key, policy, runtime.now())
   if (!result.allowed) {
     throw new AppError('rate_limited', {

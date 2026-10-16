@@ -133,6 +133,75 @@ export function corsHeaders(origin: string | null, options: CorsOptions): Record
   }
 }
 
+/* ==========================================================================
+ * Client address selection
+ * ========================================================================== */
+
+export interface ClientIpOptions {
+  /**
+   * Trust a single-valued proxy header (`cf-connecting-ip`, `x-real-ip`).
+   *
+   * Off by default, and it must stay off unless this deployment really sits
+   * behind something that *overwrites* those headers. Nothing in the Supabase
+   * Edge / Deno Deploy path sets either one, so by default they are pure caller
+   * input: reading them hands every anonymous rate-limit bucket to whoever is
+   * making the request. See tests/security/exploit-client-ip.test.ts.
+   */
+  trustProxyHeaders: boolean
+  /**
+   * How many trusted proxies sit between the client and this function.
+   *
+   * `x-forwarded-for` grows by *appending*, so the rightmost entries are the
+   * ones our own platform added and the leftmost are whatever the caller chose
+   * to send. With one trusted proxy the client address is the last entry; with
+   * two it is the second-to-last. Reading hop `[0]` — the instinctive choice —
+   * reads the attacker's value instead.
+   */
+  trustedProxyHops: number
+}
+
+export const DEFAULT_CLIENT_IP_OPTIONS: ClientIpOptions = { trustProxyHeaders: false, trustedProxyHops: 1 }
+
+/** Clamped so a typo cannot collapse every client into a single shared bucket. */
+const MAX_TRUSTED_PROXY_HOPS = 8
+
+export function readClientIpOptions(env: (key: string) => string | undefined): ClientIpOptions {
+  const hops = Number((env('TRUSTED_PROXY_HOPS') ?? '').trim())
+  return {
+    trustProxyHeaders: (env('TRUST_PROXY_HEADERS') ?? '').trim().toLowerCase() === 'true',
+    trustedProxyHops: Number.isInteger(hops) && hops >= 1 ? Math.min(hops, MAX_TRUSTED_PROXY_HOPS) : 1,
+  }
+}
+
+/**
+ * The caller's network address, or null when it cannot be established from a
+ * header this deployment is entitled to believe.
+ *
+ * Returning null is deliberate and better than guessing: an address we cannot
+ * attribute is not an address, and inventing one would let a caller pick the
+ * identity their rate-limit bucket is keyed on.
+ */
+export function clientIpFromHeaders(headers: Headers, options: ClientIpOptions = DEFAULT_CLIENT_IP_OPTIONS): string | null {
+  if (options.trustProxyHeaders) {
+    // Only meaningful behind a proxy that overwrites rather than appends.
+    const direct = headers.get('cf-connecting-ip') ?? headers.get('x-real-ip')
+    const candidate = direct?.trim()
+    if (candidate) return candidate.slice(0, 64)
+  }
+
+  const forwarded = headers.get('x-forwarded-for')
+  if (!forwarded) return null
+  const hops = forwarded
+    .split(',')
+    .map((hop) => hop.trim())
+    .filter(Boolean)
+  if (hops.length === 0) return null
+
+  const index = Math.max(0, hops.length - options.trustedProxyHops)
+  const candidate = hops[index]
+  return candidate ? candidate.slice(0, 64) : null
+}
+
 export function securityHeaders(): Record<string, string> {
   return {
     'x-content-type-options': 'nosniff',
@@ -150,6 +219,12 @@ export interface BuildRequestOptions {
   verifyAuth?: (headers: Headers) => Promise<string | null>
   maxBodyBytes?: number
   logLevel?: string
+  /**
+   * How to read the caller's address. Defaults to the environment
+   * (`TRUST_PROXY_HEADERS`, `TRUSTED_PROXY_HOPS`), which defaults to not
+   * believing any caller-supplied proxy header.
+   */
+  clientIp?: ClientIpOptions
 }
 
 function denoEnv(key: string): string | undefined {
@@ -211,11 +286,17 @@ export async function buildApiRequest(request: Request, options: BuildRequestOpt
     }
   }
 
-  const clientIp =
-    headers.get('cf-connecting-ip') ??
-    headers.get('x-real-ip') ??
-    headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    null
+  /*
+   * Rate-limit identity must not be caller-chosen. The previous version read
+   * `cf-connecting-ip` ?? `x-real-ip` ?? the *first* `x-forwarded-for` hop, and
+   * all three are ordinary request headers on this platform — so one client
+   * could rotate them and collect a fresh, empty bucket per request, defeating
+   * every anonymous limit including the per-host ceiling on password guessing.
+   * `clientIpFromHeaders` reads the hops our own proxy actually appended, and
+   * only believes a single-valued proxy header when the operator says a proxy
+   * that overwrites it is really in front of us.
+   */
+  const clientIp = clientIpFromHeaders(headers, options.clientIp ?? readClientIpOptions(denoEnv))
 
   let userId: string | null = null
   if (options.verifyAuth) {
