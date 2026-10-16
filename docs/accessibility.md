@@ -42,9 +42,9 @@ claim stays only if a command backs it.
 
 ## Known exceptions and limits
 
-- **Sub-36 px controls remain** on the 3D graph view's Canvas / 3D / List toggles (32 px tall,
-  ~70–100 px wide) and on the four `/settings` checkboxes. They pass the WCAG 2.5.8 AA floor
-  and are disclosed here rather than called fixed.
+- **Sub-36 px controls** — the 3D graph view's Canvas / 3D / List toggles and the four
+  `/settings` checkboxes now use `min-h-9` (36 px) rows, so the project's own 36 px aim is met.
+  They already passed the WCAG 2.5.8 AA floor of 24 px.
 - **No screen-reader user testing.** No VoiceOver/NVDA/TalkBack session has been run against
   this app by a person who uses one, and no third-party accessibility audit has been
   commissioned. The checks above are automated or self-run; they are necessary, not sufficient.

@@ -261,11 +261,11 @@ export function Checkbox({
   hint?: string
 }): ReactNode {
   return (
-    <div className="flex items-start gap-2 py-1">
+    <div className="flex min-h-9 items-start gap-2 py-2">
       <input
         id={id}
         type="checkbox"
-        className="mt-0.5 h-4 w-4 accent-[var(--gm-accent)]"
+        className="mt-1 h-5 w-5 accent-[var(--gm-accent)]"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
         aria-describedby={hint ? `${id}-hint` : undefined}

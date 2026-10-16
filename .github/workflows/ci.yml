@@ -39,6 +39,7 @@ jobs:
       - run: npm run typecheck:functions
       - run: npm test
       - run: npm run build
+      - run: npm run check:bundle
       - uses: actions/upload-artifact@v4
         with:
           name: dist

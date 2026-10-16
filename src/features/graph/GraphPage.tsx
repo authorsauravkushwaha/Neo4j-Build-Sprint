@@ -208,7 +208,7 @@ export function GraphPage(): ReactNode {
                 type="button"
                 aria-pressed={view === 'graph'}
                 onClick={() => setView('graph')}
-                className={`px-3 py-1.5 text-sm ${view === 'graph' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
+                className={`min-h-9 px-3 py-2 text-sm ${view === 'graph' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
               >
                 <GitBranch aria-hidden="true" className="mr-1 inline h-4 w-4" /> Canvas
               </button>
@@ -216,7 +216,7 @@ export function GraphPage(): ReactNode {
                 type="button"
                 aria-pressed={view === 'threed'}
                 onClick={() => setView('threed')}
-                className={`px-3 py-1.5 text-sm ${view === 'threed' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
+                className={`min-h-9 px-3 py-2 text-sm ${view === 'threed' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
               >
                 <Boxes aria-hidden="true" className="mr-1 inline h-4 w-4" /> 3D
               </button>
@@ -224,7 +224,7 @@ export function GraphPage(): ReactNode {
                 type="button"
                 aria-pressed={view === 'list'}
                 onClick={() => setView('list')}
-                className={`px-3 py-1.5 text-sm ${view === 'list' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
+                className={`min-h-9 px-3 py-2 text-sm ${view === 'list' ? 'bg-[var(--gm-accent-soft)] text-accent' : 'text-muted'}`}
               >
                 <TableProperties aria-hidden="true" className="mr-1 inline h-4 w-4" /> List
               </button>

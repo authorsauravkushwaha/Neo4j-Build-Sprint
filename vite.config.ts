@@ -312,6 +312,10 @@ export default defineConfig(({ mode, command }) => {
         ),
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,json}'],
+          // The 3D engine is ~750 kB and is only needed on the graph screen; keep it
+          // out of the install-time precache so a first visit downloads the core app
+          // first and fetches three.js on demand (with the runtime cache below).
+          globIgnores: ['**/three.module-*.js'],
           // Never precache the app shell for PDFs / assets that must hit the network.
           navigateFallback: 'index.html',
           // Workbox tests the denylist against the whole path, not the path relative to
@@ -337,6 +341,18 @@ export default defineConfig(({ mode, command }) => {
                 networkTimeoutSeconds: 6,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
                 cacheableResponse: { statuses: [200] },
+              },
+            },
+            {
+              // three.js is large and only needed for the 3D views; cache it on
+              // first use so repeat visits stay offline-capable without paying for
+              // it during install.
+              urlPattern: ({ url }) => url.pathname.includes('three.module-'),
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'gm-three-v1',
+                expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 30 },
+                cacheableResponse: { statuses: [0, 200] },
               },
             },
             {
@@ -371,6 +387,7 @@ export default defineConfig(({ mode, command }) => {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
             graph: ['cytoscape'],
+            dataset: ['src/data/seed/knowledgeGraph.ts'],
           },
         },
       },
