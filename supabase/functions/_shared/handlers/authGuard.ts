@@ -54,7 +54,7 @@ export async function authGuardHandler(runtime: Runtime, request: ApiRequest): P
   //    attempt is counted like any other so a loop burns its own budget.
   if (typeof input.passwordBytes === 'number' && input.passwordBytes > PASSWORD_INPUT_CEILING_BYTES) {
     const bucket = await bucketKey('auth.addr', input.emailHash)
-    await checkRateLimit(runtime.rateLimit, bucket, runtime.config.limits.authAttemptPerMinute, now)
+    await checkRateLimit(runtime.rateLimit, bucket, runtime.config.limits.authAttemptPerMinute, now, { failOpen: true })
     return json(
       400,
       {
@@ -71,7 +71,7 @@ export async function authGuardHandler(runtime: Runtime, request: ApiRequest): P
   // 1. Per-address ceiling. The client already hashed the address; it is hashed
   //    again together with the rate-limit salt so the stored key reveals nothing.
   const addressBucket = await bucketKey('auth.addr', input.emailHash)
-  const address = await checkRateLimit(runtime.rateLimit, addressBucket, runtime.config.limits.authAttemptPerMinute, now)
+  const address = await checkRateLimit(runtime.rateLimit, addressBucket, runtime.config.limits.authAttemptPerMinute, now, { failOpen: true })
   if (!address.allowed) {
     return json(
       429,
@@ -82,7 +82,7 @@ export async function authGuardHandler(runtime: Runtime, request: ApiRequest): P
 
   // 2. Longer per-address ceiling: a slow trickle still has to run out.
   const hourlyBucket = await bucketKey('auth.addr.hour', input.emailHash)
-  const hourly = await checkRateLimit(runtime.rateLimit, hourlyBucket, runtime.config.limits.authAttemptPerHour, now)
+  const hourly = await checkRateLimit(runtime.rateLimit, hourlyBucket, runtime.config.limits.authAttemptPerHour, now, { failOpen: true })
   if (!hourly.allowed) {
     return json(
       429,
@@ -94,7 +94,7 @@ export async function authGuardHandler(runtime: Runtime, request: ApiRequest): P
   // 3. Host-level ceiling: one machine must not walk a list of addresses. The
   //    platform adapter supplies the IP; the limiter hashes it before use.
   const hostBucket = await bucketKey('auth.host', `ip:${request.clientIp ?? 'unknown'}`)
-  const host = await checkRateLimit(runtime.rateLimit, hostBucket, runtime.config.limits.authAttemptPerIpPerMinute, now)
+  const host = await checkRateLimit(runtime.rateLimit, hostBucket, runtime.config.limits.authAttemptPerIpPerMinute, now, { failOpen: true })
 
   if (!host.allowed) {
     return json(

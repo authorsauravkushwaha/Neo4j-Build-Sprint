@@ -178,6 +178,9 @@ jobs:
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
         run: npm run build
 
+      - name: Scan built artifact
+        run: npm run lint:secrets
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

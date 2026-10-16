@@ -106,6 +106,9 @@ export function hostAllowed(url: string, allowedHosts: readonly string[]): { all
   if (parsed.protocol !== 'https:') return { allowed: false, host: parsed.hostname, reason: 'only https is fetched' }
   if (parsed.username !== '' || parsed.password !== '') return { allowed: false, host: parsed.hostname, reason: 'credentials in the URL are refused' }
   const host = parsed.hostname.toLowerCase()
+  if (parsed.port || host.includes(':') || /^\d+(?:\.\d+){3}$/.test(host) || !host.includes('.') || /(?:^|\.)(?:localhost|local|internal)$/.test(host)) {
+    return { allowed: false, host, reason: 'private hosts, IP literals and non-standard ports are refused' }
+  }
   const allowed = allowedHosts.some((entry) => {
     const candidate = entry.toLowerCase().replace(/^\./, '')
     return host === candidate || host.endsWith(`.${candidate}`)

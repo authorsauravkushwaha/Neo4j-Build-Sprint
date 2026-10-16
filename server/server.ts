@@ -82,7 +82,7 @@ const DUMMY_HASH = (() => {
 })()
 
 export function normalizeEmail(value: unknown): string {
-  return typeof value === 'string' ? value.trim().toLowerCase().slice(0, 254) : ''
+  return typeof value === 'string' ? value.trim().toLowerCase() : ''
 }
 
 export function emailLooksValid(email: string): boolean {
@@ -289,6 +289,9 @@ function send(response: ServerResponse, result: ApiResult): void {
   response.writeHead(result.status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+    'x-frame-options': 'DENY',
     ...(result.setCookie ? { 'set-cookie': result.setCookie } : {}),
   })
   response.end(payload)
@@ -318,44 +321,54 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
 
 function parseCookies(request: IncomingMessage): Record<string, string> {
   const header = request.headers.cookie ?? ''
-  const out: Record<string, string> = {}
+  const out: Record<string, string> = Object.create(null)
   for (const part of header.split(';')) {
     const [name, ...rest] = part.trim().split('=')
-    if (name) out[name] = decodeURIComponent(rest.join('='))
+    if (name) {
+      try { out[name] = decodeURIComponent(rest.join('=')) } catch { /* Ignore malformed cookies. */ }
+    }
   }
   return out
 }
 
-function clientAddress(request: IncomingMessage): string {
-  const forwarded = request.headers['x-forwarded-for']
+export interface AuthServerOptions {
+  /** Enable ONLY behind a proxy that overwrites all X-Forwarded-* headers. */
+  trustProxy?: boolean
+  /** Local HTTP development only. Production cookies are Secure by default. */
+  allowInsecureHttp?: boolean
+}
+
+function clientAddress(request: IncomingMessage, trustProxy: boolean): string {
+  const forwarded = trustProxy ? request.headers['x-forwarded-for'] : undefined
   const first = Array.isArray(forwarded) ? forwarded[0] : forwarded
   return (first?.split(',')[0]?.trim() || request.socket.remoteAddress || 'unknown').slice(0, 64)
 }
 
-/* Rate limiting: fixed windows in memory. Deliberately simple — the process
- * is single-instance by design, and limits reset if it restarts. */
-const attempts = new Map<string, { count: number; resetAt: number }>()
-function rateLimited(key: string, limit: number, windowMs: number): { limited: boolean; retryAfterSeconds: number } {
-  const now = Date.now()
-  const entry = attempts.get(key)
-  if (!entry || entry.resetAt <= now) {
-    attempts.set(key, { count: 1, resetAt: now + windowMs })
-    return { limited: false, retryAfterSeconds: 0 }
+/** Per-server, bounded state. Never evict a live budget to admit a new key. */
+function createLimiter() {
+  const attempts = new Map<string, { count: number; resetAt: number }>()
+  return (key: string, limit: number, windowMs: number): { limited: boolean; retryAfterSeconds: number } => {
+    const now = Date.now()
+    for (const [oldKey, entry] of attempts) if (entry.resetAt <= now) attempts.delete(oldKey)
+    const entry = attempts.get(key)
+    if (!entry) {
+      if (attempts.size >= 10_000) return { limited: true, retryAfterSeconds: 60 }
+      attempts.set(key, { count: 1, resetAt: now + windowMs })
+      return { limited: false, retryAfterSeconds: 0 }
+    }
+    entry.count = Math.min(entry.count + 1, limit + 1)
+    return { limited: entry.count > limit, retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) }
   }
-  entry.count += 1
-  return { limited: entry.count > limit, retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)) }
 }
 
-function sessionCookie(token: string, request: IncomingMessage, maxAgeSeconds: number): string {
-  const proto = request.headers['x-forwarded-proto']
-  const secure = (Array.isArray(proto) ? proto[0] : proto) === 'https'
+function sessionCookie(token: string, allowInsecureHttp: boolean, maxAgeSeconds: number): string {
   return [
     `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
     'Path=/',
     'HttpOnly',
     'SameSite=Lax',
     `Max-Age=${maxAgeSeconds}`,
-    ...(secure ? ['Secure'] : []),
+    ...(!allowInsecureHttp ? ['Secure'] : []),
   ].join('; ')
 }
 
@@ -363,7 +376,10 @@ function sessionCookie(token: string, request: IncomingMessage, maxAgeSeconds: n
  * The service
  * ====================================================================== */
 
-export function createAuthServer(pool: Pool) {
+export function createAuthServer(pool: Pool, options: AuthServerOptions = {}) {
+  const rateLimited = createLimiter()
+  const address = (request: IncomingMessage) => clientAddress(request, options.trustProxy === true)
+  const cookie = (token: string, maxAge: number) => sessionCookie(token, options.allowInsecureHttp === true, maxAge)
   async function currentUser(request: IncomingMessage): Promise<{ id: string; email: string; createdAt: string } | null> {
     const token = parseCookies(request)[SESSION_COOKIE]
     if (!token) return null
@@ -383,7 +399,7 @@ export function createAuthServer(pool: Pool) {
     return { id: row.id, email: row.email, createdAt: row.created_at.toISOString() }
   }
 
-  async function startSession(userId: string, request: IncomingMessage): Promise<string> {
+  async function startSession(userId: string): Promise<string> {
     const token = randomBytes(32).toString('base64url')
     const expires = new Date(Date.now() + SESSION_DAYS * 86_400_000)
     await pool.query('insert into auth.sessions (user_id, token_hash, expires_at) values ($1, $2, $3)', [
@@ -391,7 +407,7 @@ export function createAuthServer(pool: Pool) {
       hashToken(token),
       expires,
     ])
-    return sessionCookie(token, request, SESSION_DAYS * 86_400)
+    return cookie(token, SESSION_DAYS * 86_400)
   }
 
   async function handle(request: IncomingMessage): Promise<ApiResult> {
@@ -417,10 +433,9 @@ export function createAuthServer(pool: Pool) {
       if (request.headers['x-gm-csrf'] !== '1') return fail(403, 'This request did not come from the app.')
       const origin = request.headers.origin
       if (origin) {
-        // Behind the Vite proxy the Host header is the proxy target, so the
-        // honest comparison is against X-Forwarded-Host (set by the proxy,
-        // xfwd: true) and only then the Host header.
-        const forwarded = request.headers['x-forwarded-host']
+        // Vite preserves Host. Forwarded headers are ignored unless an operator
+        // explicitly enables trust for a sanitising reverse proxy.
+        const forwarded = options.trustProxy ? request.headers['x-forwarded-host'] : undefined
         const expectedHost = (Array.isArray(forwarded) ? forwarded[0] : forwarded) ?? request.headers.host
         try {
           if (new URL(origin).host !== expectedHost) return fail(403, 'This request did not come from the app.')
@@ -440,25 +455,32 @@ export function createAuthServer(pool: Pool) {
       if (!body) return fail(400, 'The request body was not valid JSON, or was too large.')
       const email = normalizeEmail(body['email'])
       const password = typeof body['password'] === 'string' ? body['password'] : ''
-      const limited = rateLimited(`register:${clientAddress(request)}`, 10, 10 * 60_000)
+      const limited = rateLimited(`register:${address(request)}`, 10, 10 * 60_000)
       if (limited.limited) return fail(429, 'Too many attempts. Try again in a few minutes.', { retryAfterSeconds: limited.retryAfterSeconds })
       if (!emailLooksValid(email)) return fail(400, 'That email address does not look complete.')
       const problems = passwordProblems(password)
       if (problems.length > 0) return fail(400, problems.join(' '))
 
-      const existing = await pool.query('select id from auth.users where email = $1', [email])
-      if (existing.rows.length > 0) {
-        // Same outward answer as a fresh registration: sign-up must not confirm
-        // that an address is already registered here.
-        return { status: 200, body: { ok: true, user: null, message: 'If this address can be registered, the account now exists. Sign in to continue.' } }
-      }
-      const userId = randomUUID()
+      // Do equal hashing work and return the same status/body/cookie behaviour
+      // for existing and new accounts. Never authenticate a registration request.
       const passwordHash = await hashPassword(password)
-      await pool.query('insert into auth.users (id, email) values ($1, $2)', [userId, email])
-      await pool.query('insert into auth.credentials (user_id, password_hash) values ($1, $2)', [userId, passwordHash])
-      const cookie = await startSession(userId, request)
-      const user = { id: userId, email, createdAt: new Date().toISOString() }
-      return { status: 201, body: { ok: true, user, message: 'Account created — you are signed in.' }, setCookie: cookie }
+      const client = await pool.connect()
+      try {
+        await client.query('begin')
+        const created = await client.query(
+          'insert into auth.users (id, email) values ($1, $2) on conflict (email) do nothing returning id',
+          [randomUUID(), email],
+        )
+        const userId = (created.rows[0] as { id: string } | undefined)?.id
+        if (userId) await client.query('insert into auth.credentials (user_id, password_hash) values ($1, $2)', [userId, passwordHash])
+        await client.query('commit')
+      } catch (error) {
+        await client.query('rollback')
+        throw error
+      } finally {
+        client.release()
+      }
+      return { status: 200, body: { ok: true, user: null, message: 'If this address can be registered, the account now exists. Sign in to continue.' } }
     }
 
     if (path === '/api/auth/login' && method === 'POST') {
@@ -467,8 +489,8 @@ export function createAuthServer(pool: Pool) {
       const email = normalizeEmail(body['email'])
       const password = typeof body['password'] === 'string' ? body['password'] : ''
       if (Buffer.byteLength(password, 'utf8') > 72) return fail(400, 'That password is too long to be correct.')
-      const byAddress = rateLimited(`login-addr:${clientAddress(request)}:${email}`, 8, 10 * 60_000)
-      const byNetwork = rateLimited(`login-net:${clientAddress(request)}`, 40, 10 * 60_000)
+      const byAddress = rateLimited(`login-addr:${hashToken(email)}`, 8, 10 * 60_000)
+      const byNetwork = rateLimited(`login-net:${address(request)}`, 40, 10 * 60_000)
       if (byAddress.limited || byNetwork.limited) {
         return fail(429, 'Too many sign-in attempts. Try again in a few minutes.', {
           retryAfterSeconds: Math.max(byAddress.retryAfterSeconds, byNetwork.retryAfterSeconds),
@@ -484,7 +506,7 @@ export function createAuthServer(pool: Pool) {
       // One generic failure, and the same hashing work either way.
       const passwordOk = await verifyPassword(password, row?.password_hash ?? (await DUMMY_HASH()))
       if (!row || !passwordOk) return fail(401, 'Email or password is incorrect.')
-      const cookie = await startSession(row.id, request)
+      const cookie = await startSession(row.id)
       const user = { id: row.id, email: row.email, createdAt: row.created_at.toISOString() }
       return { status: 200, body: { ok: true, user, message: 'Signed in.' }, setCookie: cookie }
     }
@@ -492,16 +514,19 @@ export function createAuthServer(pool: Pool) {
     if (path === '/api/auth/logout' && method === 'POST') {
       const token = parseCookies(request)[SESSION_COOKIE]
       if (token) await pool.query('delete from auth.sessions where token_hash = $1', [hashToken(token)])
-      return { status: 200, body: { ok: true, message: 'Signed out.' }, setCookie: sessionCookie('', request, 0) }
+      return { status: 200, body: { ok: true, message: 'Signed out.' }, setCookie: cookie('', 0) }
     }
 
     if (path === '/api/auth/change-password' && method === 'POST') {
       const user = await currentUser(request)
       if (!user) return fail(401, 'Sign in first.')
+      const limited = rateLimited(`reauth:${user.id}`, 8, 10 * 60_000)
+      if (limited.limited) return fail(429, 'Too many attempts. Try again later.', { retryAfterSeconds: limited.retryAfterSeconds })
       const body = await readJson(request)
       if (!body) return fail(400, 'The request body was not valid JSON, or was too large.')
       const current = typeof body['currentPassword'] === 'string' ? body['currentPassword'] : ''
       const next = typeof body['newPassword'] === 'string' ? body['newPassword'] : ''
+      if (Buffer.byteLength(current, 'utf8') > 72) return fail(400, 'The current password is too long.')
       const problems = passwordProblems(next)
       if (problems.length > 0) return fail(400, problems.join(' '))
       const result = await pool.query('select password_hash from auth.credentials where user_id = $1', [user.id])
@@ -520,15 +545,18 @@ export function createAuthServer(pool: Pool) {
     if (path === '/api/auth/account' && method === 'DELETE') {
       const user = await currentUser(request)
       if (!user) return fail(401, 'Sign in first.')
+      const limited = rateLimited(`reauth:${user.id}`, 8, 10 * 60_000)
+      if (limited.limited) return fail(429, 'Too many attempts. Try again later.', { retryAfterSeconds: limited.retryAfterSeconds })
       const body = await readJson(request)
       if (!body) return fail(400, 'The request body was not valid JSON, or was too large.')
       const password = typeof body['password'] === 'string' ? body['password'] : ''
+      if (Buffer.byteLength(password, 'utf8') > 72) return fail(400, 'The password is too long.')
       const result = await pool.query('select password_hash from auth.credentials where user_id = $1', [user.id])
       const stored = (result.rows[0] as { password_hash: string } | undefined)?.password_hash ?? (await DUMMY_HASH())
       if (!(await verifyPassword(password, stored))) return fail(401, 'The password is incorrect.')
       // Cascades: profile, credentials and sessions go with the identity row.
       await pool.query('delete from auth.users where id = $1', [user.id])
-      return { status: 200, body: { ok: true, message: 'Account deleted.' }, setCookie: sessionCookie('', request, 0) }
+      return { status: 200, body: { ok: true, message: 'Account deleted.' }, setCookie: cookie('', 0) }
     }
 
 
@@ -665,7 +693,10 @@ export function createAuthServer(pool: Pool) {
 const isMain = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false
 if (isMain) {
   const pool = databasePool()
-  const server = createAuthServer(pool)
+  const server = createAuthServer(pool, {
+    trustProxy: process.env['AUTH_TRUST_PROXY'] === 'true',
+    allowInsecureHttp: process.env['AUTH_ALLOW_INSECURE_HTTP'] === 'true',
+  })
   server.listen(PORT, '127.0.0.1', () => {
     console.log(`graphmentor auth server on 127.0.0.1:${PORT} (database: our own PostgreSQL via gm_auth)`)
   })

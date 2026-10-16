@@ -92,3 +92,25 @@ account deletion cascades through credentials, sessions and the profile.
   *database*; the API surface in front of it is `supabase/functions/` running against it.
 
 
+
+## Account security configuration (2026-10 audit)
+
+- Session cookies are `Secure` by default, including behind TLS termination.
+  Only for local plain-HTTP development, start with
+  `AUTH_ALLOW_INSECURE_HTTP=true npm run server`. Never enable that in production.
+- Forwarded headers are ignored by default. Vite preserves the original `Host`,
+  so same-origin CSRF checks work without trusting `X-Forwarded-Host`.
+  Behind Vite all users share the conservative socket-IP network budget; the
+  per-email and reauthentication budgets remain independent.
+- `AUTH_TRUST_PROXY=true` is **only** for an ingress that overwrites incoming
+  `X-Forwarded-For` and `X-Forwarded-Host` and prevents direct backend access.
+  Do not enable it just because the server runs behind Vite or a tunnel.
+- Registration creates identity and credentials atomically, returns a generic
+  response for both existing and new accounts, and does not sign in automatically.
+  Sign in explicitly afterwards. This local account system does not verify email
+  ownership; use verified hosted authentication before relying on email identity.
+- Throttling on this local server is single-process and resets on restart. Do not
+  run multiple instances without a shared limiter.
+
+See [the security audit](../docs/security-audit-2026-10-16.md) for evidence,
+limitations and production follow-up.

@@ -2,8 +2,7 @@
  * Rate limiting and replay protection.
  *
  * Two decisions here are deliberate and load-bearing, so they are pinned:
- *  - the window store FAILS OPEN (a broken counter must not take the product
- *    down; per-request cost caps still apply),
+ *  - the window store FAILS CLOSED (an outage must not remove abuse budgets),
  *  - the nonce store FAILS CLOSED (an unverifiable replay check would defeat the
  *    point of having one).
  * If either flips, the behaviour change has to be intentional.
@@ -57,15 +56,13 @@ describe('fixed windows', () => {
     expect((await checkRateLimit(store, 'chat.b', policy, t0)).allowed).toBe(true)
   })
 
-  it('FAILS OPEN when the store errors, so an outage does not become a lockout', async () => {
+  it('FAILS CLOSED when the store errors, preserving abuse protection', async () => {
     const broken: FixedWindowStore = {
       increment: vi.fn(async () => {
         throw new Error('database unavailable')
       }),
     }
-    const result = await checkRateLimit(broken, 'chat.abc', { limit: 6, windowSeconds: 60 }, t0)
-    expect(result.allowed).toBe(true)
-    expect(result.remaining).toBe(6)
+    await expect(checkRateLimit(broken, 'chat.abc', { limit: 6, windowSeconds: 60 }, t0)).rejects.toMatchObject({ code: 'dependency_unavailable' })
   })
 
   it('never stores a raw identifier in the bucket key', async () => {

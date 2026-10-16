@@ -141,6 +141,7 @@ export function AuthPage(): ReactNode {
         setPassword('')
         setConfirm('')
         if (outcome.user) setLocalUser(outcome.user)
+        else if (mode === 'sign-up') setMode('sign-in')
         pushToast({ kind: 'success', message: outcome.message })
       }
     } catch {
@@ -737,7 +738,8 @@ function LocalSignedIn({
             onClick={() => {
               setBusy(true)
               void localSignOut()
-                .then(() => {
+                .then((outcome) => {
+                  if (!outcome.ok) { setNotice(outcome); return }
                   pushToast({ kind: 'info', message: 'Signed out. The session is deleted on the server.' })
                   onSignedOut()
                 })

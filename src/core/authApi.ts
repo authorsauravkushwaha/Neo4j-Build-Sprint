@@ -132,13 +132,12 @@ export async function putSyncState(state: SyncState): Promise<LocalAuthResult> {
   }
 }
 
-export async function localSignOut(): Promise<void> {
+export async function localSignOut(): Promise<LocalAuthResult> {
   try {
-    await call('/api/auth/logout', { method: 'POST', body: '{}' })
+    const { status, body } = await call('/api/auth/logout', { method: 'POST', body: '{}' })
+    return toResult(status, body, 'Sign-out did not complete. Please retry.')
   } catch {
-    // The cookie expires on its own; a failed sign-out call must not strand
-    // the user on this screen pretending they are still signed in locally —
-    // the next probe tells the truth either way.
+    return { ok: false, message: 'Could not sign out on the server. Your session may still be active. Retry before leaving a shared device.' }
   }
 }
 

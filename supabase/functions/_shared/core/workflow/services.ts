@@ -58,11 +58,10 @@ export function createMemoryRecorder(): { record: WorkflowServices['record']; it
 /**
  * Ahead-only HTTP probe.
  *
- * `HEAD` with a timeout and no redirect following surprises: `redirect: 'follow'`
- * is kept, because a great many documentation sites redirect `docs.x` to
- * `x/docs` and calling those dead would be noise, but the final URL is reported so
- * the difference is visible. The response body is never read: this exists to
- * answer "is it still there", not to fetch content into the app.
+ * HEAD only, bounded timeout, no redirects or ambient browser credentials.
+ * The registry validates the initial URL against the workflow host policy;
+ * following a redirect here would bypass that policy. A redirect is reported
+ * as a non-success rather than probing its unvalidated destination.
  */
 export function createFetchProbe(fetchImpl: typeof fetch = fetch): WorkflowServices['fetch'] {
   return async ({ url, method, timeoutMs }) => {
@@ -72,7 +71,8 @@ export function createFetchProbe(fetchImpl: typeof fetch = fetch): WorkflowServi
     try {
       const response = await fetchImpl(url, {
         method,
-        redirect: 'follow',
+        redirect: 'error',
+        credentials: 'omit',
         signal: controller.signal,
         headers: { accept: 'text/html,application/xhtml+xml', 'user-agent': 'GraphMentorAI-resource-check/1.0 (+https://github.com/authorsauravkushwaha/Neo4j-Build-Sprint)' },
       })

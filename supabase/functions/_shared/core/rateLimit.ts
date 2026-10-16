@@ -9,6 +9,7 @@
  * as *not* suitable for a multi-instance deployment.
  */
 import type { NonceStore } from './security.ts'
+import { AppError } from './errors.ts'
 
 export interface FixedWindowStore {
   /**
@@ -55,15 +56,19 @@ export async function checkRateLimit(
   bucket: string,
   policy: RateLimitPolicy,
   nowMs: number = Date.now(),
+  options: { failOpen?: boolean } = {},
 ): Promise<RateLimitResult> {
   const key = `${bucket}:${windowStartedAt(nowMs, policy.windowSeconds)}`
   let count: number
   try {
     count = await store.increment(key, policy.windowSeconds, nowMs)
   } catch {
-    // Fail-open vs fail-closed: a broken limiter must not take the whole product
-    // down, so we allow the request and let per-request cost caps protect us.
-    // This is logged by the caller and documented in docs/security.md.
+    // Expensive reads/writes must not lose their budget during a store outage.
+    // Only the advisory Supabase preflight opts out; Supabase Auth is its own
+    // enforcement boundary and can be called without that preflight anyway.
+    if (!options.failOpen) throw new AppError('dependency_unavailable', {
+      publicMessage: 'Request limits are temporarily unavailable. Please retry later.',
+    })
     return {
       allowed: true,
       limit: policy.limit,

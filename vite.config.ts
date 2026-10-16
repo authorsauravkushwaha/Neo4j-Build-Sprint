@@ -311,6 +311,8 @@ export default defineConfig(({ mode, command }) => {
           base,
         ),
         workbox: {
+          // Remove the old runtime API cache on upgrade; cache static assets only.
+          importScripts: [`${base}sw-privacy.js`],
           globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest,json}'],
           // The 3D engine is ~750 kB and is only needed on the graph screen; keep it
           // out of the install-time precache so a first visit downloads the core app
@@ -326,23 +328,6 @@ export default defineConfig(({ mode, command }) => {
           clientsClaim: false,
           skipWaiting: false,
           runtimeCaching: [
-            {
-              // Public (unauthenticated) career/graph reads only. Authenticated
-              // responses carry an Authorization header and are never cached, so a
-              // shared device can never leak one user's data to the next.
-              urlPattern: ({ url, request }) =>
-                request.method === 'GET' &&
-                url.pathname.includes('/functions/v1/') &&
-                !request.headers.has('authorization') &&
-                !request.headers.has('x-client-demo'),
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'gm-public-api-v1',
-                networkTimeoutSeconds: 6,
-                expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
-                cacheableResponse: { statuses: [200] },
-              },
-            },
             {
               // three.js is large and only needed for the 3D views; cache it on
               // first use so repeat visits stay offline-capable without paying for
@@ -407,14 +392,14 @@ export default defineConfig(({ mode, command }) => {
       allowedHosts: devAllowedHosts,
       // The sign-in server (server/server.ts) on our own database. Browsers
       // only ever see same-origin /api; the database stays behind two hops.
-      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: true, xfwd: true } },
+      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false, xfwd: false } },
     },
     preview: {
       host: true,
       port: 4173,
       strictPort: true,
       allowedHosts: devAllowedHosts,
-      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: true, xfwd: true } },
+      proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false, xfwd: false } },
     },
   }
 })
