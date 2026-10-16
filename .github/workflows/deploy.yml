@@ -94,14 +94,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # `enablement` turns on Pages (Source: GitHub Actions) if it is not already on,
-      # using the workflow's own token — which carries pages:write above. Without this,
-      # a first deploy on a fresh repository needs somebody to click the setting by hand
-      # before any of the rest of this file can do its job.
+      # `enablement` turns on Pages (Source: GitHub Actions) if it is not already on.
+      # It works when the token backing the run is allowed to create the site — and it
+      # cannot, GitHub refuses for a workflow token ("Resource not accessible by
+      # integration"). The step below turns that stack trace into the one click that
+      # fixes it.
       - name: Configure Pages
+        id: pages-config
         uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - name: Explain a Pages enablement failure
+        if: failure() && steps.pages-config.outcome == 'failure'
+        run: |
+          echo "::error title=Pages is not enabled on this repository::GitHub will not let a workflow token create a Pages site. Enable it once by hand: Settings -> Pages -> Build and deployment -> Source: GitHub Actions. Every deploy after that is automatic - re-run this workflow or merge into main."
+          exit 1
 
       # The address the site will be reachable at, and the path every asset URL in the
       # HTML has to be prefixed with. Both are computed from the repository name and
