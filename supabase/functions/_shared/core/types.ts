@@ -458,8 +458,14 @@ export interface MentorAnswer {
  * ========================================================================== */
 
 export interface ApiMeta {
-  /** Where the data came from. Never claim 'live' for local sample data. */
-  source: 'neo4j-live' | 'local-sample' | 'cache' | 'unavailable'
+  /**
+   * Where the data came from. Never claim 'live' for local sample data.
+   *   - `neo4j-live`    -> served from a Neo4j database by the backend,
+   *   - `postgres-live` -> served from the deployment's own PostgreSQL database,
+   *   - `local-sample`  -> the bundled sample dataset (never presented as live),
+   *   - `cache`/`unavailable` -> stale or absent data, labelled as such.
+   */
+  source: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'cache' | 'unavailable'
   truncated?: boolean
   selectionNote?: string
   queryMs?: number

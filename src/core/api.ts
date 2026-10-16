@@ -221,7 +221,14 @@ export interface ProjectQueryInput {
 
 export interface HealthReport {
   mode: ClientMode
-  graph: 'neo4j-live' | 'local-sample' | 'unreachable'
+  /**
+   * What the backend says serves the graph:
+   *   - `neo4j-live`    -> a Neo4j database,
+   *   - `postgres-live` -> the deployment's own PostgreSQL (self-hosted backend),
+   *   - `local-sample`  -> the backend itself serves the bundled sample dataset,
+   *   - `unreachable`   -> the API answered but its graph is down.
+   */
+  graph: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'unreachable'
   graphDetail: string
   aiConfigured: boolean
   aiProvider: string
@@ -1044,8 +1051,18 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
   const base = options.apiBaseUrl.replace(/\/$/, '')
   const doFetch: typeof fetch = options.fetchImpl ?? ((...args) => fetch(...args))
 
+  /** Absolute bases are used as-is; a relative base ("/functions/v1") resolves
+   * against the page origin, which is how one same-origin deployment serves
+   * both the site and the API without the build knowing its own hostname. */
+  const endpointUrl = (fn: string): URL => {
+    const path = `${base}/${fn}`
+    if (/^https?:\/\//i.test(path)) return new URL(path)
+    if (typeof window !== 'undefined' && window.location?.origin) return new URL(path, window.location.origin)
+    return new URL(path, 'http://localhost')
+  }
+
   async function call<T>(fn: string, init: { method: 'GET' | 'POST'; body?: unknown; query?: Record<string, string | undefined> }): Promise<ClientResult<T>> {
-    const url = new URL(`${base}/${fn}`)
+    const url = endpointUrl(fn)
     for (const [key, value] of Object.entries(init.query ?? {})) {
       if (value !== undefined && value !== '') url.searchParams.set(key, value)
     }
@@ -1116,25 +1133,41 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
     provenance: 'Live deployment: careers, skills, projects and resources are read from the configured Neo4j knowledge graph through Supabase Edge Functions.',
 
     async health() {
+      /* The shape health-check actually returns (handlers/health.ts). A
+       * previous draft of this mapper read `graph.status`/'environment'/'version'
+       * fields the payload has never had, so live mode could never engage. */
       const { data } = await call<{
-        graph: { status: string; source: string; detail?: string; hint?: string }
+        graph: {
+          configured: boolean
+          reachable: boolean
+          source: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'cache' | 'unavailable'
+          nodeCount?: number
+          relationshipCount?: number
+          message?: string
+          setupHint?: string
+        }
         ai: { configured: boolean; provider: string }
         storage: { configured: boolean }
         security: { requestSigningRequired: boolean }
-        environment: string
-        version: string
+        service: { version: string; environment: string }
       }>('health-check', { method: 'GET' })
-      const graphStatus = data.graph.status === 'ready' ? 'neo4j-live' : data.graph.status === 'empty' ? 'neo4j-live' : 'unreachable'
+      const graph: HealthReport['graph'] = !data.graph.reachable
+        ? 'unreachable'
+        : data.graph.source === 'neo4j-live'
+          ? 'neo4j-live'
+          : data.graph.source === 'postgres-live'
+            ? 'postgres-live'
+            : 'local-sample'
       return {
         mode: 'live',
-        graph: graphStatus,
-        graphDetail: [data.graph.detail, data.graph.hint].filter(Boolean).join(' ') || 'Graph status reported by the backend.',
+        graph,
+        graphDetail: [data.graph.message, data.graph.setupHint].filter(Boolean).join(' ') || 'Graph status reported by the backend.',
         aiConfigured: data.ai.configured,
         aiProvider: data.ai.provider,
         storageConfigured: data.storage.configured,
         requestSigningRequired: data.security.requestSigningRequired,
-        environment: data.environment,
-        version: data.version,
+        environment: data.service.environment,
+        version: data.service.version,
       }
     },
 

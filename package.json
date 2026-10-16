@@ -50,7 +50,8 @@
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "server": "tsx server/server.ts",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
-    "start": "tsx server/website.ts"
+    "start": "tsx server/website.ts",
+    "seed:graphdb": "tsx scripts/seed-graph-db.ts"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",

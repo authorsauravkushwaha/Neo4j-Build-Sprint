@@ -93,14 +93,15 @@ export function AboutPage(): ReactNode {
           <div className="space-y-2 text-sm">
             <p>
               <Chip tone="success">Verified here</Chip> dataset validation (no dangling references, no prerequisite cycles, coverage
-              targets met), the local reader, both engines for all 17 careers, generated Cypher up to date with the dataset, secret
-              scan clean, unit and integration tests, production build, typecheck.
+              targets met), the local reader, both engines for all 17 careers, the deployment-owned PostgreSQL graph store end to end
+              (the embedded engine serves the exact contract the Supabase functions serve, exercised in the integration tests),
+              generated Cypher up to date with the dataset, secret scan clean, unit and integration tests, production build, typecheck.
             </p>
             <p>
-              <Chip tone="warning">Not verified here</Chip> live Neo4j queries (no credentials in the build environment), Supabase
-              migrations against a real Postgres, AI provider calls, the Android build (no Android SDK available), and resource links
-              (outbound network access is restricted). Each of those has a script or command listed in the README so you can run it
-              yourself and see the real result.
+              <Chip tone="warning">Not verified here</Chip> live queries against a hosted Neo4j Aura (no credentials in the build
+              environment), Supabase migrations against a real Postgres, AI provider calls, the Android build (no Android SDK
+              available), and resource links (outbound network access is restricted). Each of those has a script or command listed in
+              the README so you can run it yourself and see the real result.
             </p>
           </div>
         </Card>
@@ -108,12 +109,16 @@ export function AboutPage(): ReactNode {
         <Card>
           <SectionTitle hint="how the pieces fit">Architecture in one paragraph</SectionTitle>
           <p className="text-sm text-muted">
-            The frontend (React + TypeScript + Vite + Tailwind) never talks to Neo4j. It calls Supabase Edge Functions, which hold
-            the Neo4j credentials and run parameterised Cypher through the HTTPS Query API. The same engine modules
+            The frontend (React + TypeScript + Vite + Tailwind) never talks to the graph database directly. It calls function
+            endpoints — either Supabase Edge Functions holding Neo4j credentials (parameterised Cypher through the HTTPS Query API) or
+            the deployment's own Node server (<code className="rounded bg-[var(--gm-surface-2)] px-1">server/graphApi.ts</code>),
+            which serves the same endpoints from the project's own PostgreSQL graph store
+            (<code className="rounded bg-[var(--gm-surface-2)] px-1">server/graphStore.ts</code>) — no third-party account needed for
+            that path. The same engine modules
             (<code className="rounded bg-[var(--gm-surface-2)] px-1">supabase/functions/_shared/core</code>) are imported by the
-            browser, so demo mode runs the identical recommendation logic against the bundled dataset. Supabase Postgres stores only
-            per-user records (profiles, roadmaps, tasks, ratings, bookmarks, feedback) behind row-level security, plus rate-limit and
-            nonce tables used for abuse and replay protection.
+            browser, so demo mode runs the identical recommendation logic against the bundled dataset. The account store holds only
+            per-user records (profiles, roadmaps, tasks, ratings, bookmarks, feedback) plus rate-limit and nonce tables used for abuse
+            and replay protection.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <LinkButton to="/graph" variant="secondary">

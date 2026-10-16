@@ -10,6 +10,6 @@
 import { getProjectsHandler } from '../_shared/handlers/graph.ts'
 import { serve } from '../_shared/platform/deno.ts'
 
-serve(getProjectsHandler, { methods: ['GET'] })
+serve(getProjectsHandler, { methods: ['GET', 'POST'] })
 
 

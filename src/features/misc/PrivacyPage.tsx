@@ -75,8 +75,8 @@ export function PrivacyPage(): ReactNode {
             <SectionTitle hint="who processes what">Third parties</SectionTitle>
             <List
               items={[
-                'Supabase hosts the authentication, database and Edge Functions when a backend is configured. Their privacy terms apply to that hosting.',
-                'Neo4j AuraDB stores the public curriculum graph. It receives no personal data — queries are parameterised and read-only.',
+                'Supabase hosts the authentication, database and Edge Functions when that backend is configured; a self-hosted deployment instead serves accounts and the graph from the operator’s own PostgreSQL on the same machine. The respective host’s privacy terms apply.',
+                'The public curriculum graph is stored either in Neo4j AuraDB or in the deployment’s own PostgreSQL database, depending on the backend. It receives no personal data — queries are parameterised and read-only.',
                 'An AI provider (Google Gemini or any OpenAI-compatible endpoint) receives the mentor question and the small graph excerpt needed to answer it, only if the operator configures a key. If no key is configured, nothing leaves the server: the rules engine answers instead.',
                 'Resources link out to external sites. Those sites have their own privacy practices; this app sends no identifying information in the link.',
               ]}

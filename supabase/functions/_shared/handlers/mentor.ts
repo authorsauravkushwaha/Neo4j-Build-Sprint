@@ -28,7 +28,7 @@ import { MENTOR_SYSTEM_PROMPT, composeMentorAnswer, trimToBudget } from '../core
 import { answerWithRules } from '../core/fallbackMentor.ts'
 import { sanitizeUntrustedText } from '../core/security.ts'
 import type { Runtime } from '../runtime.ts'
-import { enforceRateLimit, enforceSignedRequest, metaFor, requireReader } from './shared.ts'
+import { enforceRateLimit, enforceSignedRequest, metaFor, requireReader, sourceFor } from './shared.ts'
 
 /**
  * Bounded vocabulary used to resolve mentions without an extra graph query.
@@ -142,7 +142,7 @@ export async function mentorChatHandler(runtime: Runtime, request: ApiRequest): 
       projectsUsed: context.projects.length,
       resourcesUsed: context.resources.length,
       truncated: context.truncated,
-      graphSource: reader.kind === 'neo4j' ? 'neo4j-live' : 'local-sample',
+      graphSource: sourceFor(reader),
       reads: context.reads,
       readMs: totalReadMs(context.reads),
     },

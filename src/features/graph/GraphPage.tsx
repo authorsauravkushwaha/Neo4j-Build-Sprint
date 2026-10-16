@@ -473,7 +473,9 @@ export function GraphPage(): ReactNode {
               {graph.data.graph.truncated ? ' — the result was cut off by the depth/row limit. Narrow the filters or reduce the hops.' : '.'}{' '}
               {graph.meta?.source === 'local-sample'
                 ? 'This is the bundled sample dataset running in your browser.'
-                : 'This is live graph data from the backend.'}
+                : graph.meta?.source === 'postgres-live'
+                  ? 'This is live graph data from the deployment’s own PostgreSQL database.'
+                  : 'This is live graph data from the backend.'}
             </Callout>
 
             {view === 'graph' ? (
@@ -511,7 +513,9 @@ export function GraphPage(): ReactNode {
                     provenanceNote={
                       graph.meta?.source === 'local-sample'
                         ? 'Bundled sample dataset, rendered in your browser. No database round trip was involved.'
-                        : 'Live graph data from Neo4j, rendered in your browser.'
+                        : graph.meta?.source === 'postgres-live'
+                          ? 'Live graph data from the deployment’s own PostgreSQL database, rendered in your browser.'
+                          : 'Live graph data from the deployed database, rendered in your browser.'
                     }
                   />
                 </div>

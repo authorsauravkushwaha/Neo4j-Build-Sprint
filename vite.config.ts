@@ -212,7 +212,9 @@ export default defineConfig(({ mode, command }) => {
     "'self'",
     'https://*.supabase.co',
     'https://*.supabase.in',
-    env.VITE_API_BASE_URL?.trim(),
+    // A relative base ("/functions/v1" for a same-origin backend) is covered by
+    // 'self' and is not a valid CSP source, so only absolute URLs are added.
+    env.VITE_API_BASE_URL?.trim().startsWith('http') ? env.VITE_API_BASE_URL.trim() : '',
     env.VITE_CSP_EXTRA_CONNECT_SRC?.trim(),
   ].filter((v): v is string => Boolean(v))
 

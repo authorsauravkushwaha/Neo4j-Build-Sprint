@@ -221,15 +221,19 @@ describe('curriculum reads', () => {
     )
     expect(nothing.data!.careers).toHaveLength(0)
 
-    // A wildcard-ish term may fuzzily match, but it must never expand to a
-    // "return everything" query or reach the backend as a pattern.
+    // A wildcard-ish term may fuzzily match, but it must never reach the
+    // backend as a pattern. When it matches nothing the handler falls back to
+    // the bounded default listing — the same catalogue the app intentionally
+    // shows when a search has no hits — never an unbounded query.
     const wildcardResponse = await call(
       getCareersHandler,
       runtime,
       makeRequest({ path: '/get-careers', query: `q=${encodeURIComponent('%~~_%')}` }),
     )
     expect(wildcardResponse.status).toBe(200)
-    expect(bodyOf<{ careers: unknown[] }>(wildcardResponse).data!.careers.length).toBeLessThanOrEqual(12)
+    const wildcardPayload = bodyOf<{ careers: unknown[]; total: number }>(wildcardResponse)
+    expect(wildcardPayload.data!.careers.length).toBeLessThanOrEqual(60)
+    expect(wildcardPayload.data!.careers.length).toBeLessThanOrEqual(wildcardPayload.data!.total)
   })
 
   it('rejects an unknown query parameter instead of ignoring it', async () => {

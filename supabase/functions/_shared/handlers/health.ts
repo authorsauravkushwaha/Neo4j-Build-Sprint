@@ -12,7 +12,7 @@ import { describeProvider } from '../core/aiAdapter.ts'
 import { emptyGraphHint } from '../core/neo4jReader.ts'
 import { BUCKET_KEY_UNPEPPERED } from '../core/rateLimit.ts'
 import type { Runtime } from '../runtime.ts'
-import { signingStatus } from './shared.ts'
+import { signingStatus, sourceFor } from './shared.ts'
 
 export interface HealthPayload {
   graph: GraphHealth
@@ -86,7 +86,7 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
       graph = {
         configured: true,
         reachable: true,
-        source: runtime.reader.kind === 'neo4j' ? 'neo4j-live' : 'local-sample',
+        source: sourceFor(runtime.reader),
         nodeCount: value.nodes,
         relationshipCount: value.relationships,
         labels: value.labels.map((entry) => ({ label: entry.label as GraphHealth['labels'][number]['label'], count: entry.count })),

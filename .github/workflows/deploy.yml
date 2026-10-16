@@ -16,7 +16,13 @@
 # labelled demo mode):
 #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SITE_URL
 # Repository variables (optional — both are derived from the repository when unset):
-#   VITE_BASE_PATH  override the computed base path, e.g. "/" to force the root
+#   VITE_BASE_PATH            override the computed base path, e.g. "/" to force the root
+#   VITE_API_BASE_URL         the graph API the published site should call for live
+#                             data — e.g. https://<your-service>/functions/v1 on the
+#                             project's own Node backend (render.yaml), or the Supabase
+#                             Edge Functions URL. Its origin is added to the CSP below.
+#   VITE_CSP_EXTRA_CONNECT_SRC  extra connect-src host when the API sits behind a
+#                             different hostname than VITE_API_BASE_URL (rare)
 name: Build and deploy
 
 on:
@@ -169,10 +175,15 @@ jobs:
 
       - name: Build
         # Values are optional: with no secrets the build produces a working
-        # demo-mode site, which is a legitimate deployment.
+        # demo-mode site, which is a legitimate deployment. Set the Supabase
+        # secrets, or the VITE_API_BASE_URL variable for the self-hosted
+        # backend, and the same pipeline publishes a live-data site. When both
+        # are set the explicit API base wins (see src/core/env.ts).
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_CSP_EXTRA_CONNECT_SRC: ${{ vars.VITE_CSP_EXTRA_CONNECT_SRC }}
           VITE_SITE_URL: ${{ steps.target.outputs.url }}
           VITE_BASE_PATH: ${{ steps.target.outputs.base }}
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
