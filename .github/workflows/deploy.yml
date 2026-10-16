@@ -94,8 +94,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # `enablement` turns on Pages (Source: GitHub Actions) if it is not already on,
+      # using the workflow's own token — which carries pages:write above. Without this,
+      # a first deploy on a fresh repository needs somebody to click the setting by hand
+      # before any of the rest of this file can do its job.
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       # The address the site will be reachable at, and the path every asset URL in the
       # HTML has to be prefixed with. Both are computed from the repository name and
