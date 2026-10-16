@@ -339,7 +339,11 @@ To turn accounts on, follow [Going live](#going-live-neo4j--supabase) and rememb
 The frontend is static files; the API is Supabase Edge Functions. Typical free-first options:
 
 - **GitHub Pages** — push to `main`, the workflow in `.github/workflows/deploy.yml` builds and publishes
-  `dist/`. Set `VITE_BASE_PATH=/<repo-name>/` for project sites.
+  `dist/`. The base path and the site URL are derived from the repository (`/<repo-name>/` for project
+  sites, `/` for a `<owner>.github.io` repository), so there is nothing to remember to set: this
+  repository is deployed at <https://authorsauravkushwaha.github.io/Neo4j-Build-Sprint/>. Deep links
+  work through a generated `404.html`, and a manually dispatched run can publish a branch before it is
+  merged.
 - **Netlify** — `netlify.toml` is committed (build command, SPA fallback, security headers). Connect the
   repo and it works as-is.
 

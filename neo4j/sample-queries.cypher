@@ -333,5 +333,3 @@ MATCH (r:Resource)
 RETURN r.accessModel AS accessModel, count(*) AS resources,
        sum(CASE WHEN r.verification = 'verified' THEN 1 ELSE 0 END) AS verified
 ORDER BY resources DESC;
-
-

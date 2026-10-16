@@ -39,5 +39,3 @@ CREATE INDEX gm_requires_skill_weight IF NOT EXISTS FOR ()-[r:REQUIRES_SKILL]-()
 // What the app expects to find, for a quick sanity check after seeding:
 //   MATCH (n) RETURN labels(n)[0] AS label, count(*) AS nodes ORDER BY label;
 //   MATCH ()-[r]->() RETURN type(r) AS rel, count(*) AS rels ORDER BY rel;
-
-

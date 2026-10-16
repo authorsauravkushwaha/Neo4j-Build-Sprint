@@ -29,8 +29,14 @@
     />
     <!-- Replaced at build time with an absolute canonical URL when VITE_SITE_URL is set. -->
     <!-- __CANONICAL__ -->
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <!--
+      Root-relative, not "./": a root-relative URL is rewritten by Vite onto the build
+      base path, and the 404.html fallback copies this document verbatim. A "./" would
+      resolve against whatever path the browser asked for, so a deep link served by the
+      fallback would request /careers/favicon.svg.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -43,19 +49,21 @@
       property="og:description"
       content="An interactive engineering knowledge graph with skill-gap analysis, dependency-aware roadmaps, projects and free resources."
     />
-    <!-- __OG_IMAGE__ becomes an absolute URL when VITE_SITE_URL is set, so a link
-         pasted into a chat or a social feed renders a card instead of bare text. -->
-    <meta property="og:image" content="__OG_IMAGE__" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="GraphMentor AI: engineering careers as a knowledge graph" />
+    <!--
+      The image block below is injected at build time by vite.config.ts, with an
+      absolute URL when VITE_SITE_URL is set so that a link pasted into a chat or a
+      social feed renders a card instead of bare text. If public/social-card.png has
+      not been rendered, the block is dropped rather than pointed at a file that
+      would answer 404.
+    -->
+    <!-- __OG_IMAGE__ -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="GraphMentor AI — The Engineering Career Navigator" />
     <meta
       name="twitter:description"
       content="Skill-gap analysis over an engineering prerequisite graph: what to learn first, what it unblocks, and how long the route takes."
     />
-    <meta name="twitter:image" content="__OG_IMAGE__" />
+    <!-- __TWITTER_IMAGE__ -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",

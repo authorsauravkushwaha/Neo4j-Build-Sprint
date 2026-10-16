@@ -2395,5 +2395,3 @@ UNWIND [
 MATCH (a:Skill {id: row.from})
 MATCH (b:Tool {id: row.to})
 MERGE (a)-[r:USES]->(b);
-
-
