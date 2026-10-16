@@ -5,6 +5,7 @@
  * Source commit: 065455eda4bec6b61984e98b85a585851f7b8cbd
  * Rows read: 2026-10-16
  * Rows kept: 259 of 2028, across 19 categories
+ * Plaintext links kept: 2 (upstream says HTTPS "Yes" and links to http:// anyway)
  *
  * Refresh with:
  *   git clone --depth 1 https://github.com/public-apis/public-apis.git /tmp/public-apis
@@ -22,6 +23,12 @@ export interface PublicApiEntry {
   /** Upstream's Auth column: "No", "apiKey", "OAuth", "X-Mashape-Key", … */
   auth: string
   cors: 'Yes' | 'No' | 'Unknown'
+  /**
+   * The scheme of the link above — *not* a copy of upstream's HTTPS column, which
+   * is sometimes "Yes" next to an http:// link. An http row is still listed,
+   * because hiding it would be worse than showing it, and it is ranked last.
+   */
+  linkScheme: 'https' | 'http'
   /** Curriculum skills this API is a plausible practice target for. */
   skillIds: string[]
 }
@@ -33,6 +40,7 @@ export const PUBLIC_API_SOURCE = {
   rowsRead: "2026-10-16",
   rowsTotal: 2028,
   rowsKept: 259,
+  plaintextLinks: 2,
   categories: ["Calendar", "Cloud Storage & File Sharing", "Continuous Integration", "Data Validation", "Development", "Documents & Productivity", "Environment", "Geocoding", "Government", "Jobs", "Machine Learning", "Open Data", "Open Source Projects", "Science & Math", "Security", "Test Data", "Text Analysis", "URL Shorteners", "Weather"],
 } as const
 
@@ -44,6 +52,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -53,6 +62,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -62,6 +72,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -71,6 +82,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -80,6 +92,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "OAuth",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -89,6 +102,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -98,6 +112,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -107,6 +122,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -116,6 +132,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -125,6 +142,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -134,6 +152,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -143,6 +162,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql"],
   },
   {
@@ -152,6 +172,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -161,6 +182,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -170,6 +192,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -179,6 +202,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Calendar",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -188,6 +212,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Cloud Storage & File Sharing",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:cloud-fundamentals"],
   },
   {
@@ -197,6 +222,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Cloud Storage & File Sharing",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cloud-fundamentals", "skill:containers-and-docker"],
   },
   {
@@ -206,6 +232,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Cloud Storage & File Sharing",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:cloud-fundamentals"],
   },
   {
@@ -215,6 +242,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Continuous Integration",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:ci-cd-pipelines", "skill:version-control-git"],
   },
   {
@@ -224,6 +252,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Continuous Integration",
     auth: "OAuth",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:ci-cd-pipelines", "skill:version-control-git"],
   },
   {
@@ -233,6 +262,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Continuous Integration",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:ci-cd-pipelines", "skill:version-control-git"],
   },
   {
@@ -242,6 +272,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Continuous Integration",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:ci-cd-pipelines", "skill:version-control-git"],
   },
   {
@@ -251,6 +282,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Continuous Integration",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:ci-cd-pipelines", "skill:version-control-git"],
   },
   {
@@ -260,6 +292,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Data Validation",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:secure-coding", "skill:testing-and-debugging"],
   },
   {
@@ -269,6 +302,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -278,6 +312,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -287,6 +322,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -296,6 +332,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -305,6 +342,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:embedded-iot-connectivity", "skill:programming-fundamentals", "skill:sensors-and-actuators", "skill:testing-and-debugging"],
   },
   {
@@ -314,6 +352,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -323,6 +362,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -332,6 +372,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -341,6 +382,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -350,6 +392,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -359,6 +402,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -368,6 +412,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -377,6 +422,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -386,6 +432,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -395,6 +442,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cloud-fundamentals", "skill:containers-and-docker", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -404,6 +452,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Development",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:programming-fundamentals", "skill:testing-and-debugging"],
   },
   {
@@ -413,6 +462,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -422,6 +472,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -431,6 +482,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography"],
   },
   {
@@ -440,6 +492,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -449,6 +502,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -458,6 +512,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography"],
   },
   {
@@ -467,6 +522,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -476,6 +532,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -485,6 +542,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:data-analysis-and-pandas", "skill:probability-statistics"],
   },
   {
@@ -494,6 +552,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -503,6 +562,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography"],
   },
   {
@@ -512,6 +572,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -521,6 +582,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -530,6 +592,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -539,6 +602,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography"],
   },
   {
@@ -548,6 +612,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Documents & Productivity",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration"],
   },
   {
@@ -557,6 +622,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -566,6 +632,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -575,6 +642,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -584,6 +652,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -593,6 +662,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -602,6 +672,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -611,6 +682,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -620,6 +692,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -629,6 +702,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:embedded-iot-connectivity", "skill:energy-auditing", "skill:renewable-energy-systems", "skill:sensors-and-actuators"],
   },
   {
@@ -638,6 +712,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -647,6 +722,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -656,6 +732,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "User-Agent",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:embedded-iot-connectivity", "skill:energy-auditing", "skill:renewable-energy-systems", "skill:sensors-and-actuators"],
   },
   {
@@ -665,6 +742,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -674,6 +752,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -683,6 +762,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -692,6 +772,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Environment",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:energy-auditing", "skill:renewable-energy-systems"],
   },
   {
@@ -701,6 +782,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -710,15 +792,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
-    skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
-  },
-  {
-    name: "Country",
-    url: "http://country.is/",
-    description: "Get your visitor's country from their IP",
-    category: "Geocoding",
-    auth: "No",
-    cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -728,6 +802,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -737,6 +812,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -746,6 +822,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -755,6 +832,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -764,6 +842,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -773,6 +852,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -782,6 +862,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -791,6 +872,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -800,6 +882,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -809,6 +892,17 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
+    skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
+  },
+  {
+    name: "Moradas",
+    url: "https://moradas.dev/docs",
+    description: "Portuguese address autocomplete and 7-digit postal codes (CP7)",
+    category: "Geocoding",
+    auth: "No",
+    cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -818,6 +912,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -827,6 +922,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -836,6 +932,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Geocoding",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:geodesy-and-coordinate-systems", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -845,6 +942,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -854,6 +952,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -863,6 +962,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:gis-and-spatial-analysis"],
   },
   {
@@ -872,6 +972,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -881,6 +982,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -890,6 +992,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -899,6 +1002,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -908,6 +1012,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -917,6 +1022,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -926,6 +1032,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -935,6 +1042,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -944,6 +1052,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -953,6 +1062,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -962,6 +1072,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -971,6 +1082,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -980,6 +1092,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Government",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:gis-and-spatial-analysis"],
   },
   {
@@ -989,6 +1102,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:work-design-and-ergonomics"],
   },
   {
@@ -998,6 +1112,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1007,6 +1122,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:work-design-and-ergonomics"],
   },
   {
@@ -1016,6 +1132,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:work-design-and-ergonomics"],
   },
   {
@@ -1025,6 +1142,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1034,6 +1152,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:work-design-and-ergonomics"],
   },
   {
@@ -1043,6 +1162,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1052,6 +1172,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1061,6 +1182,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1070,6 +1192,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1079,6 +1202,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1088,6 +1212,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1097,6 +1222,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1106,6 +1232,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:work-design-and-ergonomics"],
   },
   {
@@ -1115,6 +1242,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:work-design-and-ergonomics"],
   },
   {
@@ -1124,6 +1252,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Jobs",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:work-design-and-ergonomics"],
   },
   {
@@ -1133,6 +1262,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:machine-learning-fundamentals", "skill:renewable-energy-systems", "skill:responsible-ai-practices", "skill:secure-coding"],
   },
   {
@@ -1142,6 +1272,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1151,6 +1282,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1160,6 +1292,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1169,6 +1302,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1178,6 +1312,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "http",
     skillIds: ["skill:api-design-and-integration", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1187,6 +1322,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1196,6 +1332,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1205,6 +1342,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1214,6 +1352,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1223,6 +1362,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1232,6 +1372,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1241,6 +1382,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1250,6 +1392,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1259,6 +1402,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:machine-learning-fundamentals", "skill:responsible-ai-practices"],
   },
   {
@@ -1268,6 +1412,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Machine Learning",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals", "skill:probability-statistics", "skill:responsible-ai-practices"],
   },
   {
@@ -1277,6 +1422,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1286,6 +1432,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1295,6 +1442,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1304,6 +1452,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql", "skill:embedded-iot-connectivity", "skill:sensors-and-actuators"],
   },
   {
@@ -1313,6 +1462,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1322,6 +1472,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql", "skill:renewable-energy-systems"],
   },
   {
@@ -1331,6 +1482,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1340,6 +1492,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1349,6 +1502,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1358,6 +1512,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1367,6 +1522,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1376,6 +1532,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1385,6 +1542,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1394,6 +1552,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:data-analysis-and-pandas", "skill:databases-and-sql", "skill:probability-statistics"],
   },
   {
@@ -1403,6 +1562,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:data-analysis-and-pandas", "skill:databases-and-sql"],
   },
   {
@@ -1412,6 +1572,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cloud-fundamentals", "skill:containers-and-docker", "skill:data-analysis-and-pandas", "skill:databases-and-sql", "skill:probability-statistics"],
   },
   {
@@ -1421,6 +1582,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "OAuth",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1430,6 +1592,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1439,6 +1602,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1448,6 +1612,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1457,6 +1622,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1466,6 +1632,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1475,6 +1642,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1484,6 +1652,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:probability-statistics", "skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1493,6 +1662,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1502,6 +1672,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Open Source Projects",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:software-design-patterns", "skill:version-control-git"],
   },
   {
@@ -1511,6 +1682,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1520,6 +1692,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1529,6 +1702,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1538,6 +1712,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1547,6 +1722,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1556,6 +1732,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1565,6 +1742,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1574,6 +1752,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1583,6 +1762,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1592,6 +1772,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1601,6 +1782,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1610,6 +1792,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1619,6 +1802,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1628,6 +1812,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1637,6 +1822,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:engineering-mathematics", "skill:statistical-modelling"],
   },
   {
@@ -1646,6 +1832,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Science & Math",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:engineering-mathematics", "skill:renewable-energy-systems", "skill:statistical-modelling"],
   },
   {
@@ -1655,6 +1842,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1664,6 +1852,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1673,6 +1862,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1682,6 +1872,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1691,6 +1882,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1700,6 +1892,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1709,6 +1902,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1718,6 +1912,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1727,6 +1922,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:databases-and-sql", "skill:network-security-and-monitoring"],
   },
   {
@@ -1736,6 +1932,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:databases-and-sql", "skill:network-security-and-monitoring"],
   },
   {
@@ -1745,6 +1942,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1754,6 +1952,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:databases-and-sql", "skill:network-security-and-monitoring"],
   },
   {
@@ -1763,6 +1962,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1772,6 +1972,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:databases-and-sql", "skill:network-security-and-monitoring"],
   },
   {
@@ -1781,6 +1982,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1790,6 +1992,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Security",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:cybersecurity-fundamentals", "skill:network-security-and-monitoring"],
   },
   {
@@ -1799,6 +2002,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1808,6 +2012,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1817,6 +2022,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1826,6 +2032,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1835,6 +2042,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1844,6 +2052,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1853,6 +2062,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1862,6 +2072,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1871,6 +2082,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1880,6 +2092,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1889,6 +2102,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1898,6 +2112,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:robotics-ros2", "skill:testing-and-debugging"],
   },
   {
@@ -1907,6 +2122,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1916,6 +2132,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1925,6 +2142,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:databases-and-sql", "skill:secure-coding", "skill:testing-and-debugging"],
   },
   {
@@ -1934,6 +2152,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Test Data",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:databases-and-sql", "skill:testing-and-debugging"],
   },
   {
@@ -1943,6 +2162,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "OAuth",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1952,6 +2172,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1961,6 +2182,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1970,6 +2192,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "OAuth",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1979,6 +2202,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1988,6 +2212,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -1997,6 +2222,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2006,6 +2232,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2015,6 +2242,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2024,6 +2252,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2033,6 +2262,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2042,6 +2272,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2051,6 +2282,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2060,6 +2292,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "OAuth",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals", "skill:probability-statistics"],
   },
   {
@@ -2069,6 +2302,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals"],
   },
   {
@@ -2078,6 +2312,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Text Analysis",
     auth: "OAuth",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:machine-learning-fundamentals", "skill:probability-statistics"],
   },
   {
@@ -2087,16 +2322,8 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
-  },
-  {
-    name: "Bitly",
-    url: "http://dev.bitly.com/get_started.html",
-    description: "URL shortener and link management",
-    category: "URL Shorteners",
-    auth: "OAuth",
-    cors: "Unknown",
-    skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:web-frontend-development"],
   },
   {
     name: "CleanURI",
@@ -2105,7 +2332,18 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
+  },
+  {
+    name: "ClickMeter",
+    url: "https://support.clickmeter.com/hc/en-us/categories/201474986",
+    description: "Monitor, compare and optimize your marketing links",
+    category: "URL Shorteners",
+    auth: "apiKey",
+    cors: "Unknown",
+    linkScheme: "https",
+    skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:web-frontend-development"],
   },
   {
     name: "Drivet URL Shortener",
@@ -2114,6 +2352,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2123,6 +2362,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2132,6 +2372,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2141,6 +2382,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2150,6 +2392,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:web-frontend-development"],
   },
   {
@@ -2159,6 +2402,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:probability-statistics", "skill:web-frontend-development"],
   },
   {
@@ -2168,6 +2412,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "No",
+    linkScheme: "http",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2177,6 +2422,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2186,6 +2432,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:data-analysis-and-pandas", "skill:probability-statistics", "skill:web-frontend-development"],
   },
   {
@@ -2195,6 +2442,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2204,6 +2452,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:web-frontend-development"],
   },
   {
@@ -2213,6 +2462,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:web-frontend-development"],
   },
   {
@@ -2222,6 +2472,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "URL Shorteners",
     auth: "apiKey",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:applied-cryptography", "skill:web-frontend-development"],
   },
   {
@@ -2231,6 +2482,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2240,6 +2492,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery", "skill:renewable-energy-systems"],
   },
   {
@@ -2249,6 +2502,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2258,6 +2512,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery", "skill:renewable-energy-systems"],
   },
   {
@@ -2267,6 +2522,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Unknown",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery", "skill:renewable-energy-systems"],
   },
   {
@@ -2276,6 +2532,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2285,6 +2542,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery", "skill:renewable-energy-systems"],
   },
   {
@@ -2294,6 +2552,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2303,6 +2562,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2312,6 +2572,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:remote-sensing-and-imagery"],
   },
   {
@@ -2321,6 +2582,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2330,6 +2592,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2339,6 +2602,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "No",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:remote-sensing-and-imagery"],
   },
   {
@@ -2348,6 +2612,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:remote-sensing-and-imagery"],
   },
   {
@@ -2357,6 +2622,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:remote-sensing-and-imagery"],
   },
   {
@@ -2366,6 +2632,7 @@ export const PUBLIC_API_CATALOG: readonly PublicApiEntry[] = [
     category: "Weather",
     auth: "No",
     cors: "Yes",
+    linkScheme: "https",
     skillIds: ["skill:api-design-and-integration", "skill:remote-sensing-and-imagery"],
   },
 ]

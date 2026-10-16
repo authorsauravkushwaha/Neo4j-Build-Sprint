@@ -31,6 +31,7 @@ import { api } from '@/core/session.ts'
 import { formatHours, formatNumber, formatWeeks } from '@/core/format.ts'
 import { ratingPayload, useAppStore } from '@/state/store.ts'
 import { useCareerParam, useClientQuery } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function PathwayPage(): ReactNode {
   const { careerId, setCareerId } = useCareerParam()
@@ -164,7 +165,7 @@ export function PathwayPage(): ReactNode {
 
           <Card>
             <SectionTitle hint="prerequisites always come earlier">Ordered steps</SectionTitle>
-            <ol className="space-y-3">
+            <Stagger as="ol" className="space-y-3">
               {steps.map((step, index) => (
                 <li key={step.skillId} className="rounded-lg border border-line p-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -207,7 +208,7 @@ export function PathwayPage(): ReactNode {
                   </div>
                 </li>
               ))}
-            </ol>
+            </Stagger>
           </Card>
 
           {pathway.data.pathway.alternatives.length > 0 ? (

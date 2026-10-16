@@ -40,14 +40,14 @@ APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 | Landing | `/` | What the app is, what it needs, and an honest list of limits. |
 | Onboarding | `/onboarding` | Skippable. Guest mode works without an account. |
 | Dashboard | `/dashboard` | Your current plan, next actions, and what is missing. |
-| Career explorer | `/careers`, `/careers/:id` | 13 curated engineering careers with skills, roles and caveats. |
+| Career explorer | `/careers`, `/careers/:id` | 17 curated engineering careers with skills, roles and caveats. |
 | Knowledge graph | `/graph` | The signature feature: zoom/pan canvas, filters, prerequisite and downstream highlighting, path tracing between two nodes, a **3D view** of the same subgraph (drag to orbit, click to select) and a **list view with the same data** for keyboard and screen-reader users. |
 | Accounts | `/login`, `/account` | Optional. Password or emailed link, rate-limited sign-in, and "sign out everywhere". |
 | Pathway builder | `/pathway` | The route from where you are to a role, in dependency order, split into essentials and optional breadth. |
 | Skill-gap analyzer | `/gaps` | Which prerequisites are actually missing, which are optional, and roughly how much study time remains. Leads with the delta view: what you can start today, what gates the rest, and the one chain that cannot be parallelised. |
 | Roadmap | `/roadmap` | A week-by-week plan sized to the hours you really have, with spaced review rows and progress you control. |
 | Projects | `/projects` | 33 projects with deliverable lists and **safety notes** (mains voltage, soldering, machines, cloud cost). |
-| Resources | `/resources` | 97 free and free-to-audit resources. Every one states what you can do afterwards, what it assumes (with the prerequisites linked to the skill pages), where it stops, an hour estimate for the effort involved, what "free" means for that provider, and the date the link was last checked. Every skill in the graph is reachable from at least two of them. |
+| Resources | `/resources` | 154 free and free-to-audit resources. Every one states what you can do afterwards, what it assumes (with the prerequisites linked to the skill pages), where it stops, an hour estimate for the effort involved, what "free" means for that provider, and the date the link was last checked. Every skill in the graph is reachable from at least two of them. |
 | Mentor | `/mentor` | Graph-grounded Q&A with citations. Works with **no AI key** — a deterministic rules engine over the same context answers, and the UI says which one replied. |
 | Progress | `/progress` | What you have done, without streaks, points or invented motivation mechanics. |
 | Settings | `/settings` | Accessibility, theme, data export, account deletion, feedback. |
@@ -61,8 +61,16 @@ backdrop blur. Two 3D scenes render with three.js
 view of the graph. Both degrade to a static CSS/SVG fallback when WebGL is unavailable or the visitor has
 reduced motion enabled, and neither is required to use the app.
 
+**Scroll, across the whole app and not only the landing page** (`src/skiper/`, documented in
+`docs/skiper-ui.md`): the app bar condenses once it is no longer the top of the page, every route enters
+with the same short rise, content lists arrive in order (one CSS rule per position — no per-row
+JavaScript, no extra wrapper elements), a roadmap's week heading pins while its own week scrolls past, and
+a hairline rail plus a back-to-top control make a long page navigable. Every effect is switched off — not
+shortened — by reduced motion, the back-to-top control excepted, because a control is not decoration.
+Filters, forms and the mentor transcript deliberately do not animate.
+
 **Graph model:** `(A)-[:REQUIRES]->(B)` means *A needs B first*. Careers, branches, subjects, concepts,
-skills, languages, tools, projects, resources, learning modules and assessments are nodes; 14 relationship
+skills, languages, tools, projects, resources, learning modules and assessments are nodes; 15 relationship
 types connect them. The dataset has **444 nodes and 1,585 relationships**.
 
 **Recommendation engine** (`supabase/functions/_shared/core/recommend.ts`) is deterministic and
@@ -192,7 +200,7 @@ Notes for Windows users:
 | `npm run verify:db` | Hardening assertions plus a live attack battery against that cluster (71 checks; `-- --with-backup` also proves a dump restores). Writes `docs/database-verification.json`. | No (local DB) |
 | `npm run smoke:http` | Serves the Edge Function request pipeline on a real port and asserts the auth path over HTTP (30 checks; add `DATABASE_URL=…` to run the limiter against Postgres). | No (local) |
 | `npm run appwrite:provision` | Prints the Appwrite collections and indexes this API needs (`--json` for a pipeline, `--run` to execute). Derived from the same schema module the adapter reads, so the two cannot drift. | No |
-| `npm run verify:browser` | Drives the built app in headless Chromium: WebGL scenes, the neumorphic material, mobile layout, reduced motion, the command palette, the delta view and the enforced CSP (91 checks; 93 with `CHECK_OFFLINE=1`). Needs a running preview of `dist/` — pass `BASE_URL=http://127.0.0.1:4173`. | No (local) |
+| `npm run verify:browser` | Drives the built app in headless Chromium: WebGL scenes, the neumorphic material, mobile layout, reduced motion, the command palette, the delta view and the enforced CSP. The script prints its own total — 112 in the last full run, 114 with `CHECK_OFFLINE=1`. Needs a running preview of `dist/` — pass `BASE_URL=http://127.0.0.1:4173`. | No (local) |
 | `npm run seed:neo4j -- --dry-run` | Prints the statements it would send. | No |
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
 | `npm run cap:sync`, `cap:open`, `cap:add:android` | Capacitor helpers — see [Android](#android-app-and-apk). | Yes (Android SDK) |
@@ -400,7 +408,7 @@ one interface (`GraphMentorClient`), so a screen cannot behave differently in th
 ## Tests and verification
 
 ```bash
-npm test                     # 383 tests in 22 files
+npm test                     # 613 tests in 40 files
 npm run typecheck            # no TypeScript errors
 npm run lint:secrets         # no credential-shaped strings
 npm run validate:seed        # 53/53 dataset, engine and Cypher checks
@@ -470,7 +478,7 @@ runs that go past jsdom and into real infrastructure, all of them local:
   and the app bar paint the page colour, shadows come in light/shade pairs, fields are pressed in, a held
   button inverts its shadow, no surface carries a backdrop blur), Cmd/Ctrl+K opens the command palette and
   Enter opens the highlighted result, the 360 px layouts do not overflow, reduced
-  motion mounts no canvas, the console stays clean, the resource library renders all 97 entries with their
+  motion mounts no canvas, the console stays clean, the resource library renders all 154 entries with their
   outcomes, linked prerequisites, limits, hour estimates and time, the delta view on the gap page keeps its
   own three renderings of the numbers in agreement and follows its suggestions to real skill pages, and the
   service worker serves the shell offline.

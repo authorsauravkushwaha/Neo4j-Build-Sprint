@@ -1910,3 +1910,242 @@
     margin-left: 0.5rem;
   }
 }
+
+/* ===========================================================================
+   Site-wide scroll chrome
+   ---------------------------------------------------------------------------
+   The layer that makes every screen in the app — not only the landing story —
+   a scrolling experience: the app bar condenses, the incoming screen rises,
+   section headings stay with their content, and a list arrives in order.
+
+   One rule governs all of it: **only transform, opacity and box-shadow move.**
+   Nothing here changes a box, so scrolling never triggers a layout, and the
+   reduced-motion kill switches at the bottom are `opacity: 1 !important` rather
+   than a shorter duration — the finished state, not a faster route to it.
+=========================================================================== */
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     The app bar condensing
+     Padding is deliberately untouched: shrinking it would move every element
+     below the bar by the same few pixels on the first scroll, which is a layout
+     shift the reader sees as a twitch. The identity block compresses instead,
+     and the tagline fades — both inside a bar whose height never changes.
+  ------------------------------------------------------------------------- */
+  .gm-appbar {
+    transition:
+      box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar-identity {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar-tagline {
+    transition:
+      opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-appbar[data-scrolled='true'] {
+    box-shadow: var(--gm-neu-raised-2);
+    border-bottom-color: var(--gm-border-strong);
+  }
+
+  .gm-appbar[data-scrolled='true'] .gm-appbar-identity {
+    transform: translateY(-1px) scale(0.97);
+  }
+
+  .gm-appbar[data-scrolled='true'] .gm-appbar-tagline {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  /* -------------------------------------------------------------------------
+     The incoming screen
+     A CSS animation with no exit twin: the old screen is already gone, and
+     delaying the new one is how a transition becomes latency.
+  ------------------------------------------------------------------------- */
+  .gm-page-enter {
+    animation: gm-page-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes gm-page-enter {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     Sticky section headings
+     The heading bar rides with its own section. It is a sibling of the
+     revealed body — never a descendant — because a transform on an ancestor
+     makes that ancestor the sticky containing block and the heading would then
+     pin to the section instead of to the viewport.
+  ------------------------------------------------------------------------- */
+  .gm-section {
+    margin-bottom: 1.75rem;
+    scroll-margin-top: 5rem;
+  }
+
+  .gm-section-head {
+    margin-bottom: 0.75rem;
+  }
+
+  /* The group heading pinned inside its own card. Used by `SectionTitle sticky`
+     on long grouped lists (the roadmap's weeks). Deliberately not switched off
+     under reduced motion: pinning is not movement, it is the opposite of it. */
+  .gm-sticky-title {
+    position: sticky;
+    top: 3.6rem;
+    z-index: 4;
+    background: var(--gm-neu-base);
+    padding-block: 0.3rem;
+    border-bottom: 1px solid var(--gm-border);
+  }
+
+  .gm-section-head-sticky {
+    position: sticky;
+    top: 3.5rem;
+    z-index: 5;
+    background: var(--gm-bg);
+    padding-block: 0.35rem;
+    border-bottom: 1px solid var(--gm-border);
+  }
+
+  .gm-section-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .gm-section-hint {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--gm-text-muted);
+    max-width: 60ch;
+  }
+
+  .gm-section-body[data-reveal='out'] {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  .gm-section-body {
+    transition:
+      opacity 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .gm-section-body[data-reveal='in'] {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     Staggered lists
+     The delay is positional, which is why the component needs no per-row
+     JavaScript and no extra wrapper elements. The cap at twelve is the token
+     clamp (`staggerDelay`) expressed in CSS: past a dozen children, everyone
+     else arrives together rather than the last row waiting four seconds.
+  ------------------------------------------------------------------------- */
+  .gm-stagger > * {
+    transition:
+      opacity 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-stagger-delay, 0ms),
+      transform 420ms cubic-bezier(0.16, 1, 0.3, 1) var(--gm-stagger-delay, 0ms);
+  }
+
+  .gm-stagger[data-reveal='out'] > * {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+
+  .gm-stagger[data-reveal='in'] > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .gm-stagger > *:nth-child(1) { --gm-stagger-delay: 0ms; }
+  .gm-stagger > *:nth-child(2) { --gm-stagger-delay: 70ms; }
+  .gm-stagger > *:nth-child(3) { --gm-stagger-delay: 140ms; }
+  .gm-stagger > *:nth-child(4) { --gm-stagger-delay: 210ms; }
+  .gm-stagger > *:nth-child(5) { --gm-stagger-delay: 280ms; }
+  .gm-stagger > *:nth-child(6) { --gm-stagger-delay: 350ms; }
+  .gm-stagger > *:nth-child(7) { --gm-stagger-delay: 420ms; }
+  .gm-stagger > *:nth-child(8) { --gm-stagger-delay: 490ms; }
+  .gm-stagger > *:nth-child(9) { --gm-stagger-delay: 560ms; }
+  .gm-stagger > *:nth-child(10) { --gm-stagger-delay: 630ms; }
+  .gm-stagger > *:nth-child(11) { --gm-stagger-delay: 700ms; }
+  .gm-stagger > *:nth-child(12) { --gm-stagger-delay: 770ms; }
+  .gm-stagger > *:nth-child(n + 13) { --gm-stagger-delay: 800ms; }
+
+  /* -------------------------------------------------------------------------
+     Back to top
+     Sits above the phone's fixed bottom bar, clear of the desktop sidebar's
+     column, and never over a control it could be mistaken for.
+  ------------------------------------------------------------------------- */
+  .gm-backtotop {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 4.75rem;
+    z-index: 35;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    color: var(--gm-text);
+    background: var(--gm-bg-elevated);
+    border: 1px solid var(--gm-border);
+    border-radius: 999px;
+    box-shadow: var(--gm-depth-2);
+  }
+
+  .gm-backtotop:hover {
+    color: var(--gm-accent);
+  }
+
+  @media (min-width: 768px) {
+    .gm-backtotop {
+      right: 1.5rem;
+      bottom: 1.5rem;
+    }
+  }
+
+  /* The chapter rail, two-column variant: a page that wants the section list
+     beside its content on a wide screen. */
+  .gm-with-rail {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    .gm-with-rail {
+      grid-template-columns: minmax(0, 1fr) 12rem;
+      align-items: start;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion: finished states, not shorter animations.
+--------------------------------------------------------------------------- */
+[data-motion='reduced'] .gm-appbar-identity,
+[data-motion='reduced'] .gm-appbar-tagline,
+[data-motion='reduced'] .gm-page-enter,
+[data-motion='reduced'] .gm-section-body,
+[data-motion='reduced'] .gm-stagger > * {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}

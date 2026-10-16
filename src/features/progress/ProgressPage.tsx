@@ -16,7 +16,6 @@ import {
   Card,
   Chip,
   EmptyState,
-  Grid,
   LinkButton,
   List,
   PageHeader,
@@ -27,6 +26,7 @@ import {
 import { SKILL_STATE_LABELS, TASK_STATUS_LABELS, formatDate, formatNumber, percent } from '@/core/format.ts'
 import { useAppStore } from '@/state/store.ts'
 import { SelfRating } from '@/features/shared/SelfRating.tsx'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function ProgressPage(): ReactNode {
   const ratings = useAppStore((state) => state.ratings)
@@ -174,7 +174,7 @@ export function ProgressPage(): ReactNode {
         )}
       </Card>
 
-      <Grid cols={2}>
+      <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <Card>
           <SectionTitle hint="what the planner sees">Self-rated skills</SectionTitle>
           {ratings.length === 0 ? (
@@ -257,7 +257,7 @@ export function ProgressPage(): ReactNode {
             </ul>
           )}
         </Card>
-      </Grid>
+      </Stagger>
 
       <div className="mt-5 space-y-4">
         <Card>

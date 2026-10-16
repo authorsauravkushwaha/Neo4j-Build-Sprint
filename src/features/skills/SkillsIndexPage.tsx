@@ -1,7 +1,7 @@
 /**
  * Skill index — every skill and concept in the curriculum, searchable.
  *
- * Until this page existed, the 89 skills could only be reached sideways:
+ * Until this page existed, the skill catalogue could only be reached sideways:
  * through a career's skill tab, the graph, or the command palette. A learner
  * who already knows the name of the thing they want ("PID control", "spatial
  * joins") had no direct way in. This is that way in: one list, backed by the
@@ -15,6 +15,7 @@ import { Card, Chip, DifficultyBadge, EmptyState, ErrorNotice, Field, Loading, P
 import { api } from '@/core/session.ts'
 import { formatNumber } from '@/core/format.ts'
 import { useClientQuery, useTextParam } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function SkillsIndexPage(): ReactNode {
   const [search, setSearch] = useTextParam('q')
@@ -90,14 +91,14 @@ export function SkillsIndexPage(): ReactNode {
 
       {rows.length > 0 ? (
         <Card>
-          <ul className="flex flex-wrap gap-2">
+          <Stagger as="ul" className="flex flex-wrap gap-2">
             {rows.map((entry) => (
               <li key={entry.id} className="flex items-center gap-1.5">
                 <SkillLink skillId={entry.id} name={entry.name} difficulty={entry.difficulty} />
                 {entry.kind === 'Concept' ? <Chip title="A concept under a subject, not a practised skill">concept</Chip> : null}
               </li>
             ))}
-          </ul>
+          </Stagger>
           <p className="mt-3 text-xs text-muted">
             Difficulty is the curriculum&apos;s judgement of where the entry sits, not a gate: every page states its own
             prerequisites. <DifficultyBadge difficulty="beginner" /> entries are the honest starting points.

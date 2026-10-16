@@ -13,7 +13,9 @@
  *   2. **The vintage travels with the row.** Every response carries the source
  *      commit and the date the rows were read. An undated link list rots silently.
  *   3. **Auth and CORS are upstream's columns, quoted.** We do not add "free" to an
- *      entry that upstream marks `apiKey`, because a key is a condition.
+ *      entry that upstream marks `apiKey`, because a key is a condition — and the
+ *      scheme of the link is recorded next to it, because upstream's HTTPS column
+ *      is occasionally "Yes" next to an `http://` link.
  */
 import { PUBLIC_API_CATALOG, PUBLIC_API_SOURCE, type PublicApiEntry } from './catalog.generated.ts'
 
@@ -41,12 +43,16 @@ export function publicApiProvenance(): {
   rowsRead: string
   rowsTotal: number
   rowsKept: number
+  plaintextLinks: number
   categories: readonly string[]
   limitations: string[]
 } {
   return {
     ...PUBLIC_API_SOURCE,
     limitations: [
+      PUBLIC_API_SOURCE.plaintextLinks > 0
+        ? `The link scheme is recorded separately from upstream's HTTPS column: ${PUBLIC_API_SOURCE.plaintextLinks} of the ${PUBLIC_API_SOURCE.rowsKept} rows say HTTPS "Yes" and link to a plaintext http:// page anyway. Those rows are kept, marked \`linkScheme: "http"\` and ranked last — they are never presented as ready to call.`
+        : 'Every kept row links to an https:// page; the link scheme is recorded separately from upstream\'s HTTPS column, which is not the same claim.',
       'Imported, not live: the rows are a snapshot of the upstream directory at the commit above, refreshed by a script rather than by a background job.',
       'Both columns are upstream\'s: an entry marked apiKey needs a key, and CORS "Unknown" means the directory does not say — test it before building a browser app around it.',
       'Free means free at import time. Rate limits, quotas and terms change without notice, and nobody here re-reads them for you.',
@@ -76,14 +82,26 @@ export function listPublicApis(query: PublicApiQuery = {}): PublicApiMatch[] {
   })
 
   /*
-   * Callable-today first: no key, then CORS known. After that, alphabetical, so
-   * the same query always returns the same order — a list that reshuffles between
-   * visits makes it impossible to tell whether anything changed.
+   * Callable-today first, then alphabetical, so the same query always returns the
+   * same order — a list that reshuffles between visits makes it impossible to tell
+   * whether anything changed.
+   *
+   * The three components are deliberately far apart (auth wins by 30, CORS by 5,
+   * link scheme by 1) and added, not multiplied, so no later tiebreak can silently
+   * outrank an earlier one. A key is a condition; an unknown CORS is a caveat; a
+   * plaintext link is the smallest of the three, and it still sorts after a secure
+   * link rather than disappearing.
    */
+  const rank = (entry: PublicApiMatch): number => {
+    const auth = entry.auth.toLowerCase()
+    return (
+      (auth === 'no' ? 0 : auth === 'oauth' ? 30 : 60) +
+      (entry.cors === 'Yes' ? 0 : 5) +
+      (entry.linkScheme === 'https' ? 0 : 1)
+    )
+  }
   return matches
     .sort((a, b) => {
-      const rank = (entry: PublicApiMatch): number =>
-        (entry.auth.toLowerCase() === 'no' ? 0 : entry.auth.toLowerCase() === 'oauth' ? 1 : 2) + (entry.cors === 'Yes' ? 0 : 0.5)
       const difference = rank(a) - rank(b)
       return difference !== 0 ? difference : a.name.localeCompare(b.name)
     })

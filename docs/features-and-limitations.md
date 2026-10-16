@@ -38,13 +38,13 @@ Two lists, side by side, because a feature list without its limits is marketing.
 
 ### Curriculum
 
-- **13 curated engineering careers** across 12 branches, each with typical roles, required skills,
+- **17 curated engineering careers** across 16 branches, each with typical roles, required skills,
   related careers and explicit caveats.
 - **89 skills** with prerequisites, difficulty, study-hour ranges, proficiency levels and practice notes.
 - **33 projects** with deliverables, milestones, testing ideas, extension work and — importantly —
   **safety notes** where the project involves mains voltage, soldering, machine tools, chemicals, high
   currents or cloud cost.
-- **97 free and free-to-audit resources** (courses, books, docs, references, hands-on practice). Each one
+- **154 free and free-to-audit resources** (courses, books, docs, references, hands-on practice). Each one
   states three things a link list usually hides: **what you can do afterwards**, **what it assumes you
   already know**, and **where it stops**; plus how long it takes, what "free" means for that provider
   (`free-open`, `free-audit`, `free-account`, `free-with-limits`) and the date the link was last actually
@@ -52,14 +52,14 @@ Two lists, side by side, because a feature list without its limits is marketing.
 - **Effort you can plan around.** Every resource carries an hour range and a plain-English shape
   (`≈ 10–30 hours. A few days per feature, with a meter and a board in front of you.`), using the same units
   as the skill estimates, so a gap analysis turns into a timetable rather than a wish.
-- **Prerequisites are graph facts, not prose.** 59 resources carry `ASSUMES` edges to the skills they
-  presume you already have (79 of them). They render as links to the skill pages and can be queried:
+- **Prerequisites are graph facts, not prose.** 91 resources carry `ASSUMES` edges to the skills they
+  presume you already have (120 of them). They render as links to the skill pages and can be queried:
   `MATCH (r:Resource)-[:ASSUMES]->(s:Skill)`. A resource may revisit a skill it also assumes — a course that
   assumes arithmetic and then deepens it — but every prerequisite is taught by some resource, and
   `validate:seed` fails if that stops being true.
 - **Every skill has at least two routes.** `npm run validate:seed` fails if any skill in the graph is left
   without a resource, or is reachable from only one link that could go stale tomorrow.
-- **9 learning modules** and **8 assessments** that map a route across several skills at once.
+- **13 learning modules** and **16 assessments** that map a route across several skills at once.
 - **Find anything in one keystroke.** Cmd/Ctrl+K opens a command palette that searches every page, career,
   skill, concept, project and resource — offline, without an AI provider, and without a page load. It is a
   real dialog (focus moves in and returns to where it was, arrow keys move, Enter opens) and the ranking is
@@ -103,6 +103,18 @@ Two lists, side by side, because a feature list without its limits is marketing.
 - Two **three.js** scenes: a fixed hero composition on the landing page and the 3D graph view above. Both
   load on demand, both pause when off-screen or when the tab is hidden, and both release their GPU
   resources on unmount.
+- **The whole app is a scroll experience, not just the landing page** (`src/skiper/`,
+  [skiper-ui.md](skiper-ui.md)). The app bar condenses once it is no longer the top of the page; every
+  route enters with the same short rise-and-fade; content lists arrive in order, which costs one CSS rule
+  per position rather than a component per row; a roadmap's week heading stays pinned while its own week
+  scrolls past; and a hairline rail plus a **back-to-top** button make a forty-task page navigable. The
+  same layer is driven by the *data*: the path's steps arrive in dependency order because the engine
+  computed that order, and nothing in it is a number the front end owns.
+- **Motion is a preference, and it is honoured everywhere.** Reduced motion renders the finished state —
+  the entrance is not created at all, not merely shortened — except for the back-to-top control, which is
+  behaviour rather than decoration: a reduced-motion reader needs it exactly as much as anybody else. The
+  layer never moves a box (only transform, opacity and box-shadow) so a scroll cannot cause a reflow, and
+  filter cards, form fields and the mentor transcript are deliberately still.
 - Fallbacks, in order: reduced motion → static; no WebGL → static; no JavaScript layout yet → the scene
   builds only after its container has a real measured size. The app is fully usable with none of it.
 - **Where the tilt is, and where it deliberately is not.** Every surface is the same material, but only the *focal*
@@ -117,6 +129,25 @@ Two lists, side by side, because a feature list without its limits is marketing.
   verdict: Settings carries "Try the 3D views on this device anyway", which re-probes without the caveat
   and stores the choice. Without it, a visitor on such a machine was refused 3D permanently with no
   explanation and no way to override — which is how that bug was found.
+
+### Automation and practice targets
+
+- **A readable workflow engine** (`core/workflow`): definitions are JSON with **14 node types**
+  (`gm.http.request`, `gm.graph.pathway`, `gm.ai.mentor`, …), and six shipped workflows — a mentor digest, a
+  frontier export, a pathway digest, a resource check, a public-API map and a weekly roadmap build. Runs are
+  reproducible: every node records what it received and what it returned, so a result can be read back
+  rather than re-run.
+- **Outbound requests are allowlisted.** A node may only reach a host on the workflow's list, and the union
+  of the shipped workflows' hosts is asserted to equal the one exported host list
+  (`WORKFLOW_ALLOWED_HOSTS`) — a workflow cannot quietly acquire a new destination. Hosts are https-only, no
+  credentials in the URL, and a refused host is an error rather than an empty result.
+- **`npm run workflow -- --id … --json` runs one on the command line**, and `scripts/workflow.ts --list`
+  prints the catalogue. The same engine is used in the browser (`workflowServices.ts`), so a definition does
+  not behave differently in the two places.
+- **A public-API catalogue for practice**: **259 entries** imported from
+  [`public-apis/public-apis`](https://github.com/public-apis/public-apis) (MIT), each linked to the
+  curriculum skills it exercises, with the source commit, the read date and upstream's `auth` / `cors`
+  columns quoted rather than guessed. See [public-apis.md](public-apis.md).
 
 ### Accounts and data
 
@@ -140,7 +171,7 @@ Two lists, side by side, because a feature list without its limits is marketing.
 ### Platforms
 
 - Responsive web app: 360 px phone through desktop, with a mobile navigation drawer and touch-sized controls.
-- **PWA**: installable, offline shell (an `offline.html` fallback page), 35 precache entries, and an update
+- **PWA**: installable, offline shell (an `offline.html` fallback page), 29 precache entries, and an update
   prompt that asks before reloading — it never silently swaps the app under you.
 - **Capacitor Android** configuration committed (`appId: ai.graphmentor.app`) sharing the same build, plus
   the same Edge Functions, so user data has exactly one home.
@@ -149,7 +180,10 @@ Two lists, side by side, because a feature list without its limits is marketing.
   and what has not been exercised, is in [appwrite.md](appwrite.md) — including the honest part: no live
   Appwrite project has been run against this code.
 - Accessibility: skip link, focus-visible rings, labelled controls, reduced-motion support (which also
-  disables graph animation), a theme selector, and text alternatives for every canvas-based feature.
+  disables graph animation, the scroll entrances and the progress rail), a theme selector, and text
+  alternatives for every canvas-based feature. No animation in this app is the only route to information:
+  every pinned scene has a stacked static form, every list is in the DOM from the first render, and the
+  chapter rails are real links that skip the story entirely.
 
 ---
 
@@ -174,6 +208,33 @@ Two lists, side by side, because a feature list without its limits is marketing.
 - **Self-assessments are self-reported.** The graph cannot verify that you really know something. The
   analyzer says so on screen, in the caveats, and in exports.
 - **Estimates are ranges**, based on typical study time — not promises about how fast *you* will learn.
+
+### About the API catalogue
+
+- **It is a snapshot, not a live index**: 259 of 2,028 upstream rows, read on one date at one commit,
+  refreshed by a script that refuses to fetch on its own. Rate limits, quotas and terms change without
+  notice and nothing here re-reads them.
+- **Auth means auth.** An entry marked `apiKey` needs a key; `CORS: Unknown` means the directory does not
+  say, and "free" means free at import time. The UI repeats all five caveats next to the data rather than in
+  a footnote.
+- **Two rows link to a plaintext `http://` page** while upstream's own HTTPS column says `Yes`. They are
+  kept and marked (`linkScheme: "http"`), ranked last, and never presented as ready to call — hiding them
+  would be tidier and less truthful.
+- **There is no public catalogue page yet.** The data, the query layer, the provenance object, the tests
+  and the workflow node all exist; a browsable `/apis` route is the next piece of surface. Until then the
+  catalogue is reached through the workflow node and the query layer, and this document says so instead of
+  implying a page that is not there.
+
+### About the workflow engine
+
+- **It is not a general-purpose automation platform.** There is no arbitrary code execution, no shell node,
+  no filesystem access and no plugin loader. Nodes do one of a fixed set of things, and outbound traffic is
+  allowlisted by host.
+- **Scheduling is a definition field, not a daemon.** The cron expressions are parsed and validated (five
+  UTC fields), and `docs/workflows.md` states where a real deployment would have to run them; this project
+  does not ship a scheduler that claims to have run anything.
+- **An HTTP node needs the network** and will fail — loudly, with the host it refused — in an environment
+  without one. That is stated in the run output rather than swallowed.
 
 ### About the AI mentor
 

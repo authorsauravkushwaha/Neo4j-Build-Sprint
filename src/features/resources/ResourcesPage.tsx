@@ -32,6 +32,7 @@ import { api } from '@/core/session.ts'
 import { accessTone, formatNumber, formatRelative } from '@/core/format.ts'
 import { useAppStore } from '@/state/store.ts'
 import { useClientQuery, useTextParam } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function ResourcesPage(): ReactNode {
   // `?q=` — the library is shareable: a filtered view survives a reload and can
@@ -177,7 +178,7 @@ export function ResourcesPage(): ReactNode {
         </EmptyState>
       ) : null}
 
-      <div className="space-y-3">
+      <Stagger className="space-y-3">
         {displayed.map((resource) => {
           const bookmarked = bookmarks.some((bookmark) => bookmark.targetId === resource.id)
           const verifiedRecently = resource.verification === 'verified'
@@ -297,7 +298,7 @@ export function ResourcesPage(): ReactNode {
             </Card>
           )
         })}
-      </div>
+      </Stagger>
 
       <div className="mt-6 space-y-3">
         <Callout kind="info" title="How the access labels are decided">

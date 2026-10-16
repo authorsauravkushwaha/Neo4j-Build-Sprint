@@ -33,6 +33,9 @@ import { onAuthChange } from '@/core/supabase.ts'
 import { config } from '@/core/env.ts'
 import { useAppStore } from '@/state/store.ts'
 import { CommandPalette, PaletteTrigger } from '@/components/CommandPalette.tsx'
+import { AppScrollRail, BackToTop } from '@/skiper/components/ScrollChrome.tsx'
+import { PageTransition } from '@/skiper/components/PageTransition.tsx'
+import { useScrollFlag } from '@/skiper/motion/useScrollFlag.ts'
 
 interface NavItem {
   to: string
@@ -186,6 +189,10 @@ export function Layout(): ReactNode {
   const toasts = useAppStore((state) => state.toasts)
   const dismissToast = useAppStore((state) => state.dismissToast)
   const primaryNav = NAV.filter((item) => item.primary)
+  /* Past a few pixels, the bar is no longer "the top of the page" — it is
+     chrome floating over content, and it says so. The body compresses inside a
+     bar whose height never changes, so nothing below it moves by a pixel. */
+  const scrolled = useScrollFlag({ threshold: 8 })
 
   useEffect(() => {
     // Move focus to the main region on navigation so screen-reader and keyboard
@@ -215,9 +222,11 @@ export function Layout(): ReactNode {
           different colour from the page behind it — border-only separation
           would read as a flat toolbar on top of the material rather than as a
           raised edge of it. */}
-      <header className="gm-appbar sticky top-0 z-30">
+      <AppScrollRail />
+
+      <header className="gm-appbar sticky top-0 z-30" data-scrolled={scrolled ? 'true' : 'false'}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2.5 sm:px-4">
-          <NavLink to="/" className="flex min-h-9 items-center gap-2 no-underline">
+          <NavLink to="/" className="gm-appbar-identity flex min-h-9 items-center gap-2 no-underline">
             <span
               aria-hidden="true"
               className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--gm-accent)] text-[var(--gm-accent-contrast)]"
@@ -226,7 +235,7 @@ export function Layout(): ReactNode {
             </span>
             <span className="leading-tight">
               <span className="block text-sm font-semibold text-ink">GraphMentor AI</span>
-              <span className="block text-[11px] text-muted">The engineering career navigator</span>
+              <span className="gm-appbar-tagline block text-[11px] text-muted">The engineering career navigator</span>
             </span>
           </NavLink>
           <div className="flex items-center gap-1.5">
@@ -286,7 +295,11 @@ export function Layout(): ReactNode {
         </nav>
 
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 focus-visible:outline-none">
-          <Outlet />
+          {/* Keyed on the pathname, so a screen is re-entered when the route
+              changes and *not* when only a query parameter does. */}
+          <PageTransition routeKey={location.pathname}>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
 
@@ -337,6 +350,7 @@ export function Layout(): ReactNode {
         </ul>
       </nav>
 
+      <BackToTop />
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
   )

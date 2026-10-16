@@ -15,9 +15,20 @@ with four facts per row: the name and link, a one-line description, and the
 | --- | --- |
 | Rows read at import | see `PUBLIC_API_SOURCE` in the generated file (last import: 2026-10-16, commit `065455e`) |
 | Categories kept | 19, chosen because they map onto the curriculum (`Development`, `Open Source Projects`, `Machine Learning`, `Science & Math`, `Geocoding`, `Security`, `Test Data`, `Weather`, …) |
-| Rows kept | at most 16 per category, ranked: no-auth first, then CORS-known, then most curriculum links, then alphabetical |
-| Fields kept | name, url, description (≤200 chars), category, `auth`, `cors`, `skillIds` |
+| Rows kept | at most 16 per category, chosen by rank: no-auth first, then CORS-known, then an https link before a plaintext one, then most curriculum links, then alphabetical |
+| Rows kept with a plaintext link | 2 of 259 — upstream declares HTTPS `Yes` and links to an `http://` page anyway |
+| Fields kept | name, url, description (≤200 chars), category, `auth`, `cors`, `linkScheme`, `skillIds` |
 | Fields removed | everything else. No rate limits, no quotas, no "free forever" claims — nothing this project did not read in the source table |
+
+**Two different orders, on purpose.** The ranking above decides which rows *survive
+the cap*; the file is then written alphabetically inside each category, so a refresh
+diffs as "these rows appeared, those disappeared" rather than as a reshuffle. The
+order a reader sees is computed at query time by `listPublicApis`, which re-ranks the
+survivors. All three behaviours are pinned by
+`tests/unit/public-apis-importer.test.ts`, which runs the importer against a synthetic
+table where every rule has a planted case — including the two rows that are supposed
+to be dropped, the duplicate that must appear once, and the plaintext link that must
+survive *and* be marked.
 
 Dropping the other 40-odd categories is the point. A catalogue of 2,000 APIs is not
 guidance, it is a haystack; the ranked, capped subset is small enough to read and
@@ -42,8 +53,8 @@ The importer:
   `src/data/seed/knowledgeGraph.ts`, so a typo cannot enter the data;
 - **stamps the source commit and the date the rows were read** into the generated
   file, which is what makes "last checked" a measurement rather than a claim;
-- **is deterministic**: same input file, same output file, sorted and capped, so the
-  diff of a refresh shows only real changes.
+- **is deterministic**: same input file, same output file, ranked for selection,
+  sorted for the file, so the diff of a refresh shows only real changes.
 
 Generated output goes to `src/data/publicApis/catalog.generated.ts` — a file with a
 header saying it is generated, with the exact commands to regenerate it. It is
@@ -72,10 +83,16 @@ route" — and never "recommended for you".
 
 ## What this catalogue cannot tell you
 
-These four statements are shown in the UI, returned by
+These five statements travel with the data, returned by
 `publicApiProvenance()`, and repeated here because they are the difference between
 a useful list and a trap:
 
+0. **The link scheme is recorded, not assumed.** Upstream's HTTPS column is
+   sometimes `Yes` next to an `http://` link. Rewriting the URL would invent a link;
+   dropping the row would hide one. So each row carries `linkScheme`, the plaintext
+   ones are ranked last — and a caller can filter on the field rather than trusting
+   the column. This is the one field in the catalogue that is ours, and it says so
+   in the generated file.
 1. **Imported, not live.** The rows are a snapshot of the upstream directory at the
    commit above. Refreshing is a script run, not a background job.
 2. **`auth` and `cors` are upstream's columns, quoted.** An entry marked `apiKey`

@@ -30,6 +30,7 @@ import { api } from '@/core/session.ts'
 import { accessTone, formatHours } from '@/core/format.ts'
 import { useAppStore } from '@/state/store.ts'
 import { useClientQuery } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 import { SelfRating } from '@/features/shared/SelfRating.tsx'
 import { ShareButton } from '@/components/ShareButton.tsx'
 import { recordRecentView } from '@/core/persistence.ts'
@@ -143,7 +144,7 @@ export function CareerDetailPage(): ReactNode {
 
       <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} tabIndex={0}>
         {tab === 'overview' ? (
-          <div className="space-y-4">
+          <Stagger key={tab} className="space-y-4">
             <Card>
               <SectionTitle hint="curriculum description, not a job advert">What this work involves</SectionTitle>
               <p className="text-sm text-muted">{career.description}</p>
@@ -203,11 +204,11 @@ export function CareerDetailPage(): ReactNode {
               <SectionTitle hint="kept short on purpose">Caveats</SectionTitle>
               <List items={caveats} />
             </Card>
-          </div>
+          </Stagger>
         ) : null}
 
         {tab === 'skills' ? (
-          <div className="space-y-4">
+          <Stagger key={tab} className="space-y-4">
             <Callout kind="info" title="Essential first, then optional">
               Essential skills are the ones the graph marks as required in practice. Optional skills are useful, career-dependent
               specialisations: no single employer expects all of them. Rate yourself only where you have real evidence.
@@ -254,11 +255,11 @@ export function CareerDetailPage(): ReactNode {
                 </ul>
               </Card>
             ) : null}
-          </div>
+          </Stagger>
         ) : null}
 
         {tab === 'projects' ? (
-          <div className="space-y-3">
+          <Stagger key={tab} className="space-y-3">
             {projects.length === 0 ? (
               <Callout kind="warning" title="No projects linked yet">
                 The graph has no project connected to this career in the current dataset. Try the project recommender for the
@@ -294,11 +295,11 @@ export function CareerDetailPage(): ReactNode {
                 </Card>
               ))
             )}
-          </div>
+          </Stagger>
         ) : null}
 
         {tab === 'resources' ? (
-          <div className="space-y-3">
+          <Stagger key={tab} className="space-y-3">
             <Callout kind="info" title="Access labels are explicit">
               "Free" means no payment anywhere. "Free to audit" means the content is readable without paying, usually without a
               certificate. If a provider changes its model, the label is wrong — the note next to each link tells you what was
@@ -326,7 +327,7 @@ export function CareerDetailPage(): ReactNode {
                 </p>
               </Card>
             ))}
-          </div>
+          </Stagger>
         ) : null}
       </div>
 

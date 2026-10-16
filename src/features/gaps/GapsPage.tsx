@@ -35,6 +35,7 @@ import { ratingPayload, useAppStore } from '@/state/store.ts'
 import { useCareerParam, useClientQuery } from '@/features/shared/hooks.ts'
 import { SelfRating } from '@/features/shared/SelfRating.tsx'
 import { FrontierPanel } from '@/features/gaps/FrontierPanel.tsx'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 const CATEGORY_ORDER: GapCategory[] = [
   'missing-prerequisite',
@@ -195,7 +196,7 @@ export function GapsPage(): ReactNode {
             </p>
           </Card>
 
-          <div className="space-y-4">
+          <Stagger className="space-y-4">
             {CATEGORY_ORDER.map((category) => {
               const categoryItems = visible.filter((item) => item.category === category)
               if (categoryItems.length === 0) return null
@@ -267,7 +268,7 @@ export function GapsPage(): ReactNode {
                 </Card>
               )
             })}
-          </div>
+          </Stagger>
 
           {analysis.data && analysis.data.projects.length > 0 ? (
             <Card>

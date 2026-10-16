@@ -91,15 +91,15 @@ Everything below was run to produce [verification.md](verification.md). None of 
 ```bash
 npm ci                                   # exact pinned tree
 npx tsc -b                               # 0 TypeScript errors
-npx vitest run                           # 383 tests pass across 22 files
-npm run validate:seed                    # 53/53 dataset + engine + Cypher checks
+npx vitest run                           # 613 tests pass across 40 files
+npm run validate:seed                    # 58/58 dataset + engine + Cypher checks
 npm run emit:cypher -- --check           # generated Cypher is current
-npm run lint:secrets                     # no credential-shaped strings in 172 source + 26 built files
+npm run lint:secrets                     # no credential-shaped strings in the source tree or the built bundle
 npm run oracle                           # 39 frontier cases recomputed in Java, 507 lines identical
 npm audit --omit=dev                     # 0 vulnerabilities in the shipped tree
 npm run seed:neo4j -- --dry-run           # 32 statements, 1363 rows, writes nothing
 npm run build                            # production build + PWA service worker
-npm run verify:resources                 # re-check all 97 links (needs internet)
+npm run verify:resources                 # re-check all 154 links (needs internet)
 ```
 
 And the three that go past jsdom into real infrastructure — all local, none of them a deployment:
@@ -120,10 +120,10 @@ BASE_URL=http://127.0.0.1:4173 CHECK_OFFLINE=1 npm run verify:browser
 
 | Command | What a correct result looks like |
 | --- | --- |
-| `npx vitest run` | `Test Files 22 passed (22)`, `Tests 383 passed (383)` |
+| `npx vitest run` | `Test Files 40 passed (40)`, `Tests 613 passed (613)` |
 | `npm run validate:seed` | `58/58 checks passed` then `Self-check passed.` |
 | `npm run emit:cypher -- --check` | `neo4j artefacts are up to date.` |
-| `npm run lint:secrets` | `Secret scan clean: 172 source file(s) checked…` plus `Built bundle clean: 26 file(s) under dist/ checked` and a 14/14 rule canary |
+| `npm run lint:secrets` | `Secret scan clean: <n> source file(s) checked…` plus `Built bundle clean: <n> file(s) under dist/ checked` and a `Rule canary: 14/14 fixtures classified correctly` line — the file counts grow with the repository, the canary is the assertion |
 | `npm run verify:rls` | `42/42 checks passed` against PostgreSQL 17 |
 | `npm run smoke:http` | `30/30 checks passed` then `The auth pipeline behaves over HTTP: rate-limited, CORS-scoped, leaking nothing.` |
 | `npm run verify:browser` | `112/112 checks passed` then `Rendered in a real engine: WebGL scenes, the neumorphic material, mobile layout and reduced motion all behave.` Screenshots land in `docs/screenshots/` |

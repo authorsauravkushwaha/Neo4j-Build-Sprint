@@ -8,9 +8,10 @@
  */
 import type { ReactNode } from 'react'
 
-import { Callout, Card, Chip, Grid, LinkButton, List, PageHeader, SectionTitle, Stat } from '@/components/ui.tsx'
+import { Callout, Card, Chip, LinkButton, List, PageHeader, SectionTitle, Stat } from '@/components/ui.tsx'
 import { datasetCounts, knowledgeGraph } from '@/data/seed/knowledgeGraph.ts'
 import { config } from '@/core/env.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 import { formatNumber } from '@/core/format.ts'
 
 export function AboutPage(): ReactNode {
@@ -27,7 +28,7 @@ export function AboutPage(): ReactNode {
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Stagger className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Graph version" value={knowledgeGraph.version} hint={`Updated ${knowledgeGraph.updated}`} />
         <Stat
           label="Nodes"
@@ -48,14 +49,14 @@ export function AboutPage(): ReactNode {
         />
         <Stat label="Relationships" value={formatNumber(datasetCounts.edges)} hint={`${datasetCounts.relationshipTypes} relationship types · ${datasetCounts.projects} projects, ${datasetCounts.resources} resources`} />
         <Stat label="Build" value={config.appVersion} hint="Bundled dataset, no network needed" />
-      </div>
+      </Stagger>
 
-      <Grid cols={2}>
+      <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <Card>
           <SectionTitle hint="implemented and covered by tests">Features</SectionTitle>
           <List
             items={[
-              'Career explorer over 13 curated engineering directions, each with essential and optional skills, common job titles and portfolio ideas.',
+              `Career explorer over ${datasetCounts.careers} curated engineering directions, each with essential and optional skills, common job titles and portfolio ideas.`,
               'Interactive knowledge graph with zoom, pan, filters, prerequisite and downstream highlighting, path tracing, and a full text alternative.',
               'Career pathway builder that orders skills by the REQUIRES relationships in the graph and shows alternative routes.',
               'Skill-gap analyzer with five transparent scoring factors and categories that separate real prerequisites from optional specialisations.',
@@ -73,7 +74,7 @@ export function AboutPage(): ReactNode {
           <SectionTitle hint="stated plainly, not hidden in a FAQ">Limitations</SectionTitle>
           <List
             items={[
-              'The dataset is a curated sample (17 careers, 89 skills) — not a labour-market database, and not exhaustive.',
+              `The dataset is a curated sample (${datasetCounts.careers} careers, ${datasetCounts.skills} skills) — not a labour-market database, and not exhaustive.`,
               'Hour estimates are curriculum ranges; they are not measurements of how long you will take.',
               'No certificates, no accreditation, no verification of anything you self-report.',
               'No guarantees about jobs, internships, admissions, visas or salaries. Any tool that promises these is misleading you.',
@@ -84,7 +85,7 @@ export function AboutPage(): ReactNode {
             ]}
           />
         </Card>
-      </Grid>
+      </Stagger>
 
       <div className="mt-5 space-y-4">
         <Card>

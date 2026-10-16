@@ -39,6 +39,7 @@ import { TASK_STATUS_LABELS, formatHours, formatNumber, formatWeeks, percent } f
 import { loadLocalRoadmaps, saveLocalRoadmaps, type LocalSavedRoadmap } from '@/core/persistence.ts'
 import { ratingPayload, useAppStore } from '@/state/store.ts'
 import { useCareerParam, useClientQuery } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 const STATUS_ORDER: TaskStatus[] = ['not-started', 'in-progress', 'completed', 'needs-review']
 
@@ -384,7 +385,7 @@ export function RoadmapPage(): ReactNode {
       ) : null}
 
       {data ? (
-        <div className="space-y-5">
+        <Stagger className="space-y-5">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Stat label="Tasks" value={formatNumber(tasks.length)} hint={`${weeks.length} weeks`} />
             <Stat label="Completed" value={formatNumber(summary.completed)} hint={`${percent(summary.completed, tasks.length)}% of the plan`} />
@@ -420,7 +421,7 @@ export function RoadmapPage(): ReactNode {
             const weekHours = weekTasks.reduce((sum, task) => sum + (task.estimatedHours[0] + task.estimatedHours[1]) / 2, 0)
             return (
               <Card key={week}>
-                <SectionTitle hint={`≈ ${formatNumber(Math.round(weekHours))} h of work`}>Week {week}</SectionTitle>
+                <SectionTitle sticky hint={`≈ ${formatNumber(Math.round(weekHours))} h of work`}>Week {week}</SectionTitle>
                 <ul className="space-y-3">
                   {weekTasks.map((task) => {
                     const status = localProgress[task.taskKey]?.status ?? task.status
@@ -561,7 +562,7 @@ export function RoadmapPage(): ReactNode {
               All progress
             </LinkButton>
           </div>
-        </div>
+        </Stagger>
       ) : null}
     </div>
   )

@@ -99,9 +99,29 @@ export function Panel({ children, className = '' }: { children: ReactNode; class
   return <div className={`gm-panel gm-card-static p-4 sm:p-5 ${className}`}>{children}</div>
 }
 
-export function SectionTitle({ children, hint }: { children: ReactNode; hint?: string }): ReactNode {
+/**
+ * A group heading.
+ *
+ * `sticky` pins the heading to the top of the viewport for as long as its group
+ * is on screen, which is what a long grouped list needs: on a twelve-week plan,
+ * "Week 5 — ≈ 9 h of work" staying put answers "where am I" without a scroll
+ * indicator doing it badly. The heading is a real `<h2>` either way, and the
+ * sticky behaviour is one CSS property on a sibling of the content — no
+ * listener, and a transform on the wrapper is avoided on purpose (a transformed
+ * ancestor would move the box the heading pins against).
+ */
+export function SectionTitle({
+  children,
+  hint,
+  sticky = false,
+}: {
+  children: ReactNode
+  hint?: string
+  /** Pin the heading while its group scrolls past. Use on long grouped lists only. */
+  sticky?: boolean
+}): ReactNode {
   return (
-    <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+    <div className={`${sticky ? 'gm-sticky-title' : ''} mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1`}>
       <h2 className="text-lg font-semibold">{children}</h2>
       {hint ? <span className="text-xs text-muted">{hint}</span> : null}
     </div>

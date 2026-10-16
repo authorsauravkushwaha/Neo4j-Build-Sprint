@@ -29,6 +29,7 @@ import { api } from '@/core/session.ts'
 import { formatHours, formatNumber, percent } from '@/core/format.ts'
 import { ratingPayload, useAppStore } from '@/state/store.ts'
 import { useCareerParam, useClientQuery, useTextParam } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function ProjectsPage(): ReactNode {
   const { careerId, setCareerId } = useCareerParam()
@@ -151,7 +152,7 @@ export function ProjectsPage(): ReactNode {
         </EmptyState>
       ) : null}
 
-      <div className="space-y-4">
+      <Stagger className="space-y-4">
         {sorted.map((project) => {
           const bookmarked = bookmarks.some((bookmark) => bookmark.targetId === project.id)
           return (
@@ -235,7 +236,7 @@ export function ProjectsPage(): ReactNode {
             </Card>
           )
         })}
-      </div>
+      </Stagger>
 
       <div className="mt-6">
         <Callout kind="info" title="Why the numbers are small">

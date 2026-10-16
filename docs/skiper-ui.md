@@ -68,6 +68,7 @@ experienced as jank, so the ceilings matter more than the values.
 | `useScrollSpy(entries)` | active id | Backs both the chapter bar and the pinned scene's step rail. |
 | `useMagnetic(options)` | `{ ref, magneticProps }` | Writes `--gm-magnet-x/y/tilt`. Skips touch and reduced motion. |
 | `useParallax(options)` | ref | Decorative layer only — never text. |
+| `useScrollFlag({ threshold })` | `boolean` | "Is the reader past this point?" A boolean, and deliberately **not** motion-gated: the back-to-top control is a control, and wanting less motion is not wanting fewer features. `threshold` may be a function, so `() => 3 * innerHeight` survives a resize. Pure boundary test: `isPastScrollThreshold`. |
 
 ## Components
 
@@ -87,7 +88,33 @@ experienced as jank, so the ceilings matter more than the values.
 | `Meter` | A bar with a real `role="meter"`. | Only ever fed a computed value — never a decorative percentage. |
 | `MagneticLink` / `MagneticButton` | Buttons that lean towards the pointer, with a sheen. | Movement is capped at 8px so the hit box never moves away from the click. |
 | `SpotlightCard` | Pointer-follow highlight on a card surface. | Highlight is a pseudo-element; content and contrast are untouched. |
+| `Stagger` | A list that arrives in order. | No per-row JavaScript and no extra elements: one observer on the container, one attribute, and the stylesheet gives each child its delay by `nth-child` (capped at twelve, matching the token clamp). Children are never cloned or wrapped, so a `<ul>` of `<li>` stays one. |
+| `AppScrollRail` | The hairline document progress bar, mounted once in `Layout` for every route. | Decorative (`aria-hidden`) and not rendered at all under reduced motion — a bar frozen at 0% is worse than no bar. |
+| `BackToTop` | A real button that appears past three viewports and returns focus to the main region. | Never a link to `#`, never hidden under reduced motion (it is a control), and only smooth-scrolls when motion is allowed. |
+| `PageTransition` | The incoming screen rises 8px and fades in over 200ms. | CSS animation only — no exit twin (an exit delays the screen the user just asked for), keyed on `pathname` so a query change does not remount the screen, and a plain fragment under reduced motion. |
+| `SectionTitle sticky` (in `components/ui.tsx`) | Pins a group heading to the top while its own group scrolls past. | Not switched off under reduced motion: pinning is not movement. Requires no transformed ancestor. |
 | `GraphConstellation` | Draws the prerequisite graph from the frontier engine's own output. | Never hand-placed: x is dependency depth, y is ordering, edges come from `needsNow`. Node positions never imply a value they do not have. |
+
+## Where the scroll layer is used
+
+The landing page is a story; the **app** is where the scrolling actually happens, so
+the layer is site-wide and the shell owns most of it:
+
+| Where | What moves |
+| --- | --- |
+| `app/Layout.tsx` (every route) | The rail, the back-to-top button, the app bar condensing past 8px, and the entrance on the incoming screen. |
+| Dashboard | The four counters, and the "Next up" list in dependency order. |
+| Career explorer | The result grid. |
+| Career detail | Each tab panel re-enters when the tab changes (`key={tab}`), because the instance would otherwise be reused and never re-run. |
+| Skill index, projects, resources | The result list. |
+| Progress, About | The summary grids. |
+| Pathway | The ordered steps, staggered *in order* — here the sequence is the engine's dependency order, so arriving in sequence is information rather than decoration. |
+| Roadmap | The weekly cards, plus a **sticky week heading** that pins while its own week scrolls past. |
+| Gaps, workflows | The category groups and the run's node list. |
+| Deliberately still | Filter cards, form fields, the mentor transcript (a chat that re-animates re-animates history), the graph canvases and every 3D scene's own control surface. |
+
+`tests/unit/scroll-coverage.test.ts` asserts both halves of that table, so neither a
+page losing its entrance nor a filter bar gaining one can pass review.
 
 ## Where the data comes from
 
@@ -111,6 +138,8 @@ and no number in the front end to keep in step with the graph.
 | `tests/unit/skiper-motion.test.ts` | `scrollProgressFromRect` and `quantise` across the awkward cases (element taller than the viewport, zero-height element, element already scrolled past), plus `staggerDelay` clamping and `easeOutCubic` landing exactly on 1. |
 | `tests/unit/story-graph.test.ts` | The constellation is derived, deterministic and complete: every node has coordinates inside the viewBox, every drawn edge has both ends on the canvas, and the caption states the total it sampled from. |
 | `tests/integration/story-landing.test.tsx` | The chapters all exist as sections; every scene step's copy is in the document; reduced motion renders the stacked document form with the same text. |
+| `tests/integration/scroll-chrome.test.tsx` | The shell, driven: the rail exists on every route and is absent under reduced motion, the bar condenses on a real scroll and relaxes again, the back-to-top button appears past three viewports and moves focus to the main region, reduced motion keeps the button but drops the entrance, and a route change re-enters the screen. |
+| `tests/unit/scroll-coverage.test.ts` | The two claims above: every content page imports the layer and stages something; every animated class has a `[data-motion='reduced']` kill switch that forces the finished state; the barrel exports every file; filter cards stay plain `Grid`s; no page hand-rolls `transition-all`. |
 | `tests/unit/motion-preference.test.ts` | (existing) the attribute spelling shared by the store, the WebGL gate and the stylesheet. |
 | `scripts/verify-browser.ts` | (existing, needs a browser) hero reachable by a real pointer at 1440×900 and 360×667, no `backdrop-filter` anywhere, the material's shadow pair intact, and the reduced-motion screenshot. |
 
@@ -139,5 +168,17 @@ and no number in the front end to keep in step with the graph.
 * `ScrollScene` measures with `getBoundingClientRect` inside a rAF, which is
   correct but not free. A page with more than roughly ten pinned scenes would
   need an `IntersectionObserver` gate around the measurement loop.
+* **Sticky headings need a scroll container that is not transformed.** The reveal
+  is applied to a section's body and never to the section itself, because a
+  transform on an ancestor moves the box the heading pins against. Any future
+  component that wraps a pinned heading must respect the same rule.
+* **The positional stagger is capped at twelve children in CSS** (every row after
+  that shares the last delay). The cap is deliberate — forty rows at 70ms each is
+  a slideshow — but it means a list longer than twelve does not "arrive one by
+  one" all the way down, and the stylesheet, not the component, is where that is
+  decided.
+* **Back-to-top does not appear on a page shorter than three viewports**, which is
+  most of them. That is the point (there is nothing to go back to), and it means
+  the control is not a place to hang any other behaviour.
 * There is no `prefers-reduced-transparency` or `prefers-contrast` handling here.
   The material already avoids translucent surfaces — this layer only adds motion.

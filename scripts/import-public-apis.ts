@@ -13,6 +13,11 @@
  *   * it keeps the four facts the upstream table actually states — name, link,
  *     description, and the Auth / HTTPS / CORS columns — and nothing else, so we
  *     never invent a rate limit or a free tier we did not verify;
+ *   * it records the scheme the *link* actually uses. Four rows in the current
+ *     import declare HTTPS `Yes` and then link to a plaintext `http://` page
+ *     anyway (upstream is inconsistent, not us): rewriting the URL would be
+ *     inventing a link, and dropping the row would be hiding one, so the scheme is
+ *     recorded, ranked last, and shown. See `linkScheme` below;
  *   * it stamps the source commit and the date the rows were read, so "last
  *     checked" is a measurement rather than a claim;
  *   * it refuses to run on a file whose table does not parse, instead of quietly
@@ -69,6 +74,15 @@ const KEYWORD_SKILLS: Array<{ pattern: RegExp; skills: string[] }> = [
 ]
 
 const KNOWN_SKILLS = new Set<string>()
+
+/**
+ * The scheme of the link as published. Not derived from the HTTPS column: a row
+ * can say `Yes` and link to `http://`, and that contradiction is the reader's to
+ * see rather than ours to tidy up.
+ */
+function linkScheme(url: string): 'https' | 'http' {
+  return /^https:\/\//i.test(url) ? 'https' : 'http'
+}
 
 interface Row {
   name: string
@@ -188,9 +202,10 @@ function main(): void {
      * catalogue at "here are a dozen things to try" rather than "here are 900".
      */
     .sort((a, b) => {
-      const score = (row: Row): [number, number, number, string] => [
+      const score = (row: Row): [number, number, number, number, string] => [
         row.auth.toLowerCase() === 'no' ? 0 : 1,
         row.cors === 'Yes' ? 0 : 1,
+        linkScheme(row.url) === 'https' ? 0 : 1,
         -row.skills.length,
         row.name.toLowerCase(),
       ]
@@ -213,10 +228,11 @@ function main(): void {
     .sort((a, b) => (a.category === b.category ? a.name.localeCompare(b.name) : a.category.localeCompare(b.category)))
 
   const categories = [...new Set(kept.map((row) => row.category))].sort()
+  const insecure = kept.filter((row) => linkScheme(row.url) === 'http').length
   const body = kept
     .map(
       (row) =>
-        `  {\n    name: ${JSON.stringify(row.name)},\n    url: ${JSON.stringify(row.url)},\n    description: ${JSON.stringify(row.description.slice(0, 200))},\n    category: ${JSON.stringify(row.category)},\n    auth: ${JSON.stringify(row.auth)},\n    cors: ${JSON.stringify(row.cors)},\n    skillIds: [${row.skills.map((skill) => JSON.stringify(skill)).join(', ')}],\n  },`,
+        `  {\n    name: ${JSON.stringify(row.name)},\n    url: ${JSON.stringify(row.url)},\n    description: ${JSON.stringify(row.description.slice(0, 200))},\n    category: ${JSON.stringify(row.category)},\n    auth: ${JSON.stringify(row.auth)},\n    cors: ${JSON.stringify(row.cors)},\n    linkScheme: ${JSON.stringify(linkScheme(row.url))},\n    skillIds: [${row.skills.map((skill) => JSON.stringify(skill)).join(', ')}],\n  },`,
     )
     .join('\n')
 
@@ -227,6 +243,7 @@ function main(): void {
  * Source commit: ${commit}
  * Rows read: ${options.date}
  * Rows kept: ${kept.length} of ${parsed.length}, across ${categories.length} categories
+ * Plaintext links kept: ${insecure} (upstream says HTTPS "Yes" and links to http:// anyway)
  *
  * Refresh with:
  *   git clone --depth 1 https://github.com/public-apis/public-apis.git /tmp/public-apis
@@ -244,6 +261,12 @@ export interface PublicApiEntry {
   /** Upstream's Auth column: "No", "apiKey", "OAuth", "X-Mashape-Key", … */
   auth: string
   cors: 'Yes' | 'No' | 'Unknown'
+  /**
+   * The scheme of the link above — *not* a copy of upstream's HTTPS column, which
+   * is sometimes "Yes" next to an http:// link. An http row is still listed,
+   * because hiding it would be worse than showing it, and it is ranked last.
+   */
+  linkScheme: 'https' | 'http'
   /** Curriculum skills this API is a plausible practice target for. */
   skillIds: string[]
 }
@@ -255,6 +278,7 @@ export const PUBLIC_API_SOURCE = {
   rowsRead: ${JSON.stringify(options.date)},
   rowsTotal: ${parsed.length},
   rowsKept: ${kept.length},
+  plaintextLinks: ${insecure},
   categories: [${categories.map((category) => JSON.stringify(category)).join(', ')}],
 } as const
 
@@ -265,7 +289,8 @@ ${body}
 
   writeFileSync(options.out, file, 'utf8')
   process.stdout.write(
-    `Wrote ${options.out}\n  ${kept.length} APIs kept from ${parsed.length} rows (${categories.length} categories), source commit ${commit}\n`,
+    `Wrote ${options.out}\n  ${kept.length} APIs kept from ${parsed.length} rows (${categories.length} categories), source commit ${commit}\n` +
+      (insecure > 0 ? `  ${insecure} row(s) link to a plaintext http:// URL and are marked as such\n` : ''),
   )
 }
 

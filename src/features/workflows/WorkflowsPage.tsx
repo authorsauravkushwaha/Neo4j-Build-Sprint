@@ -33,6 +33,7 @@ import { getNodeImplementation } from '@core/workflow/registry.ts'
 import type { WorkflowDefinition, WorkflowItem, WorkflowServices } from '@core/workflow/types.ts'
 import { useIsDemo } from '@/features/shared/hooks.ts'
 import { formatRelative } from '@/core/format.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 interface StoredRecord {
   collection: string
@@ -137,7 +138,7 @@ function RunLog({ run }: { run: RunResult }): ReactNode {
         </Callout>
       ) : null}
 
-      <ol className="space-y-2">
+      <Stagger as="ol" className="space-y-2">
         {run.nodes.map((node, index) => (
           <li key={`${node.nodeId}-${index}`} className="gm-panel p-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -164,7 +165,7 @@ function RunLog({ run }: { run: RunResult }): ReactNode {
             ) : null}
           </li>
         ))}
-      </ol>
+      </Stagger>
 
       {run.planErrors.length > 0 ? (
         <Callout kind="warning" title="References this run could not resolve">

@@ -9,11 +9,12 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { GitBranch, Search } from 'lucide-react'
 
-import { Button, Callout, Card, Chip, DifficultyBadge, EmptyState, ErrorNotice, Grid, LinkButton, Loading, PageHeader, SectionTitle, Select, TextInput } from '@/components/ui.tsx'
+import { Button, Callout, Card, Chip, DifficultyBadge, EmptyState, ErrorNotice, LinkButton, Loading, PageHeader, SectionTitle, Select, TextInput } from '@/components/ui.tsx'
 import { api } from '@/core/session.ts'
 import { formatNumber } from '@/core/format.ts'
 import { useAppStore } from '@/state/store.ts'
 import { useClientQuery } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 
 export function CareersPage(): ReactNode {
   const [query, setQuery] = useState('')
@@ -127,7 +128,7 @@ export function CareersPage(): ReactNode {
         </EmptyState>
       ) : null}
 
-      <Grid cols={2}>
+      <Stagger className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         {results.map((career) => {
           const isGoal = goalId === career.id
           const branchNames = career.branchIds
@@ -178,7 +179,7 @@ export function CareersPage(): ReactNode {
             </Card>
           )
         })}
-      </Grid>
+      </Stagger>
 
       {compared.length === 2 ? (
         <Card className="mt-5" as="section">

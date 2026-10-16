@@ -70,7 +70,7 @@ public-API import, the self-audit harness and the Appwrite storage adapter lande
 | Check | Command | Result |
 | --- | --- | --- |
 | Type check | `npx tsc -b` | **0 errors** |
-| Unit + integration tests | `npx vitest run` | **569 passed / 0 failed** across **35 files** |
+| Unit + integration tests | `npx vitest run` | **613 passed / 0 failed** across **40 files** |
 | Self-audit | `npx tsx scripts/audit/self.ts` | **25/25 passed**, 0 failed, 0 errored (report: [security-self-audit.md](security-self-audit.md)) |
 | Production build | `npm run build` | OK — 29 precache entries, 2832.45 KiB |
 | Appwrite adapter + conformance | `npx vitest run tests/unit/appwrite-adapter.test.ts tests/integration/appwrite-backend.test.ts` | **49 passed** (41 + 8; the integration half replays 21 requests on both backends and compares them one at a time) |
@@ -78,7 +78,10 @@ public-API import, the self-audit harness and the Appwrite storage adapter lande
 Suites that did not exist when the table above was written: `tests/unit/workflow-engine.test.ts` (56),
 `tests/unit/self-audit.test.ts` (9), `tests/unit/appwrite-adapter.test.ts` (41),
 `tests/integration/appwrite-backend.test.ts` (8), `tests/unit/story-graph.test.ts` (11),
-`tests/unit/skiper-motion.test.ts` (14), `tests/integration/workflows.test.tsx` (7).
+`tests/unit/skiper-motion.test.ts` (14), `tests/integration/workflows.test.tsx` (7),
+`tests/unit/public-apis.test.ts` (17), `tests/unit/dataset-prose.test.ts` (3),
+`tests/integration/scroll-chrome.test.tsx` (10), `tests/unit/scroll-coverage.test.ts` (8) and
+`tests/unit/public-apis-importer.test.ts` (6).
 
 **Not re-run on 2026-10-16**, and therefore still only claimed for 2026-10-14: §3 (resource links, which
 needs the open internet), §5's browser checks and local PostgreSQL rows, and the Java oracle. The container
@@ -92,26 +95,32 @@ this change was made in has no Chromium download, no local database and no JDK; 
 | Cypher freshness | `npm run emit:cypher -- --check` | `neo4j artefacts are up to date` |
 | Seed dry run | `npm run seed:neo4j -- --dry-run` | 32 batched `MERGE` statements, 1363 rows. Nothing written. |
 
-Dataset contents (counted from the source of truth, `src/data/seed/knowledgeGraph.ts`):
+Dataset contents (counted from the source of truth, `src/data/seed/knowledgeGraph.ts`, and asserted
+against the prose in this repository by `tests/unit/dataset-prose.test.ts`):
 
 | Entity | Count | Entity | Count |
 | --- | --- | --- | --- |
-| Engineering branches | 12 | Languages | 8 |
-| Careers | 13 | Tools | 30 |
-| Subjects | 20 | Projects | 20 |
-| Concepts | 27 | Resources | 97 |
-| Skills | 60 | Learning modules | 9 |
-| — | — | Assessments | 8 |
+| Engineering branches | 16 | Languages | 8 |
+| Careers | 17 | Tools | 37 |
+| Subjects | 24 | Projects | 33 |
+| Concepts | 37 | Resources | 154 |
+| Skills | 89 | Learning modules | 13 |
+| Assessments | 16 | Graph edges | 1585 |
 
-Graph totals: **444 nodes, 1585 edges, 15 relationship types**. Seed checksum
-`4da024ddaef1316c8a7d00163e1ed671cb69901e4170f719b5f40f5161dd570d` (`neo4j/MANIFEST.json`).
-
-Nothing in the dataset is padding: every career resolves to real skills, every skill to real
-prerequisites, and every resource to a public free offering with a stated access model. `validate:seed`
-fails the build if a career has no route, if a prerequisite graph contains a cycle, or if a resource is
-labelled `verified` without a check date.
+Edge types, counted from the dataset: `BELONGS_TO` 75, `HAS_CONCEPT` 37, `BUILDS_ON` 18, `REQUIRES` 144,
+`REQUIRES_SKILL` 173, `USES` 70, `BUILDS_SKILL` 106, `PRACTICED_BY` 106, `SUGGESTS_PROJECT` 56,
+`COVERS` 340, `TAUGHT_BY` 237, `ASSUMES` 120 (across 91 resources), `TEACHES` 55, `ASSESSES` 16,
+`RELATED_TO` 32 — 15 relationship types in total, which is what `datasetCounts.relationshipTypes` reports.
 
 ## 3. Verified: resource links (measured live, 2026-10-14)
+
+> **Read this section with its date.** It was measured when the library held 97
+> resources; the dataset now holds **154**, so 57 of them have never been opened by
+> this report. The method, the outcome vocabulary and the honesty rules below are
+> unchanged — only the set is stale. Re-running it (`npm run verify:resources`)
+> overwrites `docs/resource-verification.md` with a fresh measurement, and the app
+> shows each resource's own `lastVerified` date next to its link, which is the
+> number that actually travels with the data.
 
 `npm run verify:resources` opened all 97 links with a plain HTTPS request.
 
@@ -289,7 +298,7 @@ rendered canvas has since been exercised in a real engine with WebGL (see §5).
 ```bash
 npm ci                                        # exact pinned dependency tree
 npx tsc -b                                    # 0 errors expected
-npx vitest run                                # 258 passed expected
+npx vitest run                                # 613 passed expected, in 40 files
 npm run validate:seed                         # 53/53 expected
 npm run emit:cypher -- --check                # "artefacts are up to date"
 npm run lint:secrets                          # "Secret scan clean"

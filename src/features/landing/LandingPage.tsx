@@ -47,7 +47,7 @@ import { Marquee } from '@/skiper/components/Marquee.tsx'
 import { CardStack } from '@/skiper/components/Cards.tsx'
 import { Reveal, RevealCss } from '@/skiper/components/Reveal.tsx'
 import { ScrollScene } from '@/skiper/components/ScrollScene.tsx'
-import { ScrollProgressBar, StoryNavBar } from '@/skiper/components/ScrollRail.tsx'
+import { StoryNavBar } from '@/skiper/components/ScrollRail.tsx'
 import { StoryPreloader } from '@/skiper/components/Preloader.tsx'
 import { SpotlightCard } from '@/skiper/components/Buttons.tsx'
 import { storyChapters } from './storyChapters.ts'
@@ -391,7 +391,6 @@ export function LandingPage(): ReactNode {
   return (
     <div className="gm-story">
       <StoryPreloader />
-      <ScrollProgressBar />
 
       <HeroStage />
 

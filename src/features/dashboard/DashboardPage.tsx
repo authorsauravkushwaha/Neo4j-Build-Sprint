@@ -15,6 +15,7 @@ import { api } from '@/core/session.ts'
 import { formatHours, formatNumber, formatWeeks, percent } from '@/core/format.ts'
 import { useAppStore, ratingPayload } from '@/state/store.ts'
 import { useClientQuery } from '@/features/shared/hooks.ts'
+import { Stagger } from '@/skiper/components/Stagger.tsx'
 import { loadRecentViews } from '@/core/persistence.ts'
 
 export function DashboardPage(): ReactNode {
@@ -88,12 +89,12 @@ export function DashboardPage(): ReactNode {
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Stagger className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="Skills rated" value={formatNumber(ratings.length)} hint="Self-reported" />
         <Stat label="Tasks tracked" value={formatNumber(totals.tasks)} hint={`${totals.done} completed`} />
         <Stat label="Hours logged" value={`${formatNumber(Math.round(totals.hours))} h`} hint="From your own notes" />
         <Stat label="Bookmarks" value={formatNumber(bookmarks.length)} hint="Skills, projects, resources" />
-      </div>
+      </Stagger>
 
       {careers.status === 'error' ? (
         <div className="mb-4">
@@ -123,7 +124,7 @@ export function DashboardPage(): ReactNode {
       {!goal ? (
         <EmptyState
           title="No career goal selected"
-          action={<LinkButton to="/careers" variant="primary">Browse the 17 careers</LinkButton>}
+          action={<LinkButton to="/careers" variant="primary">Browse every career</LinkButton>}
         >
           Recommendations need a target: the graph ranks skills by how much a specific career needs them. Pick one, and you can
           change it whenever you like.
@@ -145,7 +146,7 @@ export function DashboardPage(): ReactNode {
                 specialisations, or pick a second goal and compare.
               </Callout>
             ) : (
-              <ol className="space-y-3">
+              <Stagger as="ol" className="space-y-3">
                 {nextSkills.map((item, index) => (
                   <li key={item.skillId} className="rounded-lg border border-line p-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -170,7 +171,7 @@ export function DashboardPage(): ReactNode {
                     </div>
                   </li>
                 ))}
-              </ol>
+              </Stagger>
             )}
           </Card>
 
