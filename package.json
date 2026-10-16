@@ -47,7 +47,8 @@
     "db:env": "sh db/bin/app-env.sh",
     "verify:db": "tsx scripts/verify-db.ts",
     "typecheck:functions": "tsc -p tsconfig.functions.json",
-    "server": "tsx server/server.ts"
+    "server": "tsx server/server.ts",
+    "check:bundle": "node scripts/check-bundle-budget.mjs"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",

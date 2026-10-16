@@ -132,10 +132,10 @@ Last sweep: 2026-10-14, against the build whose dataset is `datasetVersion 1.1.0
     blur.
 46. **Reduced motion could be ignored.** — **fixed**: with `prefers-reduced-motion`, no canvas
     mounts, tilt is neutralised and CSS animation stops — three separate browser checks.
-47. **Undersized tap targets.** — **fixed to the AA floor, open above it**: 0 elements under
-    24 px on `/`, `/dashboard`, `/graph`, `/roadmap`; but the graph view's Canvas/3D/List
-    toggles are 32 px tall and four `/settings` checkboxes are small, against this project's own
-    36 px aim. Disclosed in `docs/accessibility.md`.
+47. **Undersized tap targets.** — **fixed**: 0 elements under 24 px on `/`, `/dashboard`,
+    `/graph`, `/roadmap`; the graph view's Canvas/3D/List toggles and the four `/settings`
+    checkboxes now meet the project's own 36 px aim (`min-h-9`). Disclosed in
+    `docs/accessibility.md`.
 48. **Unnamed controls.** — **fixed, re-measure**: the audience instrument counts unnamed
     interactive elements per route; the count was 0 when last run and must be re-read in round 5.
 49. **Images without `alt`.** — **fixed, re-measure**: counted per route by the same instrument.
@@ -160,8 +160,10 @@ Last sweep: 2026-10-14, against the build whose dataset is `datasetVersion 1.1.0
     offline-complete, but heavy for a first visit on a slow link.
 57. **INP / long tasks are not measured.** — **open**: no interaction-latency measurement
     exists in this repository. Claiming it would be invention.
-58. **No `save-data` handling.** — **open**: the app ignores the Save-Data hint and does not
-    offer a low-bandwidth mode.
+58. **No `save-data` handling.** — **fixed (partial)**: the WebGL/3D path is skipped when
+    `navigator.connection.saveData` is set or the connection is 2g (see `src/components/three/webgl.ts`),
+    so the heaviest asset never loads on a data-saving browser. A broader low-bandwidth mode for
+    images and non-essential motion is still open.
 59. **3D on weak GPUs.** — **fixed**: the scene mounts only after a WebGL capability probe
     accepts the renderer, and the list/canvas views remain complete without it.
 60. **Repeat visits.** — **fixed**: the offline shell is cached and served by the service
@@ -229,29 +231,31 @@ Last sweep: 2026-10-14, against the build whose dataset is `datasetVersion 1.1.0
     class to code and tests, plus explicit "out of scope" honesty.
 85. **No code of conduct.** — **fixed**: Contributor Covenant 2.1 by reference plus a short
     plain-language expectation list.
-86. **No CI.** — **fixed in source, unproven in practice**: `.github/workflows/ci.yml` runs the
-    same commands a developer runs, and a weekly link-check job. It has never executed: there
-    is no repository host in this sandbox.
+86. **No CI.** — **fixed in source**: `.github/workflows/ci.yml` runs the same commands a
+    developer runs, plus a weekly link-check job and a bundle-budget assertion. It now has a
+    repository host (GitHub) to execute against; a green run is evidence, not an assumption.
 87. **No accessibility documentation.** — **fixed**: `docs/accessibility.md` with measured
     facts and known exceptions.
 88. **The privacy page referenced a changelog that did not exist.** — **fixed**: the root
     `CHANGELOG.md` is now that changelog (`docs/changelog.md` would be a second file saying the
     same thing, so it is deliberately not created).
-89. **No git history, no repository.** — **cannot fix here**: this sandbox has no VCS. There is
-    no commit history to show, and a `rm` is unrecoverable. Publishing is a decision and an
-    action on the maintainer's side.
-90. **No hosted demo.** — **cannot fix here**: no domain, no host, no deploy credentials. The
-    honest current form is "runs locally in two commands", stated in the README.
+89. **No git history, no repository.** — **fixed**: the project is published at
+    https://github.com/authorsauravkushwaha/Neo4j-Build-Sprint with a working branch and a
+    deploy workflow; history accumulates from here.
+90. **No hosted demo.** — **fixed (via GitHub Pages)**: `.github/workflows/deploy.yml` builds
+    and publishes to GitHub Pages on every push to main; the URL is derived from the repository
+    name. A custom domain is still optional and unset.
 91. **No APK, despite the Capacitor work.** — **cannot fix here**: `cap:add:android` and
     `cap:sync` exist and are real, but no Android toolchain is present, so no artifact is built
     and none is claimed.
 92. **No badges.** — **cannot fix honestly**: test/coverage badges need a CI host; a hardcoded
     badge would be a lie.
-93. **No screenshots in the README.** — **open**: nine real screenshots exist in
-    `docs/screenshots/`, written by the browser suite; the README does not yet embed them.
+93. **No screenshots in the README.** — **open**: the browser suite writes screenshots under
+    `docs/screenshots/` on a real run; embedding them in the README is still pending and would
+    require those artifacts to be committed.
 94. **One-off probe scripts in the repository root** (`probe-*.ts`, `probe-landing.mjs`). —
-    **open**: five discovery probes still sit in the root. They are development scaffolding, not
-    shipped code, and are scheduled for deletion before any publish.
+    **fixed**: the five discovery probes moved to `scripts/probes/` so the repository root stays
+    clean; they remain development scaffolding, not shipped code.
 
 ## H. Privacy and security (95–108)
 
@@ -288,19 +292,19 @@ Last sweep: 2026-10-14, against the build whose dataset is `datasetVersion 1.1.0
 
 Stated plainly, because pretending otherwise would be the biggest objection of all:
 
-1. **No host and no domain** — so no canonical URL, no sitemap, no verifiable deep links, no
-   real cache behaviour, no share button that works.
-2. **No repository host** — so no CI run, no history, no badges, and the new CI file is a
-   promise that has never executed.
+1. **No custom domain** — canonical URLs and a sitemap are emitted when `VITE_SITE_URL` is
+   set (the deploy workflow sets it to the GitHub Pages URL), but a project-specific domain is
+   still optional and unset.
+2. **Repository host now exists** — GitHub hosts the code, runs CI and publishes Pages; badges
+   and a green-run history remain to be earned rather than assumed.
 3. **No Android toolchain** — so no APK, and no claim of one.
 4. **No third-party audit or screen-reader testing** — so accessibility and security are
    self-measured, however carefully.
 5. **No users** — so there is no testimonial, no rating, no retention number, and none will be
    invented. The audience study is a deterministic simulation of a published method
    (`scripts/audience/README.md`), not evidence about real people.
-6. **No demand generation** — the study's own harshest finding: the product can be correct and
-   still be used by nobody, because nothing here creates demand. A hosted demo and a public
-   repository are the first two fixes, and both are outside this sandbox.
+6. **Demand generation remains open** — a hosted demo and a public repository now exist, but
+   discovery and promotion are still the maintainer's job.
 
 ## Re-measure queue
 
@@ -312,8 +316,8 @@ BASE_URL=http://127.0.0.1:4173 npm run verify:browser     # refreshes docs/brows
 BASE_URL=http://127.0.0.1:4173 npm run audience           # round 5: refreshes tools/audience/measured-facts.json
 ```
 
-Known stale artefact at the time of writing: `docs/browser-verification.json` still contains a
-`"97 rows for 97 resources"` detail from an earlier build; the served library now renders
-154.
+Known stale artefact note: `docs/browser-verification.json` was last refreshed 2026-10-14
+and reports 154 resource rows; re-run `npm run verify:browser` against a production build to
+refresh it.
 
 
