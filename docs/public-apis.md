@@ -109,10 +109,16 @@ a useful list and a trap:
   `workflow:public-api-map` (`docs/workflows.md`).
 - `listPublicApis({ skillIds, category, q, limit })` — the query layer in
   `src/data/publicApis/index.ts`, callable from any feature.
-- **Not yet**: there is no public catalogue *page*. The data, the query layer, the
-  provenance object and the workflow node all exist and are tested; a browsable
-  `/apis` route is the next piece of surface, and it is listed in
-  `docs/features-and-limitations.md` rather than quietly implied by this document.
+- **The catalogue page** at `/apis` (`src/features/apis/ApisPage.tsx`): search, category,
+  skill and "needs no key" filters — all of them in the URL, so a filtered view is a
+  link — with the provenance block and all five limitations rendered above the
+  results rather than in a footnote. It is lazy-loaded, because the generated
+  module is 84 KB and the landing page should not pay for it.
+- **The health of the page is asserted, not assumed**: `tests/integration/apis.test.tsx`
+  checks that the caveats reach the screen, that an `apiKey` entry is labelled with
+  the condition rather than the word "free", that a plaintext link is marked on its
+  own card, and that an impossible filter produces an empty state rather than an
+  error or a quiet fallback to the whole catalogue.
 
 ## Licence and attribution
 

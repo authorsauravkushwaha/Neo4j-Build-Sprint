@@ -70,9 +70,9 @@ public-API import, the self-audit harness and the Appwrite storage adapter lande
 | Check | Command | Result |
 | --- | --- | --- |
 | Type check | `npx tsc -b` | **0 errors** |
-| Unit + integration tests | `npx vitest run` | **613 passed / 0 failed** across **40 files** |
+| Unit + integration tests | `npx vitest run` | **621 passed / 0 failed** across **41 files** |
 | Self-audit | `npx tsx scripts/audit/self.ts` | **25/25 passed**, 0 failed, 0 errored (report: [security-self-audit.md](security-self-audit.md)) |
-| Production build | `npm run build` | OK — 29 precache entries, 2832.45 KiB |
+| Production build | `npm run build` | OK — 30 precache entries, 2851.85 KiB |
 | Appwrite adapter + conformance | `npx vitest run tests/unit/appwrite-adapter.test.ts tests/integration/appwrite-backend.test.ts` | **49 passed** (41 + 8; the integration half replays 21 requests on both backends and compares them one at a time) |
 
 Suites that did not exist when the table above was written: `tests/unit/workflow-engine.test.ts` (56),
@@ -80,8 +80,8 @@ Suites that did not exist when the table above was written: `tests/unit/workflow
 `tests/integration/appwrite-backend.test.ts` (8), `tests/unit/story-graph.test.ts` (11),
 `tests/unit/skiper-motion.test.ts` (14), `tests/integration/workflows.test.tsx` (7),
 `tests/unit/public-apis.test.ts` (17), `tests/unit/dataset-prose.test.ts` (3),
-`tests/integration/scroll-chrome.test.tsx` (10), `tests/unit/scroll-coverage.test.ts` (8) and
-`tests/unit/public-apis-importer.test.ts` (6).
+`tests/integration/scroll-chrome.test.tsx` (10), `tests/unit/scroll-coverage.test.ts` (8),
+`tests/unit/public-apis-importer.test.ts` (6) and `tests/integration/apis.test.tsx` (8).
 
 **Not re-run on 2026-10-16**, and therefore still only claimed for 2026-10-14: §3 (resource links, which
 needs the open internet), §5's browser checks and local PostgreSQL rows, and the Java oracle. The container
@@ -298,7 +298,7 @@ rendered canvas has since been exercised in a real engine with WebGL (see §5).
 ```bash
 npm ci                                        # exact pinned dependency tree
 npx tsc -b                                    # 0 errors expected
-npx vitest run                                # 613 passed expected, in 40 files
+npx vitest run                                # 621 passed expected, in 41 files
 npm run validate:seed                         # 53/53 expected
 npm run emit:cypher -- --check                # "artefacts are up to date"
 npm run lint:secrets                          # "Secret scan clean"

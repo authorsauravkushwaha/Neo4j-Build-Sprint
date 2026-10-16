@@ -37,6 +37,10 @@ const SettingsPage = lazy(() => import('@/features/settings/SettingsPage.tsx').t
    lazy for the same reason the graph explorer is: the landing page should not
    pay for a page most visitors will never open. */
 const WorkflowsPage = lazy(() => import('@/features/workflows/WorkflowsPage.tsx').then((module) => ({ default: module.WorkflowsPage })))
+/* The public-API catalogue imports an 84 KB generated module, so it is lazy for
+   the same reason: nobody should pay for 259 imported rows to read the landing
+   page. */
+const ApisPage = lazy(() => import('@/features/apis/ApisPage.tsx').then((module) => ({ default: module.ApisPage })))
 
 function Lazy({ children }: { children: ReactNode }): ReactNode {
   return <Suspense fallback={<Loading label="Loading this view…" />}>{children}</Suspense>
@@ -148,6 +152,14 @@ export function App(): ReactNode {
           element={
             <Lazy>
               <WorkflowsPage />
+            </Lazy>
+          }
+        />
+        <Route
+          path="/apis"
+          element={
+            <Lazy>
+              <ApisPage />
             </Lazy>
           }
         />

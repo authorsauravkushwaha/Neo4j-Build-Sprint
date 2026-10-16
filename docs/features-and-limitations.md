@@ -144,10 +144,12 @@ Two lists, side by side, because a feature list without its limits is marketing.
 - **`npm run workflow -- --id … --json` runs one on the command line**, and `scripts/workflow.ts --list`
   prints the catalogue. The same engine is used in the browser (`workflowServices.ts`), so a definition does
   not behave differently in the two places.
-- **A public-API catalogue for practice**: **259 entries** imported from
+- **A public-API catalogue for practice at `/apis`**: **259 entries** imported from
   [`public-apis/public-apis`](https://github.com/public-apis/public-apis) (MIT), each linked to the
   curriculum skills it exercises, with the source commit, the read date and upstream's `auth` / `cors`
-  columns quoted rather than guessed. See [public-apis.md](public-apis.md).
+  columns quoted rather than guessed. The filters (search, category, skill, "needs no key") live in the
+  URL, and the catalogue's five caveats are rendered above the results rather than in a footnote. See
+  [public-apis.md](public-apis.md).
 
 ### Accounts and data
 
@@ -171,7 +173,8 @@ Two lists, side by side, because a feature list without its limits is marketing.
 ### Platforms
 
 - Responsive web app: 360 px phone through desktop, with a mobile navigation drawer and touch-sized controls.
-- **PWA**: installable, offline shell (an `offline.html` fallback page), 29 precache entries, and an update
+- **PWA**: installable, offline shell (an `offline.html` fallback page), a precache list covering every
+  route including the lazy chunks, and an update
   prompt that asks before reloading — it never silently swaps the app under you.
 - **Capacitor Android** configuration committed (`appId: ai.graphmentor.app`) sharing the same build, plus
   the same Edge Functions, so user data has exactly one home.
@@ -220,10 +223,10 @@ Two lists, side by side, because a feature list without its limits is marketing.
 - **Two rows link to a plaintext `http://` page** while upstream's own HTTPS column says `Yes`. They are
   kept and marked (`linkScheme: "http"`), ranked last, and never presented as ready to call — hiding them
   would be tidier and less truthful.
-- **There is no public catalogue page yet.** The data, the query layer, the provenance object, the tests
-  and the workflow node all exist; a browsable `/apis` route is the next piece of surface. Until then the
-  catalogue is reached through the workflow node and the query layer, and this document says so instead of
-  implying a page that is not there.
+- **The catalogue is reached at `/apis`**, and it is the only place it appears as a page: the rows are also
+  available to the workflow node and to the query layer, which is what the "practice target" advice in the
+  mentor and the pathway screens uses. There is no per-entry detail page, and no way to save an API the way
+  you can save a resource: the catalogue is a starting point, not a collection.
 
 ### About the workflow engine
 

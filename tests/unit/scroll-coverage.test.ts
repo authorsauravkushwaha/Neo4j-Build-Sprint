@@ -46,6 +46,7 @@ const CHOREOGRAPHED_PAGES = [
   'src/features/gaps/GapsPage.tsx',
   'src/features/workflows/WorkflowsPage.tsx',
   'src/features/misc/AboutPage.tsx',
+  'src/features/apis/ApisPage.tsx',
 ]
 
 /** Classes this layer introduces, each of which needs a reduced-motion rule. */
