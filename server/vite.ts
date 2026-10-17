@@ -1,6 +1,7 @@
 /** Same-origin APIs in dev/preview: one command starts the website AND the databases. */
 import type { Plugin, ViteDevServer, PreviewServer } from 'vite'
 import { openDatabase, type Database } from './database.ts'
+import { loadServerEnv } from './env.ts'
 import { createAuthServer } from './server.ts'
 import { createGraphApi, type GraphApi } from './graphApi.ts'
 
@@ -17,10 +18,22 @@ const state = globalThis as typeof globalThis & {
 const databases = state.__graphmentorViteDatabases ??= new Map()
 const graphApis = state.__graphmentorViteGraphApis ??= new Map()
 
-/** Lease the embedded graph store the same way the account database is leased. */
+const GRAPH_LEASE_KEYS = [
+  'NEO4J_URI',
+  'NEO4J_BOLT_URI',
+  'NEO4J_QUERY_URL',
+  'NEO4J_USERNAME',
+  'NEO4J_USER',
+  'NEO4J_PASSWORD',
+  'NEO4J_DATABASE',
+  'GRAPH_DATABASE_URL',
+  'GM_GRAPH_DATABASE_DIR',
+] as const
+
+/** Lease the graph API the same way the account database is leased. */
 async function leaseGraphApi(env: Record<string, string>): Promise<{ graph: GraphApi | null; release: () => Promise<void> }> {
   const settings = { ...process.env, ...env }
-  const key = JSON.stringify(['GRAPH_DATABASE_URL', 'GM_GRAPH_DATABASE_DIR'].map((name) => settings[name] ?? ''))
+  const key = JSON.stringify(GRAPH_LEASE_KEYS.map((name) => settings[name] ?? ''))
   let shared = graphApis.get(key)
   if (!shared) {
     shared = {
@@ -55,6 +68,7 @@ export function accountsPlugin(env: Record<string, string>): Plugin {
   let closeDatabase: (() => Promise<void>) | undefined
   let closeGraph: (() => Promise<void>) | undefined
   async function attach(server: ViteDevServer | PreviewServer): Promise<void> {
+    loadServerEnv()
     // Set GM_EXTERNAL_API=true when running npm run server independently.
     if (env['GM_EXTERNAL_API'] === 'true') return
     const settings = { ...process.env, ...env }
@@ -97,20 +111,28 @@ export function accountsPlugin(env: Record<string, string>): Plugin {
 
     server.middlewares.use((request, response, next) => {
       const path = (request.url ?? '').split('?')[0]
-      if (path === '/api' || path.startsWith('/api/')) api.emit('request', request, response)
-      else if (graph?.matches(path)) {
+      // Graph REST endpoints (/api/graph/*, /api/health/*, /api/query, /api/evidence/*, /api/ledger/*)
+      // and /functions/v1/* belong to the graph API; /api/auth/* and /api/sync belong to the account server.
+      if (graph?.matches(path) && !path.startsWith('/api/auth') && !path.startsWith('/api/sync')) {
         void graph.handle(request, response).catch(() => {
           if (!response.headersSent) response.writeHead(500).end('Unable to serve this request.')
           else response.destroy()
         })
-      } else next()
+      } else if (path === '/api' || path.startsWith('/api/')) {
+        api.emit('request', request, response)
+      } else {
+        next()
+      }
     })
     server.httpServer?.once('close', () => {
       void closeDatabase?.()
       void closeGraph?.()
     })
     server.config.logger.info('GraphMentor account database connected — /api/auth and /api/sync ready')
-    if (graph) server.config.logger.info('GraphMentor graph API connected — /functions/v1 ready (PostgreSQL)')
+    if (graph) {
+      const mode = graph.driver ? 'Neo4j' : graph.db ? 'PostgreSQL' : 'unconfigured'
+      server.config.logger.info(`GraphMentor graph API connected — /functions/v1 ready (${mode})`)
+    }
   }
   return {
     name: 'graphmentor-accounts',

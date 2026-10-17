@@ -42,6 +42,7 @@ import {
   updateProgressHandler,
 } from '../supabase/functions/_shared/handlers/user.ts'
 import { AppError } from '../supabase/functions/_shared/core/errors.ts'
+import { labelForNodeId } from '../supabase/functions/_shared/core/graphQuery.ts'
 import { NODE_ID_REGEX } from '../supabase/functions/_shared/core/validate.ts'
 import { createNeo4jDriverReader, resolveNeo4jUri, type DriverReader, type LedgerEvent } from './neo4jDriverReader.ts'
 import { openGraphDatabase, seedGraphDatabase, type TransactionalGraphDatabase } from './graphStore.ts'
@@ -234,7 +235,8 @@ async function openReader(env: NodeJS.ProcessEnv, opts: GraphApiOptions): Promis
       return { reader: driver, reason: null, driver, pgDb: null, kind: 'neo4j' }
     }
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error)
+    const rawMsg = error instanceof AppError ? String(error.internal ?? error.message) : error instanceof Error ? error.message : String(error)
+    const msg = rawMsg.replace(/:\/\/[^/@]+@/g, '://<redacted>@').slice(0, 300)
     return {
       reader: null,
       driver: null,
@@ -242,7 +244,7 @@ async function openReader(env: NodeJS.ProcessEnv, opts: GraphApiOptions): Promis
       kind: 'none',
       reason: `Neo4j is configured but could not be reached: ${msg}. Graph endpoints will report unavailable.`,
       setupHint:
-        'Set NEO4J_URI (neo4j+s://...), NEO4J_USERNAME and NEO4J_PASSWORD. ' +
+        'Set NEO4J_URI (neo4j+s://...) or NEO4J_QUERY_URL (https://...), NEO4J_USERNAME and NEO4J_PASSWORD. ' +
         'The bundled demo dataset stays available in the browser, clearly labelled.',
     }
   }
@@ -573,12 +575,19 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       const depth = Math.max(1, Math.min(Number(url.searchParams.get('depth') ?? 1), 3))
       const limit = Math.max(10, Math.min(Number(url.searchParams.get('limit') ?? 60), 200))
       const started = Date.now()
-      const result = await opened.driver.getNeighborhood({
-        seedId: seedId ?? undefined, careerId: careerId ?? undefined, depth, limit,
-      })
-      return {
-        servedBy: 'neo4j-live',
-        response: json(200, { ok: true, source: 'neo4j-live', ...result.value, queryMs: result.ms, executionMs: Date.now() - started }),
+      try {
+        const result = await opened.driver.getNeighborhood({
+          seedId: seedId ?? undefined, careerId: careerId ?? undefined, depth, limit,
+        })
+        return {
+          servedBy: 'neo4j-live',
+          response: json(200, { ok: true, source: 'neo4j-live', ...result.value, queryMs: result.ms, executionMs: Date.now() - started }),
+        }
+      } catch {
+        return {
+          servedBy: 'unavailable',
+          response: json(503, { ok: false, error: 'neo4j_unavailable', reason: 'Neo4j subgraph query failed.' }),
+        }
       }
     }
 
@@ -589,19 +598,25 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       if (opened.kind !== 'neo4j' || !opened.driver) {
         return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'Neo4j unavailable', reason: neo4jUnavailableReason() }) }
       }
-      // Fetch up to one node of each known label with this id.
-      const labels = ['Career','Skill','Project','Resource','Concept','Tool','Subject','EngineeringBranch','LearningModule','Assessment','ProgrammingLanguage']
+      // Fetch up to one node of each matching label with this id.
+      const knownLabel = labelForNodeId(id)
+      const labels = knownLabel
+        ? [knownLabel]
+        : ['Career','Skill','Project','Resource','Concept','Tool','Subject','EngineeringBranch','LearningModule','Assessment','ProgrammingLanguage']
       const evidence: Array<{ label: string; node: Record<string, unknown> | null; supportingEdges: Array<{ type: string; target: string }> }> = []
-      for (const label of labels) {
-        const cypher = `MATCH (n:\`${label}\` {id: $id}) OPTIONAL MATCH (n)-[r]->(m) RETURN n, collect(DISTINCT {type: type(r), target: m.id, targetName: m.name}) AS edges LIMIT 1`
-        try {
+      try {
+        for (const label of labels) {
+          const cypher = `MATCH (n:\`${label}\` {id: $id}) OPTIONAL MATCH (n)-[r]->(m) RETURN n, collect(DISTINCT {type: type(r), target: m.id, targetName: m.name}) AS edges LIMIT 1`
           const r = await opened.driver.runQuery(cypher, { id }, `EVIDENCE:${label}`)
           const row = r.rows[0]
           if (row && row.n) {
             evidence.push({ label, node: row.n as Record<string, unknown>, supportingEdges: (row.edges as Array<{type:string;target:string}> ?? []) })
           }
-        } catch {
-          // skip label on error
+        }
+      } catch {
+        return {
+          servedBy: 'unavailable',
+          response: json(503, { ok: false, error: 'neo4j_unavailable', reason: 'Neo4j evidence query failed.' }),
         }
       }
       return {

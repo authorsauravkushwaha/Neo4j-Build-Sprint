@@ -109,10 +109,11 @@ WHERE ($q = '' OR toLower(c.name) CONTAINS $q OR toLower(coalesce(c.summary,''))
   AND ($branchId = '' OR EXISTS { MATCH (c)-[:BELONGS_TO]->(:EngineeringBranch {id: $branchId}) })
   AND ($difficulty = '' OR c.difficulty = $difficulty)
 OPTIONAL MATCH (c)-[:BELONGS_TO]->(b:EngineeringBranch)
-WITH c, collect(DISTINCT b.id) AS branchIds
+OPTIONAL MATCH (c)-[:REQUIRES_SKILL]->(s:Skill)
+WITH c, collect(DISTINCT b.id) AS branchIds, collect(DISTINCT s.id) AS skillIds
 RETURN c.id AS id, 'Career' AS label, c.name AS name, c.summary AS summary,
        c.description AS description, c.difficulty AS difficulty, c.verification AS verification,
-       branchIds AS branchIds
+       branchIds AS branchIds, skillIds AS skillIds
 ORDER BY c.name ASC
 SKIP $offset LIMIT $limit`
 
@@ -120,7 +121,7 @@ export const CAREER_DETAILS = `MATCH (c:Career {id: $careerId})
 OPTIONAL MATCH (c)-[:BELONGS_TO]->(b:EngineeringBranch)
 WITH c, collect(DISTINCT b { .id, .name }) AS branches
 OPTIONAL MATCH (c)-[rs:REQUIRES_SKILL]->(s:Skill)
-WITH c, branches, collect(DISTINCT s { .id, .name, .difficulty, essential: rs.essential, weight: rs.weight }) AS skills
+WITH c, branches, collect(DISTINCT s { .id, .name, .summary, .difficulty, essential: rs.essential, weight: rs.weight }) AS skills
 OPTIONAL MATCH (c)-[:RELATED_TO]-(other:Career)
 WITH c, branches, skills, collect(DISTINCT other { .id, .name }) AS related
 OPTIONAL MATCH (c)-[:SUGGESTS_PROJECT]->(p:Project)
@@ -167,7 +168,9 @@ export function skillPrereqClosure(depth: number): QueryVariant {
     purpose: `Prerequisites of one skill, up to ${safeDepth} step(s).`,
     cypher: `MATCH (s:Skill {id: $skillId})
 MATCH ${SKILL_PREREQ_CLOSURE_VARIANTS[safeDepth]}
-RETURN DISTINCT ${NODE_PROJECTION_ALIASES.replace(/\bn\./g, 'p.')}
+RETURN DISTINCT p.id AS id, 'Skill' AS label, p.name AS name, p.summary AS summary, p.difficulty AS difficulty,
+       p.estimatedHoursLow AS estimatedHoursLow, p.estimatedHoursHigh AS estimatedHoursHigh,
+       p.completionCriteria AS completionCriteria, p.practice AS practice
 ORDER BY name ASC
 LIMIT $limit`,
   }
@@ -177,12 +180,13 @@ export function careerPrereqClosure(depth: number): QueryVariant {
   const safeDepth = [1, 2, 3, 4, 5, 6].includes(depth) ? depth : 4
   return {
     purpose: `All skills a career needs, including transitive prerequisites (max ${safeDepth} steps).`,
-    cypher: `MATCH (c:Career {id: $careerId})-[rs:REQUIRES_SKILL]->(direct:Skill)
+    cypher: `MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(direct:Skill)
 OPTIONAL MATCH (direct)-[:REQUIRES*0..${safeDepth}]->(p:Skill)
-WITH c, rs, direct, collect(DISTINCT p) AS chain
+WITH direct, collect(DISTINCT p) AS chain
 UNWIND (CASE WHEN size(chain) = 0 THEN [direct] ELSE chain END) AS n
 RETURN DISTINCT n.id AS id, 'Skill' AS label, n.name AS name, n.summary AS summary, n.difficulty AS difficulty,
-       (n.id = direct.id) AS isDirect, coalesce(rs.essential, true) AS directEssential
+       n.estimatedHoursLow AS estimatedHoursLow, n.estimatedHoursHigh AS estimatedHoursHigh,
+       n.completionCriteria AS completionCriteria, n.practice AS practice
 ORDER BY name ASC
 LIMIT $limit`,
   }
@@ -191,12 +195,12 @@ LIMIT $limit`,
 /** Prerequisite edges inside a bounded id set — the engine sorts on these. */
 export const SKILL_EDGES_BY_IDS = `MATCH (a:Skill)-[r:REQUIRES]->(b:Skill)
 WHERE a.id IN $ids AND b.id IN $ids
-RETURN a.id AS from, b.id AS to, 'REQUIRES' AS type, coalesce(r.strength, 1.0) AS weight, r.note AS note
+RETURN a.id AS from, b.id AS to, 'REQUIRES' AS type, coalesce(r.weight, r.strength, 1.0) AS weight, r.note AS note
 LIMIT $limit`
 
 export const SKILL_DETAILS = `MATCH (s:Skill {id: $skillId})
 OPTIONAL MATCH (s)-[r:REQUIRES]->(pre:Skill)
-WITH s, collect(DISTINCT pre { .id, .name, strength: r.strength }) AS prerequisites
+WITH s, collect(DISTINCT pre { .id, .name, strength: coalesce(r.weight, r.strength) }) AS prerequisites
 OPTIONAL MATCH (child:Skill)-[:REQUIRES]->(s)
 WITH s, prerequisites, collect(DISTINCT child { .id, .name }) AS unlocks
 OPTIONAL MATCH (s)-[:USES]->(t:Tool)
@@ -207,7 +211,8 @@ OPTIONAL MATCH (s)-[:PRACTICED_BY]->(p:Project)
 WITH s, prerequisites, unlocks, tools, languages, collect(DISTINCT p { .id, .name, .difficulty }) AS projects
 OPTIONAL MATCH (s)-[:TAUGHT_BY]->(res:Resource)
 RETURN s.id AS id, 'Skill' AS label, s.name AS name, s.summary AS summary, s.description AS description,
-       s.difficulty AS difficulty, s.completionCriteria AS completionCriteria, s.practice AS practice,
+       s.difficulty AS difficulty, s.estimatedHoursLow AS estimatedHoursLow, s.estimatedHoursHigh AS estimatedHoursHigh,
+       s.completionCriteria AS completionCriteria, s.practice AS practice,
        prerequisites AS prerequisites, unlocks AS unlocks, tools AS tools, languages AS languages,
        projects AS projects, collect(DISTINCT res { .id, .name, .provider, .url, .accessModel, .format }) AS resources
 LIMIT 1`
@@ -218,14 +223,12 @@ export function downstreamClosure(depth: number): QueryVariant {
     purpose: `Skills and careers that become reachable after this skill (max ${safeDepth} steps).`,
     cypher: `MATCH (s:Skill {id: $skillId})
 OPTIONAL MATCH (next:Skill)-[:REQUIRES*1..${safeDepth}]->(s)
-WITH s, collect(DISTINCT next) AS downstream
-OPTIONAL MATCH (down:Skill)-[:REQUIRES*1..${safeDepth}]->(s)
-WHERE down.id <> s.id
-WITH s, downstream, collect(DISTINCT down) AS allDown
+WHERE next.id <> s.id
+WITH s, collect(DISTINCT next { .id, .name, .summary, .difficulty, .estimatedHoursLow, .estimatedHoursHigh, .completionCriteria, .practice }) AS skills, collect(DISTINCT next) AS allDown
 OPTIONAL MATCH (c:Career)-[:REQUIRES_SKILL]->(sk:Skill)
 WHERE sk.id = s.id OR sk IN allDown
-RETURN collect(DISTINCT { id: c.id, name: c.name }) AS careers,
-       collect(DISTINCT { id: x.id, name: x.name, difficulty: x.difficulty }) AS skills
+RETURN collect(DISTINCT c { .id, .name }) AS careers,
+       skills AS skills
 LIMIT 1`,
   }
 }
@@ -233,6 +236,17 @@ LIMIT 1`,
 /* -------------------------------------------------------------------------- */
 /* 4. Projects                                                                 */
 /* -------------------------------------------------------------------------- */
+
+export const PROJECT_CATALOG = `MATCH (p:Project)
+WHERE ($difficulty = '' OR p.difficulty = $difficulty)
+OPTIONAL MATCH (p)-[:BUILDS_SKILL]->(s:Skill)
+RETURN p.id AS id, 'Project' AS label, p.name AS name, p.summary AS summary, p.description AS description,
+       p.difficulty AS difficulty, p.objectives AS objectives, p.deliverables AS deliverables,
+       p.milestones AS milestones, p.testingIdeas AS testingIdeas, p.extensions AS extensions,
+       p.safetyNotes AS safetyNotes, p.estimatedHoursLow AS estimatedHoursLow, p.estimatedHoursHigh AS estimatedHoursHigh,
+       p.tools AS tools, collect(DISTINCT s.id) AS skillIds
+ORDER BY p.name ASC
+LIMIT $limit`
 
 export const PROJECTS_FOR_SKILLS = `MATCH (p:Project)-[:BUILDS_SKILL]->(s:Skill)
 WHERE s.id IN $skillIds
@@ -275,8 +289,8 @@ LIMIT 1`
 export const RESOURCES_FOR_SKILLS = `MATCH (r:Resource)-[:COVERS]->(s:Skill)
 WHERE s.id IN $skillIds
 WITH r, collect(DISTINCT s.id) AS skillIds, count(DISTINCT s) AS matchCount
+OPTIONAL MATCH (r)-[:COVERS]->(target)
 OPTIONAL MATCH (r)-[:ASSUMES]->(presumed:Skill)
-WITH r, skillIds, matchCount, collect(DISTINCT presumed.id) AS assumesIds, collect(DISTINCT presumed.name) AS assumesNames
 RETURN r.id AS id, 'Resource' AS label, r.name AS name, r.summary AS summary, r.url AS url,
        r.provider AS provider, r.format AS format, r.difficulty AS difficulty, r.language AS language,
        r.accessModel AS accessModel, r.accessNote AS accessNote, r.outcomes AS outcomes,
@@ -284,26 +298,39 @@ RETURN r.id AS id, 'Resource' AS label, r.name AS name, r.summary AS summary, r.
        r.estimatedHoursLow AS estimatedHoursLow, r.estimatedHoursHigh AS estimatedHoursHigh,
        r.lastVerified AS lastVerified,
        r.verification AS verification, skillIds AS skillIds, matchCount AS matchCount,
-       assumesIds AS assumesIds, assumesNames AS assumesNames
+       collect(DISTINCT target.id) AS coversIds,
+       collect(DISTINCT target.name) AS coversNames,
+       collect(DISTINCT presumed.id) AS assumesIds,
+       collect(DISTINCT presumed.name) AS assumesNames
 ORDER BY matchCount DESC, r.name ASC
 LIMIT $limit`
 
-export const RESOURCES_FOR_SUBJECT = `MATCH (r:Resource)-[:COVERS]->(sub:Subject {id: $subjectId})
+export const RESOURCES_FOR_SUBJECT = `MATCH (r:Resource)-[:COVERS]->(covered)
+WHERE covered.id = $subjectId OR EXISTS {
+  MATCH (:Subject {id: $subjectId})-[:HAS_CONCEPT]->(c:Concept)
+  WHERE c.id = covered.id
+}
+WITH DISTINCT r
+OPTIONAL MATCH (r)-[:COVERS]->(target)
 OPTIONAL MATCH (r)-[:ASSUMES]->(presumed:Skill)
-WITH r, collect(DISTINCT presumed.id) AS assumesIds, collect(DISTINCT presumed.name) AS assumesNames
 RETURN r.id AS id, 'Resource' AS label, r.name AS name, r.summary AS summary, r.url AS url,
        r.provider AS provider, r.format AS format, r.difficulty AS difficulty, r.language AS language,
        r.accessModel AS accessModel, r.accessNote AS accessNote, r.outcomes AS outcomes,
        r.assumes AS assumes, r.limits AS limits, r.commitment AS commitment,
        r.estimatedHoursLow AS estimatedHoursLow, r.estimatedHoursHigh AS estimatedHoursHigh,
        r.lastVerified AS lastVerified,
-       r.verification AS verification, assumesIds AS assumesIds, assumesNames AS assumesNames
+       r.verification AS verification,
+       collect(DISTINCT target.id) AS coversIds,
+       collect(DISTINCT target.name) AS coversNames,
+       collect(DISTINCT presumed.id) AS assumesIds,
+       collect(DISTINCT presumed.name) AS assumesNames
 ORDER BY r.name ASC
 LIMIT $limit`
 
 export const RESOURCE_CATALOG = `MATCH (r:Resource)
 WHERE $q = '' OR toLower(r.name) CONTAINS $q OR toLower(coalesce(r.summary,'')) CONTAINS $q
-   OR toLower(coalesce(r.provider,'')) CONTAINS $q OR toLower(coalesce(r.limits,'')) CONTAINS $q
+   OR toLower(coalesce(r.provider,'')) CONTAINS $q OR toLower(coalesce(r.assumes,'')) CONTAINS $q
+   OR toLower(coalesce(r.limits,'')) CONTAINS $q
    OR any(outcome IN coalesce(r.outcomes, []) WHERE toLower(outcome) CONTAINS $q)
 WITH r
 WHERE ($format = '' OR r.format = $format)
@@ -394,24 +421,17 @@ export function labelForNodeId(id: string): string | null {
  */
 export function neighbourhoodQuery(seedLabel: string, depth: number): QueryVariant {
   const safeDepth = [1, 2, 3].includes(depth) ? depth : 1
-  const pattern =
-    safeDepth === 1
-      ? 'MATCH (seed)-[r]-(n)'
-      : safeDepth === 2
-        ? 'MATCH (seed)-[]-(mid)-[]-(n)'
-        : 'MATCH (seed)-[]-(mid)-[]-(far)-[]-(n)'
-  const relationFilter = safeDepth === 1 ? 'AND type(r) IN $relations' : ''
   return {
     purpose: `Return the ${safeDepth}-hop neighbourhood of a node, bounded by $limit.`,
     cypher: `MATCH (seed:${seedLabel} {id: $seedId})
-${pattern}
-WHERE n.id <> seed.id
-  AND head(labels(n)) IN $labels
-  ${relationFilter}
-  AND ($difficulty = '' OR n.difficulty IS NULL OR n.difficulty = $difficulty)
-WITH DISTINCT n
+OPTIONAL MATCH p = (seed)-[*1..${safeDepth}]-(neighbor)
+WHERE neighbor.id <> seed.id
+  AND head(labels(neighbor)) IN $labels
+  AND ($relations = [] OR all(rel IN relationships(p) WHERE type(rel) IN $relations))
+  AND ($difficulty = '' OR neighbor.difficulty IS NULL OR neighbor.difficulty = $difficulty)
+WITH seed, collect(DISTINCT neighbor) AS neighbors
+UNWIND ([seed] + [x IN neighbors WHERE x IS NOT NULL]) AS n
 RETURN DISTINCT ${NODE_PROJECTION_ALIASES}
-ORDER BY label ASC, name ASC
 LIMIT $limit`,
   }
 }
@@ -444,7 +464,7 @@ WITH c, skills,
      [x IN tools WHERE x IS NOT NULL] AS tools,
      [x IN projects WHERE x IS NOT NULL] AS projects,
      [x IN resources WHERE x IS NOT NULL] AS resources
-WITH (skills + tools) AS base, projects, resources, c
+WITH ([c] + skills + tools + projects + resources) AS base
 UNWIND base AS n
 RETURN DISTINCT ${NODE_PROJECTION_ALIASES}
 LIMIT $limit`
@@ -473,9 +493,11 @@ LIMIT $limit`
 
 export const MODULES_FOR_CAREER = `MATCH (m:LearningModule)-[:TEACHES]->(s:Skill)
 WHERE ($careerId = '' OR EXISTS { MATCH (:Career {id: $careerId})-[:REQUIRES_SKILL]->(s) })
+WITH m, count(DISTINCT s) AS overlap
+OPTIONAL MATCH (m)-[:TEACHES]->(allSkill:Skill)
 RETURN m.id AS id, 'LearningModule' AS label, m.name AS name, m.summary AS summary,
-       collect(DISTINCT s.id) AS skillIds
-ORDER BY name ASC
+       collect(DISTINCT allSkill.id) AS skillIds
+ORDER BY overlap DESC, name ASC
 LIMIT $limit`
 
 /** Exported for documentation generation and tests. */
@@ -491,6 +513,7 @@ export const QUERY_CATALOG = {
   CAREER_REQUIRED_SKILLS,
   SKILL_EDGES_BY_IDS,
   SKILL_DETAILS,
+  PROJECT_CATALOG,
   PROJECTS_FOR_SKILLS,
   PROJECTS_FOR_CAREER,
   PROJECT_DETAILS,
@@ -517,6 +540,7 @@ export const QUERY_PURPOSES: Record<keyof typeof QUERY_CATALOG, string> = {
   CAREER_REQUIRED_SKILLS: 'Direct skills a career requires, with essential/weight flags.',
   SKILL_EDGES_BY_IDS: 'Prerequisite edges inside a bounded id set.',
   SKILL_DETAILS: 'One skill with prerequisites, unlocks, tools, projects and resources.',
+  PROJECT_CATALOG: 'Full project catalogue with optional difficulty filter.',
   PROJECTS_FOR_SKILLS: 'Projects that build a given set of skills, ranked by overlap.',
   PROJECTS_FOR_CAREER: 'Projects suggested by a career.',
   PROJECT_DETAILS: 'One project with objectives, milestones, safety notes and skills.',

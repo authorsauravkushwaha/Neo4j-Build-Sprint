@@ -37,9 +37,11 @@ import {
   HEALTH_COUNTS,
   HEALTH_TOTAL,
   HEALTH_TOTAL_RELS,
+  PROJECT_CATALOG,
   PROJECTS_FOR_CAREER,
   PROJECTS_FOR_SKILLS,
   RESOURCES_FOR_SKILLS,
+  RESOURCES_FOR_SUBJECT,
   RESOURCE_CATALOG,
   ROUTES_SKILL_TO_CAREER,
   SKILL_DETAILS,
@@ -189,9 +191,16 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
     tag: string,
     options: ReadOptions = {},
   ): Promise<{ rows: RawRow[]; ms: number; summary: ResultSummary }> {
+    if (options.signal?.aborted) {
+      throw new AppError('timeout', { internal: 'neo4j query aborted' })
+    }
     const started = Date.now()
     const safeParams: Record<string, unknown> = { limit: maxRows, ...params }
-    safeParams.limit = Math.min(asNumber(safeParams.limit, maxRows) || maxRows, maxRows)
+    const boundedLimit = Math.max(1, Math.min(Math.trunc(asNumber(safeParams.limit, maxRows) || maxRows), maxRows))
+    safeParams.limit = neo4j.int(boundedLimit)
+    if (typeof safeParams.offset === 'number' && Number.isFinite(safeParams.offset)) {
+      safeParams.offset = neo4j.int(Math.max(0, Math.trunc(safeParams.offset)))
+    }
 
     const sessionCfg: SessionConfig = {
       database,
@@ -200,6 +209,10 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       fetchSize: 1000,
     }
     const session: Session = driver.session(sessionCfg)
+    const onAbort = () => {
+      session.close().catch(() => {})
+    }
+    options.signal?.addEventListener?.('abort', onAbort)
     let summary: ResultSummary | null = null
     try {
       const txConfig = { timeout: timeoutMs }
@@ -218,21 +231,22 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
         dbAvailableMs: availableMs,
         dbConsumedMs: consumedMs,
       })
-      options.signal?.addEventListener?.('abort', () => {
-        session.close().catch(() => {})
-      })
       return { rows, ms, summary }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown neo4j error'
       config.onEvent?.({ type: 'error', cypherTag: tag, message: message.slice(0, 240) })
-      if (/authentication/i.test(message)) {
+      if (options.signal?.aborted) {
+        throw new AppError('timeout', { internal: 'neo4j query aborted' })
+      }
+      if (/authentication|unauthorized/i.test(message)) {
         throw new AppError('dependency_unavailable', { internal: 'neo4j authentication failed' })
       }
-      if (/timeout/i.test(message)) {
+      if (/timeout|timed out/i.test(message)) {
         throw new AppError('timeout', { internal: 'neo4j query timeout' })
       }
       throw new AppError('dependency_unavailable', { internal: `neo4j query failed: ${tag}` })
     } finally {
+      options.signal?.removeEventListener?.('abort', onAbort)
       await session.close().catch(() => {})
     }
   }
@@ -317,19 +331,44 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       language: asString(row.language, 16) ?? 'en',
       accessModel: asString(row.accessModel, 32) ?? 'unknown',
       accessNote: asString(row.accessNote, 400) ?? '',
-      outcomes: asStringArray(row.outcomes, 6),
-      assumes: asString(row.assumes, 400) ?? '',
-      limits: asString(row.limits, 400) ?? '',
-      commitment: asString(row.commitment, 200) ?? '',
-      estimatedHours: [asNumber(row.estimatedHoursLow, 0), asNumber(row.estimatedHoursHigh, 0)],
-      assumesIds: asStringArray(row.assumesIds, 20),
-      assumesNames: asStringArray(row.assumesNames, 20),
+      outcomes: asStringArray(row.outcomes, 12),
+      assumes: asString(row.assumes, 600) ?? '',
+      limits: asString(row.limits, 600) ?? '',
+      commitment: asString(row.commitment, 240) ?? '',
+      estimatedHours: asHourRange(row.estimatedHoursLow, row.estimatedHoursHigh),
+      assumesIds: asStringArray(row.assumesIds, 24),
+      assumesNames: asStringArray(row.assumesNames, 24),
       lastVerified: asString(row.lastVerified, 32) ?? null,
       verification: (asString(row.verification, 24) ?? 'unverified') as VerificationState,
       coversIds: asStringArray(row.coversIds ?? row.skillIds, 40),
       coversNames: asStringArray(row.coversNames, 40),
       matchedSkillIds: asStringArray(row.matchedSkills ?? row.skillIds, 40),
     }
+  }
+
+  const dedupeSkills = (skills: SkillMetaRow[]): SkillMetaRow[] => {
+    const seen = new Set<string>()
+    const out: SkillMetaRow[] = []
+    for (const skill of skills) {
+      if (seen.has(skill.id)) continue
+      seen.add(skill.id)
+      out.push(skill)
+    }
+    return out
+  }
+
+  const filterResource = (resource: ResourceView, query: ResourceQuery): boolean => {
+    if (query.format && resource.format !== query.format) return false
+    if (query.accessModel && resource.accessModel !== query.accessModel) return false
+    if (query.difficulty && resource.difficulty !== query.difficulty) return false
+    const q = normalizeText(query.q ?? '').slice(0, 80)
+    if (q) {
+      const hay = normalizeText(
+        [resource.name, resource.summary, resource.provider, resource.assumes, resource.limits, ...resource.outcomes].join(' '),
+      )
+      if (!hay.includes(q)) return false
+    }
+    return true
   }
 
   const reader: GraphReader = {
@@ -360,8 +399,8 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
 
     async listSkillIndex(input, options) {
       const limit = clampLimit(input.limit, 400, 120)
-      const { rows, ms } = await runQuery(SKILL_INDEX, { limit }, 'SKILL_INDEX', options)
       const query = normalizeText(input.q ?? '')
+      const { rows, ms } = await runQuery(SKILL_INDEX, { limit: query ? 400 : limit }, 'SKILL_INDEX', options)
       const parsed: SkillIndexRow[] = rows
         .map((row) => {
           const id = asString(row.id), name = asString(row.name)
@@ -410,7 +449,10 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       if (!row) return { value: null, ms }
       const summary = toCareerSummary(row)
       if (!summary) return { value: null, ms }
-      const skills = asObjectArray(row.skills, 120).map((e) => toSkillRow({ id: e.id, name: e.name, difficulty: e.difficulty, essential: e.essential, weight: e.weight })).filter((s): s is CareerSkillRow => s !== null)
+      const skills = asObjectArray(row.skills, 120)
+        .map((e) => toSkillRow({ id: e.id, name: e.name, summary: e.summary, difficulty: e.difficulty, essential: e.essential, weight: e.weight }))
+        .filter((s): s is CareerSkillRow => s !== null)
+        .sort((a, b) => Number(b.essential) - Number(a.essential) || a.name.localeCompare(b.name))
       const pair = (v: unknown) => asObjectArray(v, 40).map((b) => ({ id: asString(b.id, 72) ?? '', name: asString(b.name, 160) ?? '' })).filter((b) => b.id && b.name)
       return {
         value: {
@@ -436,9 +478,14 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
     },
 
     async getCareerClosure(careerId, depth, limit, options) {
+      const capped = clampLimit(limit, 400, 200)
       const v = careerPrereqClosure(depth)
-      const { rows, ms } = await runQuery(v.cypher, { careerId, limit: clampLimit(limit, 400, 200) }, 'CAREER_PREREQ_CLOSURE', options)
-      return { value: rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null), ms, truncated: rows.length >= clampLimit(limit, 400, 200) }
+      const { rows, ms } = await runQuery(v.cypher, { careerId, limit: capped }, 'CAREER_PREREQ_CLOSURE', options)
+      return {
+        value: dedupeSkills(rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null)),
+        ms,
+        truncated: rows.length >= capped,
+      }
     },
 
     async getSkillEdges(ids, limit, options) {
@@ -461,12 +508,12 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
           description: asString(row.description, 2000) ?? meta.summary ?? '',
           prerequisites: asObjectArray(row.prerequisites, 40).map((e) => ({
             id: asString(e.id, 72) ?? '', name: asString(e.name, 200) ?? '',
-            ...(e.strength !== undefined ? { strength: clamp(asNumber(e.strength, 1), 0, 1) } : {}),
+            ...(e.strength !== undefined && e.strength !== null ? { strength: clamp(asNumber(e.strength, 1), 0, 1) } : {}),
           })).filter((e) => e.id && e.name),
           unlocks: pair(row.unlocks), tools: pair(row.tools), languages: pair(row.languages),
-          projects: projectsArr.map((p, i) => ({
+          projects: projectsArr.map((p) => ({
             id: asString(p.id, 72) ?? '', name: asString(p.name, 200) ?? '',
-            difficulty: isDifficulty(projectsArr[i]?.difficulty) ? (projectsArr[i]?.difficulty as Difficulty) : undefined,
+            ...(isDifficulty(p.difficulty) ? { difficulty: p.difficulty as Difficulty } : {}),
           })).filter((p) => p.id && p.name),
           resources: asObjectArray(row.resources, 40).map((e) => ({
             id: asString(e.id, 72) ?? '', name: asString(e.name, 200) ?? '',
@@ -479,9 +526,14 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
     },
 
     async getSkillClosure(skillId, depth, limit, options) {
+      const capped = clampLimit(limit, 400, 200)
       const v = skillPrereqClosure(depth)
-      const { rows, ms } = await runQuery(v.cypher, { skillId, limit: clampLimit(limit, 400, 200) }, 'SKILL_PREREQ_CLOSURE', options)
-      return { value: rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null), ms, truncated: rows.length >= clampLimit(limit, 400, 200) }
+      const { rows, ms } = await runQuery(v.cypher, { skillId, limit: capped }, 'SKILL_PREREQ_CLOSURE', options)
+      return {
+        value: dedupeSkills(rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null)),
+        ms,
+        truncated: rows.length >= capped,
+      }
     },
 
     async getDownstream(skillId, depth, options) {
@@ -491,7 +543,7 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       return {
         value: {
           careers: asObjectArray(row.careers, 40).map((c) => ({ id: asString(c.id, 72) ?? '', name: asString(c.name, 160) ?? '' })).filter((c) => c.id && c.name),
-          skills: asObjectArray(row.skills, 200).map((s) => toSkillMeta({ id: s.id, name: s.name, difficulty: s.difficulty })).filter((s): s is SkillMetaRow => s !== null),
+          skills: dedupeSkills(asObjectArray(row.skills, 200).map((s) => toSkillMeta(s)).filter((s): s is SkillMetaRow => s !== null)),
         },
         ms,
       }
@@ -528,11 +580,11 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
           return { value: { seedId: input.seedId, nodes: [], edges: [], truncated: false, selectionNote: 'That identifier does not match the graph id convention.' }, ms: Date.now() - started }
         }
         const variant = neighbourhoodQuery(seedLabel, depth)
-        const r = await runQuery(variant.cypher, { seedId: input.seedId, labels, relations, difficulty: input.difficulty ?? '', limit }, 'NEIGHBOURHOOD', options)
+        const r = await runQuery(variant.cypher, { seedId: input.seedId, labels, relations, difficulty: input.difficulty ?? '', limit: limit + 1 }, 'NEIGHBOURHOOD', options)
         nodeRows = r.rows
         selectionNote = `${depth}-hop neighbourhood of ${input.seedId}, limited to ${limit} nodes.`
       } else if (input.careerId) {
-        const r = await runQuery(CAREER_OVERVIEW_SUBGRAPH, { careerId: input.careerId, limit }, 'CAREER_OVERVIEW_SUBGRAPH', options)
+        const r = await runQuery(CAREER_OVERVIEW_SUBGRAPH, { careerId: input.careerId, limit: limit + 1 }, 'CAREER_OVERVIEW_SUBGRAPH', options)
         nodeRows = r.rows
         selectionNote = `Overview of ${input.careerId}: required skills with their tools, projects and resources, limited to ${limit} nodes.`
       } else {
@@ -549,7 +601,7 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       const nodeIds = new Set(ids)
       const edgeRows = edges.filter((e) => nodeIds.has(e.from) && nodeIds.has(e.to)).map((e) => ({ from: e.from, to: e.to, type: e.type, weight: e.weight }))
       const built = buildNeighborhood(nodeRows, edgeRows, { seedId: input.seedId ?? input.careerId ?? null, limit, selectionNote })
-      return { value: { seedId: input.seedId ?? input.careerId ?? null, ...built, selectionNote }, ms: Date.now() - started, truncated: (built as any).truncated || nodeRows.length >= limit }
+      return { value: { seedId: input.seedId ?? input.careerId ?? null, ...built, selectionNote }, ms: Date.now() - started, truncated: (built as any).truncated || nodeRows.length > limit }
     },
 
     async getEdgesAmong(ids, relations, limit, options) {
@@ -561,25 +613,37 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
 
     async findProjects(query: ProjectQuery, options) {
       const limit = clampLimit(query.limit, MAX_CATALOG_LIMIT, 8)
+      const fetchLimit = query.difficulty ? MAX_CATALOG_LIMIT : limit
       if (query.skillIds && query.skillIds.length > 0) {
-        const { rows, ms } = await runQuery(PROJECTS_FOR_SKILLS, { skillIds: query.skillIds.slice(0, 60), limit }, 'PROJECTS_FOR_SKILLS', options)
+        const { rows, ms } = await runQuery(PROJECTS_FOR_SKILLS, { skillIds: query.skillIds.slice(0, 60), limit: fetchLimit }, 'PROJECTS_FOR_SKILLS', options)
         const projects = rows.map(toProjectView).filter((p): p is ProjectView => p !== null)
-        return { value: query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects, ms }
+        const filtered = query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects
+        return { value: filtered.slice(0, limit), ms }
       }
       if (query.careerId) {
-        const { rows, ms } = await runQuery(PROJECTS_FOR_CAREER, { careerId: query.careerId, limit }, 'PROJECTS_FOR_CAREER', options)
+        const { rows, ms } = await runQuery(PROJECTS_FOR_CAREER, { careerId: query.careerId, limit: fetchLimit }, 'PROJECTS_FOR_CAREER', options)
         const projects = rows.map(toProjectView).filter((p): p is ProjectView => p !== null)
-        return { value: query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects, ms }
+        const filtered = query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects
+        return { value: filtered.slice(0, limit), ms }
       }
-      const { rows, ms } = await runQuery(PROJECTS_FOR_SKILLS, { skillIds: ['__none__'], limit }, 'PROJECTS_FOR_SKILLS', options)
-      return { value: rows.map(toProjectView).filter((p): p is ProjectView => p !== null), ms, truncated: true }
+      const { rows, ms } = await runQuery(PROJECT_CATALOG, { difficulty: query.difficulty ?? '', limit }, 'PROJECT_CATALOG', options)
+      return { value: rows.map(toProjectView).filter((p): p is ProjectView => p !== null), ms }
     },
 
     async findResources(query: ResourceQuery, options) {
       const limit = clampLimit(query.limit, MAX_CATALOG_LIMIT, 20)
+      const hasExtraFilters = Boolean(query.q || query.format || query.accessModel || query.difficulty)
       if (query.skillIds && query.skillIds.length > 0) {
-        const { rows, ms } = await runQuery(RESOURCES_FOR_SKILLS, { skillIds: query.skillIds.slice(0, 60), limit }, 'RESOURCES_FOR_SKILLS', options)
-        return { value: rows.map(toResourceView).filter((r): r is ResourceView => r !== null), ms }
+        const { rows, ms } = await runQuery(RESOURCES_FOR_SKILLS, { skillIds: query.skillIds.slice(0, 60), limit: hasExtraFilters ? MAX_CATALOG_LIMIT : limit }, 'RESOURCES_FOR_SKILLS', options)
+        const parsed = rows.map(toResourceView).filter((r): r is ResourceView => r !== null)
+        const filtered = hasExtraFilters ? parsed.filter((r) => filterResource(r, query)) : parsed
+        return { value: filtered.slice(0, limit), ms }
+      }
+      if (query.subjectId) {
+        const { rows, ms } = await runQuery(RESOURCES_FOR_SUBJECT, { subjectId: query.subjectId, limit: hasExtraFilters ? MAX_CATALOG_LIMIT : limit }, 'RESOURCES_FOR_SUBJECT', options)
+        const parsed = rows.map(toResourceView).filter((r): r is ResourceView => r !== null)
+        const filtered = hasExtraFilters ? parsed.filter((r) => filterResource(r, query)) : parsed
+        return { value: filtered.slice(0, limit), ms }
       }
       const { rows, ms } = await runQuery(RESOURCE_CATALOG, {
         q: normalizeText(query.q ?? '').slice(0, 80),
@@ -656,27 +720,40 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
  * same environment variables work in both places.
  */
 export function resolveNeo4jUri(env: Record<string, string | undefined>): { uri: string; username: string; password: string; database: string } | null {
-  const username = (env.NEO4J_USERNAME ?? 'neo4j').trim() || 'neo4j'
+  const username = (env.NEO4J_USERNAME ?? env.NEO4J_USER ?? 'neo4j').trim() || 'neo4j'
   const password = env.NEO4J_PASSWORD ?? ''
   const database = (env.NEO4J_DATABASE ?? 'neo4j').trim() || 'neo4j'
   const boltUri = (env.NEO4J_URI ?? env.NEO4J_BOLT_URI ?? '').trim()
-  if (boltUri && password) {
-    if (!/^(neo4j(\+s)?|bolt(\+s)?):\/\//i.test(boltUri)) {
-      throw new AppError('internal', { internal: 'NEO4J_URI must start with neo4j://, neo4j+s://, bolt://, or bolt+s://' })
+  const queryUrl = (env.NEO4J_QUERY_URL ?? '').trim()
+
+  if (!boltUri && !queryUrl && !password) {
+    return null
+  }
+  if (!boltUri && !queryUrl) {
+    throw new AppError('dependency_unavailable', { internal: 'NEO4J_PASSWORD is set, but neither NEO4J_URI nor NEO4J_QUERY_URL is configured.' })
+  }
+  if (!password) {
+    throw new AppError('dependency_unavailable', { internal: 'NEO4J_URI or NEO4J_QUERY_URL is set, but NEO4J_PASSWORD is missing.' })
+  }
+
+  if (boltUri) {
+    if (!/^(neo4j(\+s|\+ssc)?|bolt(\+s|\+ssc)?):\/\//i.test(boltUri)) {
+      throw new AppError('internal', { internal: 'NEO4J_URI must start with neo4j://, neo4j+s://, neo4j+ssc://, bolt://, bolt+s://, or bolt+ssc://' })
+    }
+    if (/\/\/[^/@]+@/.test(boltUri)) {
+      throw new AppError('internal', { internal: 'NEO4J_URI must not embed credentials; pass NEO4J_USERNAME and NEO4J_PASSWORD separately.' })
     }
     return { uri: boltUri, username, password, database }
   }
+
   // Fall back: synthesise a neo4j+s:// URI from the Query API host.
-  const queryUrl = (env.NEO4J_QUERY_URL ?? '').trim()
-  if (queryUrl && password) {
-    try {
-      const u = new URL(queryUrl)
-      if (u.protocol === 'https:' && u.host) {
-        return { uri: `neo4j+s://${u.host}`, username, password, database }
-      }
-    } catch {
-      /* ignore invalid url */
+  try {
+    const u = new URL(queryUrl)
+    if (u.protocol === 'https:' && u.host && !u.username && !u.password) {
+      return { uri: `neo4j+s://${u.host}`, username, password, database }
     }
+  } catch {
+    /* handled below */
   }
-  return null
+  throw new AppError('internal', { internal: 'NEO4J_QUERY_URL must be a valid https:// URL without embedded credentials.' })
 }

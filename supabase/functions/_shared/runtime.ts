@@ -16,7 +16,7 @@ import type { GraphReader } from './core/graphReader.ts'
 import type { FixedWindowStore, RateLimitPolicy } from './core/rateLimit.ts'
 import { MemoryFixedWindowStore, MemoryNonceStore, RATE_POLICIES } from './core/rateLimit.ts'
 import type { NonceStore } from './core/security.ts'
-import { createNeo4jReader, emptyGraphHint, type Neo4jConfig } from './core/neo4jReader.ts'
+import { createNeo4jReader, emptyGraphHint, resolveQueryEndpoint, type Neo4jConfig } from './core/neo4jReader.ts'
 import type { AuthCheck, UserRepositories } from './platform/supabaseStore.ts'
 
 export type EnvAccessor = (key: string) => string | undefined
@@ -70,25 +70,36 @@ function num(value: string | undefined, fallback: number, min: number, max: numb
 }
 
 export function readRuntimeConfig(env: EnvAccessor): RuntimeConfig {
-  const queryUrl = (env('NEO4J_QUERY_URL') ?? '').trim()
-  const username = (env('NEO4J_USERNAME') ?? '').trim()
+  const rawQueryUrl = (env('NEO4J_QUERY_URL') ?? '').trim()
+  const rawUri = (env('NEO4J_URI') ?? env('NEO4J_BOLT_URI') ?? '').trim()
+  const username = (env('NEO4J_USERNAME') ?? env('NEO4J_USER') ?? '').trim()
   const password = env('NEO4J_PASSWORD') ?? ''
-  const database = (env('NEO4J_DATABASE') ?? 'neo4j').trim()
+  const database = (env('NEO4J_DATABASE') ?? 'neo4j').trim() || 'neo4j'
 
   let neo4j: Neo4jConfig | null = null
   let neo4jIssue: string | null = null
 
-  if (!queryUrl || !username || !password) {
+  const resolvedQueryUrl = resolveQueryEndpoint({ queryUrl: rawQueryUrl, uri: rawUri, database })
+  const effectiveUsername = username || (rawUri ? 'neo4j' : '')
+
+  if (!rawQueryUrl && !rawUri && !username && !password) {
     neo4jIssue =
-      'Neo4j is not configured. Set NEO4J_QUERY_URL, NEO4J_USERNAME and NEO4J_PASSWORD as Edge Function secrets (see supabase/.env.example).'
-  } else if (!/^https:\/\//i.test(queryUrl)) {
+      'Neo4j is not configured. Set NEO4J_QUERY_URL (or NEO4J_URI), NEO4J_USERNAME and NEO4J_PASSWORD as Edge Function secrets (see supabase/.env.example).'
+  } else if (rawQueryUrl && !/^https:\/\//i.test(rawQueryUrl)) {
     // Refuse plain http: the Query API carries credentials in the Authorization
     // header and curriculum reads must not be downgradeable to cleartext.
     neo4jIssue = 'NEO4J_QUERY_URL must be an https:// URL.'
+  } else if (!resolvedQueryUrl) {
+    neo4jIssue = rawQueryUrl
+      ? 'NEO4J_QUERY_URL is not a valid HTTPS Query API URL (or contains embedded credentials).'
+      : 'NEO4J_URI must be a valid neo4j+s://, bolt+s://, or https:// AuraDB URI.'
+  } else if (!effectiveUsername || !password) {
+    neo4jIssue =
+      'Neo4j credentials are incomplete. Set both NEO4J_USERNAME and NEO4J_PASSWORD alongside NEO4J_QUERY_URL or NEO4J_URI.'
   } else {
     neo4j = {
-      queryUrl,
-      username,
+      queryUrl: resolvedQueryUrl,
+      username: effectiveUsername,
       password,
       database,
       timeoutMs: num(env('NEO4J_TIMEOUT_MS'), 8000, 1000, 30_000),

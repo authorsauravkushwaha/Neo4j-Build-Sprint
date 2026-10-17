@@ -58,9 +58,11 @@ import {
   SKILL_INDEX,
   HEALTH_TOTAL,
   HEALTH_TOTAL_RELS,
+  PROJECT_CATALOG,
   PROJECTS_FOR_CAREER,
   PROJECTS_FOR_SKILLS,
   RESOURCES_FOR_SKILLS,
+  RESOURCES_FOR_SUBJECT,
   RESOURCE_CATALOG,
   ROUTES_SKILL_TO_CAREER,
   SKILL_DETAILS,
@@ -100,19 +102,55 @@ interface QueryResult {
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504])
 
 function base64(input: string): string {
-  const globalBtoa = (globalThis as { btoa?: (s: string) => string }).btoa
-  if (globalBtoa) return globalBtoa(input)
-  // Node fallback (scripts/tests).
   const bufferCtor = (globalThis as unknown as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } })
     .Buffer
   if (bufferCtor) return bufferCtor.from(input, 'utf8').toString('base64')
+  const bytes = new TextEncoder().encode(input)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  const globalBtoa = (globalThis as { btoa?: (s: string) => string }).btoa
+  if (globalBtoa) return globalBtoa(binary)
   throw new Error('No base64 implementation available')
+}
+
+/**
+ * Resolves a Neo4j AuraDB HTTPS Query API v2 endpoint from either an explicit
+ * `queryUrl` (`NEO4J_QUERY_URL`) or a Bolt/Aura URI (`NEO4J_URI`) plus `database`.
+ * Rejects plain `http://` and URLs carrying embedded credentials.
+ */
+export function resolveQueryEndpoint(input: { queryUrl?: string; uri?: string; database?: string }): string | null {
+  const db = encodeURIComponent((input.database ?? 'neo4j').trim() || 'neo4j')
+  if (input.queryUrl && input.queryUrl.trim()) {
+    try {
+      const parsed = new URL(input.queryUrl.trim())
+      if (parsed.protocol !== 'https:' || !parsed.host) return null
+      if (parsed.username || parsed.password) return null
+      if (parsed.pathname === '/' || parsed.pathname === '') {
+        parsed.pathname = `/db/${db}/query/v2`
+      }
+      return parsed.toString()
+    } catch {
+      return null
+    }
+  }
+  if (!input.uri || !input.uri.trim()) return null
+  const trimmed = input.uri.trim()
+  const match = trimmed.match(/^(?:neo4j\+s|neo4j\+ssc|bolt\+s|bolt\+ssc|https):\/\/([A-Za-z0-9.-]+)(?::\d+)?\/?$/i)
+  if (!match) return null
+  const host = match[1]
+  if (!host || host.startsWith('.') || host.endsWith('.')) return null
+  return `https://${host}/db/${db}/query/v2`
 }
 
 /** Decodes both Query API response shapes into an array of flat row objects. */
 export function decodeQueryApiResponse(payload: unknown): { rows: RawRow[]; errors: Array<{ code: string; message: string }> } {
   const errors: Array<{ code: string; message: string }> = []
-  if (!payload || typeof payload !== 'object') return { rows: [], errors }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {
+      rows: [],
+      errors: [{ code: 'Neo.ClientError.Request.InvalidFormat', message: 'Malformed Neo4j Query API response.' }],
+    }
+  }
   const body = payload as Record<string, unknown>
 
   if (Array.isArray(body.errors)) {
@@ -131,41 +169,51 @@ export function decodeQueryApiResponse(payload: unknown): { rows: RawRow[]; erro
   const data = body.data
   if (data && typeof data === 'object' && !Array.isArray(data)) {
     const v2 = data as Record<string, unknown>
-    const fields = Array.isArray(v2.fields) ? v2.fields.map((f) => asString(f, 64) ?? '') : []
-    const values = Array.isArray(v2.values) ? v2.values : []
-    const rows: RawRow[] = []
-    for (const rowValues of values.slice(0, 5000)) {
-      if (!Array.isArray(rowValues)) continue
-      const row: RawRow = {}
-      fields.forEach((field, index) => {
-        row[field || `col${index}`] = rowValues[index]
-      })
-      rows.push(row)
+    if (Array.isArray(v2.fields) || Array.isArray(v2.values)) {
+      const fields = Array.isArray(v2.fields) ? v2.fields.map((f) => asString(f, 64) ?? '') : []
+      const values = Array.isArray(v2.values) ? v2.values : []
+      const rows: RawRow[] = []
+      for (const rowValues of values.slice(0, 5000)) {
+        if (!Array.isArray(rowValues)) continue
+        const row: RawRow = {}
+        fields.forEach((field, index) => {
+          row[field || `col${index}`] = rowValues[index]
+        })
+        rows.push(row)
+      }
+      return { rows, errors }
     }
-    return { rows, errors }
   }
 
   // ---- Query API v1: { results: [ { columns: [...], data: [ { row: [...] } ] } ] }
-  const results = Array.isArray(body.results) ? body.results : []
-  const first = results[0]
-  if (first && typeof first === 'object') {
-    const v1 = first as Record<string, unknown>
-    const columns = Array.isArray(v1.columns) ? v1.columns.map((c) => asString(c, 64) ?? '') : []
-    const dataRows = Array.isArray(v1.data) ? v1.data : []
-    const rows: RawRow[] = []
-    for (const entry of dataRows.slice(0, 5000)) {
-      if (!entry || typeof entry !== 'object') continue
-      const rowArray = (entry as Record<string, unknown>).row
-      if (!Array.isArray(rowArray)) continue
-      const row: RawRow = {}
-      columns.forEach((column, index) => {
-        row[column || `col${index}`] = rowArray[index]
-      })
-      rows.push(row)
+  if (Array.isArray(body.results)) {
+    const first = body.results[0]
+    if (first && typeof first === 'object') {
+      const v1 = first as Record<string, unknown>
+      const columns = Array.isArray(v1.columns) ? v1.columns.map((c) => asString(c, 64) ?? '') : []
+      const dataRows = Array.isArray(v1.data) ? v1.data : []
+      const rows: RawRow[] = []
+      for (const entry of dataRows.slice(0, 5000)) {
+        if (!entry || typeof entry !== 'object') continue
+        const rowArray = (entry as Record<string, unknown>).row
+        if (!Array.isArray(rowArray)) continue
+        const row: RawRow = {}
+        columns.forEach((column, index) => {
+          row[column || `col${index}`] = rowArray[index]
+        })
+        rows.push(row)
+      }
+      return { rows, errors }
     }
-    return { rows, errors }
+    return { rows: [], errors }
   }
 
+  if (errors.length === 0) {
+    errors.push({
+      code: 'Neo.ClientError.Request.InvalidFormat',
+      message: 'Unrecognised Neo4j Query API response shape.',
+    })
+  }
   return { rows: [], errors }
 }
 
@@ -186,6 +234,9 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
     safeParams.limit = Math.min(asNumber(safeParams.limit, maxRows) || maxRows, maxRows)
 
     for (let attempt = 0; attempt <= attempts; attempt++) {
+      if (options.signal?.aborted) {
+        throw new AppError('timeout', { internal: 'neo4j request aborted' })
+      }
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), timeoutMs)
       const onOuterAbort = () => controller.abort()
@@ -222,9 +273,13 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
         const payload = await response.json().catch(() => null)
         const { rows, errors } = decodeQueryApiResponse(payload)
         if (errors.length > 0) {
+          const code = errors[0].code
+          if (code === 'Neo.ClientError.Request.InvalidFormat') {
+            throw new AppError('dependency_unavailable', { internal: `neo4j malformed payload: ${code}` })
+          }
           // Cypher/syntax problems are our bug, not the user's: log internally,
           // return a generic dependency error so nothing about the schema leaks.
-          throw new AppError('internal', { internal: `neo4j query error: ${errors[0].code}` })
+          throw new AppError('internal', { internal: `neo4j query error: ${code}` })
         }
 
         const clamped = rows.slice(0, maxRows)
@@ -235,7 +290,7 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
         lastError = error
         const isAbort = error instanceof Error && error.name === 'AbortError'
         if (isAbort) {
-          if (attempt < attempts) {
+          if (!options.signal?.aborted && attempt < attempts) {
             await sleep(120 * (attempt + 1))
             continue
           }
@@ -353,19 +408,44 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
       language: asString(row.language, 16) ?? 'en',
       accessModel: asString(row.accessModel, 32) ?? 'unknown',
       accessNote: asString(row.accessNote, 400) ?? '',
-      outcomes: asStringArray(row.outcomes, 6),
-      assumes: asString(row.assumes, 400) ?? '',
-      limits: asString(row.limits, 400) ?? '',
-      commitment: asString(row.commitment, 200) ?? '',
-      estimatedHours: [asNumber(row.estimatedHoursLow, 0), asNumber(row.estimatedHoursHigh, 0)],
-      assumesIds: asStringArray(row.assumesIds, 20),
-      assumesNames: asStringArray(row.assumesNames, 20),
+      outcomes: asStringArray(row.outcomes, 12),
+      assumes: asString(row.assumes, 600) ?? '',
+      limits: asString(row.limits, 600) ?? '',
+      commitment: asString(row.commitment, 240) ?? '',
+      estimatedHours: asHourRange(row.estimatedHoursLow, row.estimatedHoursHigh),
+      assumesIds: asStringArray(row.assumesIds, 24),
+      assumesNames: asStringArray(row.assumesNames, 24),
       lastVerified: asString(row.lastVerified, 32) ?? null,
       verification: (asString(row.verification, 24) ?? 'unverified') as VerificationState,
       coversIds: asStringArray(row.coversIds ?? row.skillIds, 40),
       coversNames: asStringArray(row.coversNames, 40),
       matchedSkillIds: asStringArray(row.matchedSkills ?? row.skillIds, 40),
     }
+  }
+
+  const dedupeSkills = (skills: SkillMetaRow[]): SkillMetaRow[] => {
+    const seen = new Set<string>()
+    const out: SkillMetaRow[] = []
+    for (const skill of skills) {
+      if (seen.has(skill.id)) continue
+      seen.add(skill.id)
+      out.push(skill)
+    }
+    return out
+  }
+
+  const filterResource = (resource: ResourceView, query: ResourceQuery): boolean => {
+    if (query.format && resource.format !== query.format) return false
+    if (query.accessModel && resource.accessModel !== query.accessModel) return false
+    if (query.difficulty && resource.difficulty !== query.difficulty) return false
+    const q = normalizeText(query.q ?? '').slice(0, 80)
+    if (q) {
+      const hay = normalizeText(
+        [resource.name, resource.summary, resource.provider, resource.assumes, resource.limits, ...resource.outcomes].join(' '),
+      )
+      if (!hay.includes(q)) return false
+    }
+    return true
   }
 
   const reader: GraphReader = {
@@ -396,10 +476,12 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
 
     async listSkillIndex(input, options) {
       // The filter is applied in Node, never by building a Cypher predicate from
-      // user input, so a search term cannot change the query plan.
+      // user input, so a search term cannot change the query plan. When a search
+      // term is present, fetch the full index before filtering so alphabetical
+      // truncation cannot hide matches.
       const limit = clampLimit(input.limit, 400, 120)
-      const { rows, ms } = await runQuery(SKILL_INDEX, { limit }, { signal: options?.signal, tag: 'SKILL_INDEX' })
       const query = normalizeText(input.q ?? '')
+      const { rows, ms } = await runQuery(SKILL_INDEX, { limit: query ? 400 : limit }, { signal: options?.signal, tag: 'SKILL_INDEX' })
       const parsed = rows
         .map((row) => {
           const id = asString(row.id)
@@ -470,12 +552,14 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
           toSkillRow({
             id: entry.id,
             name: entry.name,
+            summary: entry.summary,
             difficulty: entry.difficulty,
             essential: entry.essential,
             weight: entry.weight,
           }),
         )
         .filter((s): s is CareerSkillRow => s !== null)
+        .sort((a, b) => Number(b.essential) - Number(a.essential) || a.name.localeCompare(b.name))
 
       return {
         value: {
@@ -510,10 +594,11 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
     },
 
     async getCareerClosure(careerId, depth, limit, options) {
+      const capped = clampLimit(limit, 400, 200)
       const variant = careerPrereqClosure(depth)
-      const { rows, ms } = await runQuery(variant.cypher, { careerId, limit: clampLimit(limit, 400, 200) }, { signal: options?.signal, tag: 'CAREER_PREREQ_CLOSURE' })
-      const value = rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null)
-      return { value, ms, truncated: rows.length >= clampLimit(limit, 400, 200) }
+      const { rows, ms } = await runQuery(variant.cypher, { careerId, limit: capped }, { signal: options?.signal, tag: 'CAREER_PREREQ_CLOSURE' })
+      const value = dedupeSkills(rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null))
+      return { value, ms, truncated: rows.length >= capped }
     },
 
     async getSkillEdges(ids, limit, options) {
@@ -536,6 +621,7 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
         asObjectArray(value, 40)
           .map((entry) => ({ id: asString(entry.id, 72) ?? '', name: asString(entry.name, 200) ?? '' }))
           .filter((entry) => entry.id && entry.name)
+      const projectsRaw = asObjectArray(row.projects, 40)
       return {
         value: {
           ...meta,
@@ -544,18 +630,19 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
             .map((entry) => ({
               id: asString(entry.id, 72) ?? '',
               name: asString(entry.name, 200) ?? '',
-              ...(entry.strength !== undefined ? { strength: clamp(asNumber(entry.strength, 1), 0, 1) } : {}),
+              ...(entry.strength !== undefined && entry.strength !== null ? { strength: clamp(asNumber(entry.strength, 1), 0, 1) } : {}),
             }))
             .filter((entry) => entry.id && entry.name),
           unlocks: pair(row.unlocks),
           tools: pair(row.tools),
           languages: pair(row.languages),
-          projects: pair(row.projects).map((p, index) => ({
-            ...p,
-            difficulty: isDifficulty(asObjectArray(row.projects, 40)[index]?.difficulty)
-              ? (asObjectArray(row.projects, 40)[index]?.difficulty as Difficulty)
-              : undefined,
-          })),
+          projects: projectsRaw
+            .map((p) => ({
+              id: asString(p.id, 72) ?? '',
+              name: asString(p.name, 200) ?? '',
+              ...(isDifficulty(p.difficulty) ? { difficulty: p.difficulty as Difficulty } : {}),
+            }))
+            .filter((p) => p.id && p.name),
           resources: asObjectArray(row.resources, 40)
             .map((entry) => ({
               id: asString(entry.id, 72) ?? '',
@@ -573,12 +660,13 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
     },
 
     async getSkillClosure(skillId, depth, limit, options) {
+      const capped = clampLimit(limit, 400, 200)
       const variant = skillPrereqClosure(depth)
-      const { rows, ms } = await runQuery(variant.cypher, { skillId, limit: clampLimit(limit, 400, 200) }, { signal: options?.signal, tag: 'SKILL_PREREQ_CLOSURE' })
+      const { rows, ms } = await runQuery(variant.cypher, { skillId, limit: capped }, { signal: options?.signal, tag: 'SKILL_PREREQ_CLOSURE' })
       return {
-        value: rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null),
+        value: dedupeSkills(rows.map(toSkillMeta).filter((s): s is SkillMetaRow => s !== null)),
         ms,
-        truncated: rows.length >= clampLimit(limit, 400, 200),
+        truncated: rows.length >= capped,
       }
     },
 
@@ -591,9 +679,11 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
           careers: asObjectArray(row.careers, 40)
             .map((c) => ({ id: asString(c.id, 72) ?? '', name: asString(c.name, 160) ?? '' }))
             .filter((c) => c.id && c.name),
-          skills: asObjectArray(row.skills, 200)
-            .map((s) => toSkillMeta({ id: s.id, name: s.name, difficulty: s.difficulty }))
-            .filter((s): s is SkillMetaRow => s !== null),
+          skills: dedupeSkills(
+            asObjectArray(row.skills, 200)
+              .map((s) => toSkillMeta(s))
+              .filter((s): s is SkillMetaRow => s !== null),
+          ),
         },
         ms,
       }
@@ -641,13 +731,13 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
         const variant = neighbourhoodQuery(seedLabel, depth)
         const result = await runQuery(
           variant.cypher,
-          { seedId: input.seedId, labels, relations, difficulty: input.difficulty ?? '', limit },
+          { seedId: input.seedId, labels, relations, difficulty: input.difficulty ?? '', limit: limit + 1 },
           { signal: options?.signal, tag: 'NEIGHBOURHOOD' },
         )
         nodeRows = result.rows
         selectionNote = `${depth}-hop neighbourhood of ${input.seedId}, limited to ${limit} nodes.`
       } else if (input.careerId) {
-        const result = await runQuery(CAREER_OVERVIEW_SUBGRAPH, { careerId: input.careerId, limit }, { signal: options?.signal, tag: 'CAREER_OVERVIEW_SUBGRAPH' })
+        const result = await runQuery(CAREER_OVERVIEW_SUBGRAPH, { careerId: input.careerId, limit: limit + 1 }, { signal: options?.signal, tag: 'CAREER_OVERVIEW_SUBGRAPH' })
         nodeRows = result.rows
         selectionNote = `Overview of ${input.careerId}: required skills with their tools, projects and resources, limited to ${limit} nodes.`
       } else {
@@ -682,7 +772,7 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
       return {
         value: { seedId: input.seedId ?? input.careerId ?? null, ...built, selectionNote },
         ms: Date.now() - started,
-        truncated: built.truncated || nodeRows.length >= limit,
+        truncated: built.truncated || nodeRows.length > limit,
       }
     },
 
@@ -699,35 +789,54 @@ export function createNeo4jReader(config: Neo4jConfig): GraphReader {
 
     async findProjects(query: ProjectQuery, options): Promise<ReadResult<ProjectView[]>> {
       const limit = clampLimit(query.limit, MAX_CATALOG_LIMIT, 8)
+      const fetchLimit = query.difficulty ? MAX_CATALOG_LIMIT : limit
       if (query.skillIds && query.skillIds.length > 0) {
         const { rows, ms } = await runQuery(
           PROJECTS_FOR_SKILLS,
-          { skillIds: query.skillIds.slice(0, 60), limit },
+          { skillIds: query.skillIds.slice(0, 60), limit: fetchLimit },
           { signal: options?.signal, tag: 'PROJECTS_FOR_SKILLS' },
         )
         const projects = rows.map(toProjectView).filter((p): p is ProjectView => p !== null)
-        return { value: query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects, ms }
+        const filtered = query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects
+        return { value: filtered.slice(0, limit), ms }
       }
       if (query.careerId) {
-        const { rows, ms } = await runQuery(PROJECTS_FOR_CAREER, { careerId: query.careerId, limit }, { signal: options?.signal, tag: 'PROJECTS_FOR_CAREER' })
+        const { rows, ms } = await runQuery(PROJECTS_FOR_CAREER, { careerId: query.careerId, limit: fetchLimit }, { signal: options?.signal, tag: 'PROJECTS_FOR_CAREER' })
         const projects = rows.map(toProjectView).filter((p): p is ProjectView => p !== null)
-        return { value: query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects, ms }
+        const filtered = query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects
+        return { value: filtered.slice(0, limit), ms }
       }
-      // No filter: return the catalogue (used by the Projects screen landing state).
-      const { rows, ms } = await runQuery(PROJECTS_FOR_SKILLS, { skillIds: ['__none__'], limit }, { signal: options?.signal, tag: 'PROJECTS_FOR_SKILLS' })
+      const { rows, ms } = await runQuery(
+        PROJECT_CATALOG,
+        { difficulty: query.difficulty ?? '', limit },
+        { signal: options?.signal, tag: 'PROJECT_CATALOG' },
+      )
       const projects = rows.map(toProjectView).filter((p): p is ProjectView => p !== null)
-      return { value: query.difficulty ? projects.filter((p) => p.difficulty === query.difficulty) : projects, ms, truncated: true }
+      return { value: projects, ms }
     },
 
     async findResources(query: ResourceQuery, options): Promise<ReadResult<ResourceView[]>> {
       const limit = clampLimit(query.limit, MAX_CATALOG_LIMIT, 20)
+      const hasExtraFilters = Boolean(query.q || query.format || query.accessModel || query.difficulty)
       if (query.skillIds && query.skillIds.length > 0) {
         const { rows, ms } = await runQuery(
           RESOURCES_FOR_SKILLS,
-          { skillIds: query.skillIds.slice(0, 60), limit },
+          { skillIds: query.skillIds.slice(0, 60), limit: hasExtraFilters ? MAX_CATALOG_LIMIT : limit },
           { signal: options?.signal, tag: 'RESOURCES_FOR_SKILLS' },
         )
-        return { value: rows.map(toResourceView).filter((r): r is ResourceView => r !== null), ms }
+        const parsed = rows.map(toResourceView).filter((r): r is ResourceView => r !== null)
+        const filtered = hasExtraFilters ? parsed.filter((r) => filterResource(r, query)) : parsed
+        return { value: filtered.slice(0, limit), ms }
+      }
+      if (query.subjectId) {
+        const { rows, ms } = await runQuery(
+          RESOURCES_FOR_SUBJECT,
+          { subjectId: query.subjectId, limit: hasExtraFilters ? MAX_CATALOG_LIMIT : limit },
+          { signal: options?.signal, tag: 'RESOURCES_FOR_SUBJECT' },
+        )
+        const parsed = rows.map(toResourceView).filter((r): r is ResourceView => r !== null)
+        const filtered = hasExtraFilters ? parsed.filter((r) => filterResource(r, query)) : parsed
+        return { value: filtered.slice(0, limit), ms }
       }
       const { rows, ms } = await runQuery(
         RESOURCE_CATALOG,

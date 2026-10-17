@@ -161,6 +161,56 @@ describe('named query contract with an injected Neo4j driver reader', () => {
       expect(calls[0]?.cypher).not.toContain('career:software-engineer')
       expect(calls[0]?.params.careerId).toBe('career:software-engineer')
       expect(calls[0]?.tag).toBe('NAMED:career.longest-prereq-chain')
+
+      // /api/evidence/:id uses the known prefix to query only the matching label
+      calls.length = 0
+      const evidenceRes = await fetch(`${testBase}/api/evidence/career:software-engineer`)
+      expect(evidenceRes.status).toBe(200)
+      expect(calls).toHaveLength(1)
+      expect(calls[0]?.tag).toBe('EVIDENCE:Career')
+    } finally {
+      await new Promise<void>((resolve) => { testServer.close(() => resolve()); testServer.closeAllConnections() })
+      await testApi.close()
+    }
+  })
+
+  it('returns 503 instead of a false 200 or unhandled exception when /api/graph/explore or /api/evidence/:id fails mid-query', async () => {
+    const failingMock = {
+      kind: 'neo4j',
+      configured: true,
+      provenance: 'failing reader',
+      uri: 'bolt://test.invalid:7687',
+      async runQuery() {
+        throw new Error('connection reset by peer')
+      },
+      async getNeighborhood() {
+        throw new Error('connection reset by peer')
+      },
+      async totals() {
+        throw new Error('connection reset by peer')
+      },
+      async close() {},
+    } as unknown as DriverReader
+
+    const testApi = await createGraphApi({
+      env: { NEO4J_URI: 'bolt://test.invalid:7687', NEO4J_PASSWORD: 'test-only', LOG_LEVEL: 'error' },
+      neo4jReader: failingMock,
+    })
+    const testServer = createServer((request, response) => void testApi.handle(request, response))
+    await new Promise<void>((resolve) => testServer.listen(0, '127.0.0.1', resolve))
+    const address = testServer.address()
+    if (!address || typeof address === 'string') throw new Error('No test port')
+    const testBase = `http://127.0.0.1:${address.port}`
+    try {
+      const exploreRes = await fetch(`${testBase}/api/graph/explore?careerId=career:software-engineer`)
+      expect(exploreRes.status).toBe(503)
+      const exploreBody = await exploreRes.json()
+      expect(exploreBody.ok).toBe(false)
+
+      const evidenceRes = await fetch(`${testBase}/api/evidence/career:software-engineer`)
+      expect(evidenceRes.status).toBe(503)
+      const evidenceBody = await evidenceRes.json()
+      expect(evidenceBody.ok).toBe(false)
     } finally {
       await new Promise<void>((resolve) => { testServer.close(() => resolve()); testServer.closeAllConnections() })
       await testApi.close()
