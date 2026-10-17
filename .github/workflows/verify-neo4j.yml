@@ -51,6 +51,9 @@ on:
 
 permissions:
   contents: read
+  # The verdict is published as a pull-request comment, so a reviewer sees the
+  # evidence next to the change it is evidence for.
+  pull-requests: write
 
 concurrency:
   group: verify-neo4j
@@ -88,15 +91,23 @@ jobs:
       - name: Report the configured credentials
         id: credentials
         run: |
+          table=''
+          for name in NEO4J_URI NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_QUERY_URL SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF; do
+            if [ -n "${!name}" ]; then present=yes; else present=no; fi
+            table="${table}| \`$name\` | ${present} |\n"
+          done
           {
             echo '## Configured credentials'
             echo
             echo '| Variable | Present |'
             echo '| --- | --- |'
-            for name in NEO4J_URI NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_QUERY_URL SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF; do
-              if [ -n "${!name}" ]; then echo "| \`$name\` | yes |"; else echo "| \`$name\` | no |"; fi
-            done
+            printf '%b' "$table"
           } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo 'table<<GM_CREDENTIALS_EOF'
+            printf '%b' "$table"
+            echo 'GM_CREDENTIALS_EOF'
+          } >> "$GITHUB_OUTPUT"
           if [ -n "$NEO4J_URI" ] || [ -n "$NEO4J_QUERY_URL" ]; then
             echo "has_neo4j=true" >> "$GITHUB_OUTPUT"
           else
@@ -194,6 +205,7 @@ jobs:
         env:
           OUTCOME: ${{ steps.verify.outputs.outcome }}
           VERIFY_JSON: ${{ steps.verify.outputs.exit_code }}
+          CREDENTIALS: ${{ steps.credentials.outputs.table }}
         run: |
           {
             echo '## Live Neo4j verification'
@@ -225,11 +237,13 @@ jobs:
 
       - name: Comment the report on the pull request
         if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('node:fs')
             const outcome = process.env.OUTCOME || 'BLOCKED'
+            const credentials = process.env.CREDENTIALS || '(not reported)'
             const verify = fs.existsSync('/tmp/verify.json') ? fs.readFileSync('/tmp/verify.json', 'utf8') : '(not run)'
             const deployed = fs.existsSync('/tmp/verify-deployed.json') ? fs.readFileSync('/tmp/verify-deployed.json', 'utf8') : ''
             const headline = {
@@ -237,7 +251,7 @@ jobs:
               FAIL: '❌ **FAIL** — the backend answered but broke its contract.',
               BLOCKED: '⛔ **BLOCKED** — verification could not be completed (missing credentials or unreachable database).',
             }[outcome]
-            const body = `${headline}\n\n<details><summary>Verification output</summary>\n\n\`\`\`\n${verify}\n\`\`\`\n${deployed ? `\n### Deployed backend\n\n\`\`\`\n${deployed}\n\`\`\`\n` : ''}\n</details>`
+            const body = `${headline}\n\n### Configured credentials\n\n${credentials}\n\n<details><summary>Verification output</summary>\n\n\`\`\`\n${verify}\n\`\`\`\n${deployed ? `\n### Deployed backend\n\n\`\`\`\n${deployed}\n\`\`\`\n` : ''}\n</details>`
             const { data } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
