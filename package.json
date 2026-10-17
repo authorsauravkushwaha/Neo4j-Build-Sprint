@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "GraphMentor AI - The Engineering Career Navigator. React + Vite PWA + Capacitor Android, backed by Neo4j graph data and Supabase.",
+  "description": "GraphMentor AI - The Engineering Career Navigator. React + Vite PWA + Capacitor Android, with configurable Neo4j, PostgreSQL, and bundled demo data backends.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

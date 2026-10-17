@@ -4,20 +4,11 @@ A career navigator for engineering students and early-career engineers, built on
 instead of a course list. It answers questions like *"what do I actually need to learn for this role,
 in what order, and what is genuinely free?"* — and it shows the graph edges behind every claim it makes.
 
-**Neo4j is the primary graph database.** The Node backend connects to Neo4j AuraDB (or any reachable
-Neo4j server) with the **official `neo4j-driver`** over Bolt (`neo4j+s://`), executes parameterised
-Cypher for every graph query, and exposes an honest read ledger plus health check. The only way the
-banner says **LIVE NEO4J** is after a successful Cypher round-trip. Without credentials the app runs
-in clearly-labelled **DEMO DATA** mode against the bundled dataset — see `docs/verification-neo4j.md`.
+**Architecture and deployment status:** the code supports a Neo4j-backed Node API (official `neo4j-driver`), an explicitly configured PostgreSQL graph alternative, and bundled browser demo data. This checkout does not verify that external hosting, credentials, GitHub Actions variables, or the public site are connected. The UI only displays **LIVE NEO4J** after successful graph response metadata confirms Neo4j as the source. See [the architecture source of truth](docs/architecture.md), [verification steps](docs/verification-neo4j.md), and [the judge demo](docs/demo-script-neo4j.md).
 
-**One codebase, four ways to run it:** responsive website · installable PWA · Android app (Capacitor) ·
-APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
+**One codebase, four ways to run it:** responsive website · installable PWA · Android app (Capacitor) · APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 
-> **It works with nothing configured.** No Neo4j account, no Supabase project, no AI key: the app starts
-> in a clearly-labelled **local sample mode** using the bundled dataset (`src/data/seed/knowledgeGraph.ts`).
-> Every screen works, and every screenshot-visible claim says "bundled sample dataset" rather than
-> pretending to be live. Set `NEO4J_URI` / `NEO4J_USERNAME` / `NEO4J_PASSWORD` (server-side only — see
-> `.env.example`) and the same UI switches to genuine live Neo4j data.
+> **It works with nothing configured.** When no API is configured, the browser uses the bundled sample curriculum (`src/data/seed/knowledgeGraph.ts`) and labels it **DEMO DATA**. A backend outage is identified separately from the demo source. Neo4j credentials belong only in server-side hosting configuration; they must never be placed in a Vite variable.
 
 ## Website database — no Supabase setup needed
 
@@ -40,7 +31,7 @@ only deploys the frontend. See [Database setup and deployment](docs/database.md)
 4. [Quick start (works with zero configuration)](#quick-start-works-with-zero-configuration)
 5. [Windows: the short version](#windows-the-short-version)
 6. [Commands you will actually use](#commands-you-will-actually-use)
-7. [Going live: connecting a real database](#going-live-connecting-a-real-database)
+7. [Architecture and live verification](#architecture-and-live-verification)
 8. [Accounts and sign-in](#accounts-and-sign-in)
 9. [Deploying](#deploying)
 10. [Android app and APK](#android-app-and-apk)
@@ -224,176 +215,13 @@ Notes for Windows users:
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
 | `npm run cap:sync`, `cap:open`, `cap:add:android` | Capacitor helpers — see [Android](#android-app-and-apk). | Yes (Android SDK) |
 
-## Architecture at a glance
+## Architecture and live verification
 
-```
-┌──────────────┐    HTTPS     ┌────────────────────────┐   Bolt (neo4j+s://)   ┌────────────┐
-│ React + Vite │ ───────────▶ │ Node backend (server/) │ ────────────────────▶ │ Neo4j 5.x  │
-│ (GitHub Pages│              │  /api/health           │   parameterised       │ (AuraDB or  │
-│  or same     │              │  /api/health/neo4j     │   Cypher ONLY,        │  self-hosted)│
-│  origin)     │              │  /api/graph/stats      │   read-only           │             │
-│              │              │  /api/query (named)    │   sessions            │             │
-│              │              │  /api/graph/explore    │                       │             │
-│              │              │  /api/evidence/:id     │                       │             │
-│              │              │  /api/ledger/recent    │                       │             │
-│              │              │  /functions/v1/*       │                       │             │
-│              │              │  + accounts /api/auth  │                       │             │
-└──────────────┘              └────────────────────────┘                       └────────────┘
-                                        │
-                                        ▼
-                                 Optional Postgres
-                                 (accounts only; not
-                                  the graph database)
-```
+The browser uses the bundled graph in demo mode or calls the configured `/functions/v1/*` backend. The Node backend can read Neo4j via the official Bolt driver, or explicitly configured PostgreSQL; the Edge Functions deployment is a separate Neo4j HTTPS Query API alternative. GitHub Pages serves static files only and does not host the database.
 
-- Cypher lives in `supabase/functions/_shared/core/graphQuery.ts` (constant
-  strings with `$parameters`) and `neo4j/live-demo.cypher` (judge-demo queries).
-- The driver wrapper lives in `server/neo4jDriverReader.ts` — one Cypher
-  catalogue, two transports (HTTPS Query API for Supabase/Deno, native Bolt
-  driver for Node).
-- Read ledger: every Cypher execution is recorded and served at
-  `/api/ledger/recent` with request id, query id, row count and execution time.
-  When Neo4j is unreachable, entries are recorded as errors rather than
-  fabricated successes.
-- Secrets stay server-side; `.env.example` contains only placeholders.
+See [docs/architecture.md](docs/architecture.md) for the request diagram, environment variables, and truthful runtime statuses. The current external production deployment is **not verified by this repository checkout**. To verify an actual Node backend, use `node scripts/verify-neo4j.mjs https://ACTUAL-BACKEND-ORIGIN`; it must return PASS with real non-empty records before claiming live connectivity. [docs/verification-neo4j.md](docs/verification-neo4j.md) explains the evidence and verdicts.
 
-Verification: `npm run verify:neo4j` prints one of `PASS — LIVE NEO4J VERIFIED`,
-`BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE`, or `FAIL — LIVE
-NEO4J INTEGRATION FAILED`. See `docs/verification-neo4j.md`.
-
-Judge demonstration script: [`docs/demo-script-neo4j.md`](docs/demo-script-neo4j.md).
-
-## Going live: connecting a real database
-
-Everything below is optional. Nothing in the app requires it to run.
-
-Two paths turn the demo into a live deployment — both serve the *same* endpoints and the *same* logic; the
-banner says so honestly either way. The full comparison is in [docs/graph-database.md](docs/graph-database.md).
-
-- **Path A — no third-party accounts (recommended first): the repo's own graph database.** The Node server
-  serves the shared API from a PostgreSQL store the deployment owns — embedded on disk by default — seeded
-  automatically on first boot. Any Node host with one persistent disk runs the whole thing;
-  [`render.yaml`](render.yaml) is a complete Blueprint for it. See §0 below.
-- **Path B — Supabase Edge Functions + Neo4j AuraDB.** The route that needs no Node host: static site
-  (GitHub Pages) plus Supabase. See §1–§3, or run the automation in
-  [.github/workflows/deploy-backend.yml](.github/workflows/deploy-backend.yml).
-
-### 0. Path A: the repo-owned PostgreSQL graph store (no accounts to create)
-
-1. Build and start the self-contained deployment locally to check it out:
-
-   ```bash
-   VITE_BASE_PATH=/ VITE_API_BASE_URL=/functions/v1 npm run build
-   npm start
-   ```
-
-   Open the printed address: the sample-data banner is gone, replaced by *"Live data: reading the knowledge
-   graph from this deployment's own PostgreSQL database."*, and `curl http://localhost:3000/functions/v1/health-check`
-   answers `reachable: true`, `source: "postgres-live"` with real table counts.
-2. For a public host, the included [`render.yaml`](render.yaml) Blueprint provisions exactly this: one web
-   service, one persistent disk for both databases (accounts + graph), `VITE_API_BASE_URL=/functions/v1`.
-   Import the blueprint in the host's dashboard — that is the whole setup.
-3. Operator tools: `npm run seed:graphdb` (idempotent seed), `--force` (rebuild from the bundle), `--wipe`
-   (drop the tables). To serve from an existing PostgreSQL cluster instead of the embedded engine, set
-   `GRAPH_DATABASE_URL` — details, edits-by-SQL and the exactly-one-change-provenance rule are in
-   [docs/graph-database.md](docs/graph-database.md).
-
-## Going live: Neo4j + Supabase
-
-### 1. Neo4j AuraDB Free (graph)
-
-1. Create a free instance at <https://console.neo4j.io>. Free instances are enough for this dataset.
-2. In the console: **Connect → Query API** and copy the URL — it looks like
-   `https://<instance-id>.databases.neo4j.io/db/neo4j/query/v2`. The password is shown once at creation.
-   The **Bolt URI** (preferred by the Node backend) is `neo4j+s://<instance-id>.databases.neo4j.io`;
-   the backend will also derive this automatically if you only set `NEO4J_QUERY_URL`.
-3. Load the schema and the seed data (this runs from your machine, not the browser):
-
-   ```bash
-   cp supabase/.env.example supabase/.env      # then edit it
-   npm run emit:cypher                         # regenerate artefacts if you edited the dataset
-   npm run seed:neo4j -- --dry-run             # show the statements (31 batched MERGEs)
-   npm run seed:neo4j                          # idempotent: safe to run twice
-   ```
-
-   The seeder refuses `http://` URLs and refuses to run against a non-Aura host unless you explicitly
-   set `NEO4J_ALLOW_HTTP=true` for a local server you control.
-
-4. The same `.env` values become Edge Function secrets in the next step. **They never go in the frontend
-   `.env` file** — the browser never talks to Neo4j directly.
-
-### 2. Supabase (accounts, policies, API)
-
-1. Create a project at <https://supabase.com>. Free tier is sufficient.
-2. Apply the migrations in `supabase/migrations/` (`001_graphmentor_core.sql`, then
-   `002_graphmentor_rate_limit.sql`) with the SQL editor, or with the CLI:
-
-   ```bash
-   supabase link --project-ref <your-project-ref>
-   supabase db push
-   ```
-
-   They create the tables, the row-level-security policies and the rate-limit buckets. Every table is
-   `user_id`-scoped and every policy says `auth.uid() = user_id`: private data is not readable by other
-   users even with a valid token.
-3. Set the Edge Function secrets and deploy the functions:
-
-   ```bash
-   supabase secrets set --env-file supabase/.env
-   supabase functions deploy health-check get-careers get-career-details get-career-path \
-     get-skill-details get-skills get-graph get-projects get-resources analyze-skill-gaps \
-     generate-learning-roadmap mentor-chat save-roadmap update-progress manage-bookmarks \
-     manage-account submit-feedback
-   ```
-
-   All of them are thin shims over `supabase/functions/_shared/handlers/` so the same code is unit-tested
-   in Node.
-4. Deploy the sign-in guard as well (`supabase functions deploy auth-guard`) — it is the rate limiter that
-   runs before the browser talks to Supabase Auth. Without it, sign-in still works and relies on Supabase's
-   own limits; see [Accounts and sign-in](#accounts-and-sign-in).
-5. Point the frontend at it — copy `.env.example` to `.env.local` and fill in:
-
-   ```bash
-   VITE_SUPABASE_URL=https://<your-project>.supabase.co
-   VITE_SUPABASE_ANON_KEY=<your anon/publishable key>
-   VITE_SITE_URL=https://<your-site-url>        # canonical link + share metadata
-   ```
-
-   The **anon** key is safe in a browser only because RLS protects every table. The `service_role` key
-   belongs in `supabase/.env` (server-side) and nowhere else. `npm run lint:secrets` fails the build if a
-   key-shaped string is ever committed.
-
-### 3. Optional: run the same API on Appwrite instead
-
-The storage layer has two implementations behind one contract, so the Edge Functions, the ownership rules
-and every handler are identical on either. To switch:
-
-```bash
-npm run appwrite:provision -- --run   # creates the 8 collections + indexes (no client permissions)
-```
-
-then set `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` and `APPWRITE_API_KEY` as function secrets. A
-partially filled Appwrite block is **not** a fallback to Supabase — the deployment goes read-only and
-`health-check` names the missing variables. What genuinely differs (no row-level security to fall back on,
-session secrets instead of JWTs, no stored procedures, one request per document write) and how each gap is
-covered is in [docs/appwrite.md](docs/appwrite.md), including the part that has *not* been exercised: no
-live Appwrite project has been run against this code.
-
-### 4. Optional: an AI provider for the mentor
-
-With `AI_PROVIDER=none` the mentor answers from a deterministic rules engine and the UI shows
-*"no language model was called"*. To let a model rephrase those answers (it still only sees graph context,
-never your identity), set in `supabase/.env`:
-
-```bash
-AI_PROVIDER=gemini            # or: openai-compatible (Groq, OpenRouter, a local llama.cpp server)
-GEMINI_API_KEY=<your key>     # free tier available at https://aistudio.google.com
-```
-
-The answer is always assembled from graph facts first; the model cannot invent a skill that is not in the
-graph, and every answer shows which skills, projects and resources it used.
-
----
+The Render blueprint is in [`render.yaml`](render.yaml). The Pages workflow reads the public Actions repository variable `VITE_API_BASE_URL` at build time; set it to the actual backend API base (for example `https://<actual-host>/functions/v1`) and trigger a new Pages build. The project-specific Pages path remains `/Neo4j-Build-Sprint/`. Credentials never belong in `VITE_*` variables.
 
 ## Accounts and sign-in
 
@@ -433,30 +261,15 @@ Design decisions you can check in the code (`src/core/auth.ts`, `docs/security.m
 - **Deleting account data deletes rows, not the login.** Removing an auth user needs the `service_role`
   key, which never goes near a browser. The UI says exactly that.
 
-To turn Supabase accounts on, follow [Going live](#going-live-neo4j--supabase) and remember to deploy the
-`auth-guard` function — without it, sign-in still works but the app has no ceiling of its own.
+To use Supabase accounts, follow the alternative deployment path in [docs/deployment.md](docs/deployment.md) and deploy the `auth-guard` function — without it, sign-in still works but the app has no ceiling of its own.
 
 ## Deploying
 
-**Database-backed Node website:** build with `npm run build`, serve with `npm start`, and mount a
-persistent disk at `GM_DATABASE_DIR`. `render.yaml` includes a single-instance service and disk
-(review paid hosting costs first). See [docs/database.md](docs/database.md). The server serves the
-frontend and account API at the same origin; no database credential is shipped to a browser.
+**Node backend:** `render.yaml` describes the Render service, production build/start commands, health endpoint, and disk for account data. Neo4j credentials are server-side. A PostgreSQL graph reader is an explicitly configured alternative, not Neo4j. See [docs/deployment.md](docs/deployment.md).
 
-**Static frontend + optional Supabase Edge Functions:** the following options cannot run the built-in
-Node/database service on their own:
+**GitHub Pages:** the workflow publishes static `dist/` files and preserves the project base path. It does not host the API or a database. To call a backend, set the Actions repository variable `VITE_API_BASE_URL` to its real public API base and trigger a new Pages build. Without that variable, the site remains a working demo deployment. Netlify can likewise host the static frontend; see `netlify.toml`.
 
-- **GitHub Pages** — push to `main`, the workflow in `.github/workflows/deploy.yml` builds and publishes
-  `dist/`. The base path and the site URL are derived from the repository (`/<repo-name>/` for project
-  sites, `/` for a `<owner>.github.io` repository), so there is nothing to remember to set: this
-  repository is deployed at <https://authorsauravkushwaha.github.io/Neo4j-Build-Sprint/>. Deep links
-  work through a generated `404.html`, and a manually dispatched run can publish a branch before it is
-  merged.
-- **Netlify** — `netlify.toml` is committed (build command, SPA fallback, security headers). Connect the
-  repo and it works as-is.
-
-Step-by-step instructions, including the GitHub secrets to add, are in
-[docs/deployment.md](docs/deployment.md).
+The exact deployment steps and verification evidence are in [docs/architecture.md](docs/architecture.md) and [docs/deployment.md](docs/deployment.md). No live production connection is claimed until the deployed backend passes the real query verifier.
 
 ## Android app and APK
 
@@ -521,10 +334,10 @@ one interface (`GraphMentorClient`), so a screen cannot behave differently in th
 ## Tests and verification
 
 ```bash
-npm test                     # 639 tests in 44 files
+npm test                     # Vitest regression suite
 npm run typecheck            # no TypeScript errors
 npm run lint:secrets         # no credential-shaped strings
-npm run validate:seed        # 53/53 dataset, engine and Cypher checks
+npm run validate:seed        # validate the checked-in dataset and generated Cypher
 npm run emit:cypher -- --check
 npm run build                # production build + service worker
 
@@ -572,33 +385,7 @@ What each suite covers:
 - `tests/integration/writes.test.ts` — the write endpoints through both clients, including that demo mode
   never claims data was sent anywhere.
 
-Measured results for this build are in [docs/verification.md](docs/verification.md) — including the three
-runs that go past jsdom and into real infrastructure, all of them local:
-
-- **`npm run verify:rls` — 42/42** against PostgreSQL 17 with the shipped migrations applied unmodified:
-  thirteen intruder attacks refused, 64 concurrent limiter increments counted as exactly 64, a nonce
-  refused on replay, and cascading deletes leaving zero orphans.
-- **`npm run smoke:http` — 30/30** over a real socket, with the limiter backed by that database: 429 with
-  `retry-after` once attempts run out, byte-identical answers for two different addresses (no account
-  enumeration), CORS scoped to the allow-list, method rejections, and error bodies carrying no stack or SQL.
-- **`npm run oracle`** — 39 cases and 507 canonical lines recomputed in Java and identical to the
-  TypeScript engine, with a self-test proving the diff detects an injected error. The division of labour is
-  explicit: algorithms are independently implemented, tuning constants are declared by the fixture and
-  pinned by unit tests.
-- **`npm run verify:browser` — 112/112** in headless Chromium with WebGL 2.0: the hero scene and the 3D graph
-  reach `running` and actually draw, dragging rotates them, the hero copy is painted above the scene and
-  stays legible, the neumorphic material is checked in rendered pixels as well as computed styles (a card
-  and the app bar paint the page colour, shadows come in light/shade pairs, fields are pressed in, a held
-  button inverts its shadow, no surface carries a backdrop blur), Cmd/Ctrl+K opens the command palette and
-  Enter opens the highlighted result, the 360 px layouts do not overflow, reduced
-  motion mounts no canvas, the console stays clean, the resource library renders all 154 entries with their
-  outcomes, linked prerequisites, limits, hour estimates and time, the delta view on the gap page keeps its
-  own three renderings of the numbers in agreement and follows its suggestions to real skill pages, and the
-  service worker serves the shell offline.
-
-What is still **not** verified is anything that needs a deployment: live Neo4j reads, the Supabase-hosted
-backend and GoTrue (password sign-in, sign-in links, **email delivery**), AI provider calls, and the Android
-APK. §5 of that document lists each one with the command that would close it.
+Previous measurement notes in [docs/verification.md](docs/verification.md) are historical. Do not treat them as evidence of current external infrastructure. Live Neo4j, deployed backend, Pages-to-backend requests, email delivery, AI provider calls, and the Android APK require their own current verification. See [docs/architecture.md](docs/architecture.md) for the implemented/tested/production-verified distinction.
 
 ## Security and privacy
 
@@ -630,7 +417,7 @@ Privacy posture, in short:
 | --- | --- |
 | `npm ci` fails with `EBADENGINE` | Node is too old. Install Node 20 LTS or newer. |
 | `npm run dev` starts but the page is blank | Open the browser console. If a chunk failed to load after an update, hard-reload (`Ctrl+Shift+R`). |
-| The app says "local sample dataset" and you expected live data | No `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` (or `VITE_FORCE_DEMO_MODE=true`). Check `/health-check` in the deployed functions for the server-side reason. |
+| The app says DEMO DATA or BACKEND UNAVAILABLE and you expected live data | Check the build-time `VITE_API_BASE_URL` value and the configured backend health/source metadata. Updating the repository variable requires a new Pages build. Neo4j credentials remain server-side. |
 | Mentor answers say "no language model was called" | `AI_PROVIDER=none`. That is the default and everything still works; set a provider to change the wording, not the facts. |
 | `npm run verify:resources` reports `blocked` | A provider refused the automated checker (common: Cloudflare-protected sites). Open the link in a browser to confirm; the dataset keeps saying "not re-checked" until a check actually succeeds. |
 | `npm run seed:neo4j` refuses to run | It checks for an `https://` Aura URL and a password first. Read the error: it names the missing value. |

@@ -186,9 +186,9 @@ const CLAIMS: Claim[] = [
   },
   {
     file: 'src/features/misc/AboutPage.tsx',
-    pattern: /both engines for all (\d+) careers/,
+    pattern: /local recommendation engine is validated for all (\d+) careers/,
     expected: [counts.careers],
-    what: 'the About screen states how many careers both engines were run against',
+    what: 'the About screen states the local engine validation coverage without implying a hosted database test',
   },
 ]
 

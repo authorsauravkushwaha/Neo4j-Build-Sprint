@@ -6,20 +6,7 @@ version (`neo4j/MANIFEST.json`). Every number below is reproducible with the com
 
 ## Unreleased
 
-- **Neo4j is now the primary graph database.** The Node backend (`server/`) connects
-  to Neo4j using the official `neo4j-driver` over Bolt, executing the same
-  parameterised Cypher catalogue the Deno/Edge-Functions path used. New REST
-  endpoints: `/api/health`, `/api/health/neo4j` (real connectivity ping — fails
-  honestly when credentials are missing), `/api/graph/stats`, `/api/query`
-  (named-query dispatch only; arbitrary Cypher is rejected), `/api/graph/explore`,
-  `/api/evidence/:id`, `/api/ledger/recent`. The in-memory read ledger records
-  request id, query id, row count, execution time and a truthful `servedBy`
-  label — error states are recorded as errors, not fabricated successes.
-  Verification script: `npm run verify:neo4j` prints `PASS|BLOCKED|FAIL`
-  verbatim. Legacy Postgres (PGlite) remains an opt-in fallback but is never
-  labelled `neo4j-live`; without credentials the UI clearly shows DEMO DATA
-  rather than silently falling back. Cypher catalogue reviewable in
-  `neo4j/live-demo.cypher`.
+- **Node-hosted Neo4j API path implemented.** The Node backend can connect over Bolt with the official `neo4j-driver` and exposes health, live stats, an allow-listed named-query endpoint, graph exploration, evidence, and a read ledger. It is one supported backend path, not evidence that a production service is configured. The explicitly configured PostgreSQL reader remains an alternative; the browser also has a bundled demo mode. `scripts/verify-neo4j.mjs` now exercises a real backend URL and distinguishes PASS, BLOCKED, and FAIL. See `docs/architecture.md` for the current verified status.
 
 - **Second-pass security audit: five defects found, demonstrated and fixed**
   (`docs/security-audit-round2-2026-10-16.md`, `tests/security/`, 57 adversarial assertions).

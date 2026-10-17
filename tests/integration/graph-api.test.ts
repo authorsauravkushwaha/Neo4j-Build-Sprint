@@ -43,6 +43,43 @@ afterAll(async () => {
   await api.close()
 })
 
+describe('Neo4j REST verification endpoints stay truthful without a Neo4j driver', () => {
+  it('reports the actual PostgreSQL backend in liveness and refuses to claim Neo4j', async () => {
+    const liveness = await fetch(`${base.replace('/functions/v1', '')}/api/health`)
+    const liveBody = await liveness.json()
+    expect(liveness.status).toBe(200)
+    expect(liveBody.graphBackend).toBe('postgres')
+
+    const neoHealth = await fetch(`${base.replace('/functions/v1', '')}/api/health/neo4j`)
+    const neoBody = await neoHealth.json()
+    expect(neoHealth.status).toBe(503)
+    expect(neoBody.connected).toBe(false)
+    expect(neoBody.backend).toBe('postgres')
+
+    const stats = await fetch(`${base.replace('/functions/v1', '')}/api/graph/stats`)
+    const statsBody = await stats.json()
+    expect(stats.status).toBe(503)
+    expect(statsBody.source).toBeUndefined()
+
+    const query = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'career.longest-prereq-chain', params: { careerId: 'career:software-engineer', limit: 10 } }),
+    })
+    const queryBody = await query.json()
+    expect(query.status).toBe(503)
+    expect(queryBody.servedBy).toBeUndefined()
+  })
+
+  it('rejects unknown query ids before touching the database', async () => {
+    const response = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'arbitrary-cypher', params: {} }),
+    })
+    expect(response.status).toBe(400)
+    expect((await response.json()).error).toBe('unknown_query')
+  })
+})
+
 describe('health-check reports the deployment database, not a bundle', () => {
   it('answers reachable, postgres-live, with counts straight from the tables', async () => {
     const response = await fetch(`${base}/health-check`)

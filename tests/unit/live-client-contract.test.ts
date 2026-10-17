@@ -171,6 +171,46 @@ describe('listCareers(): reads the handler envelope as-is', () => {
   })
 })
 
+describe('data-source evidence', () => {
+  it('does not invent live status when a transport failure triggers the demo fallback', async () => {
+    let unavailable = ''
+    let requested = false
+    const client = createLiveClient({
+      apiBaseUrl: 'https://api.example.test/functions/v1',
+      getToken: async () => null,
+      onRequestStart: () => { requested = true },
+      onBackendUnavailable: (reason) => { unavailable = reason },
+      fetchImpl: (async () => { throw new TypeError('Failed to fetch') }) as typeof fetch,
+    })
+    await expect(client.listCareers()).rejects.toMatchObject({ code: 'network_error' })
+    expect(requested).toBe(true)
+    expect(unavailable).toBe('Failed to fetch')
+  })
+
+  it('forwards only actual response provenance and never invents neo4j-live metadata', async () => {
+    const observed: string[] = []
+    const client = createLiveClient({
+      apiBaseUrl: 'https://api.example.test/functions/v1',
+      getToken: async () => null,
+      onDataSource: (source) => observed.push(source),
+      fetchImpl: (async () => new Response(JSON.stringify({ ok: true, data: {}, meta: { source: 'neo4j-live' } }), { status: 200 })) as typeof fetch,
+    })
+    const result = await client.listCareers()
+    expect(result.meta.source).toBe('neo4j-live')
+    expect(observed).toEqual(['neo4j-live'])
+
+    const malformed = createLiveClient({
+      apiBaseUrl: 'https://api.example.test/functions/v1',
+      getToken: async () => null,
+      onDataSource: (source) => observed.push(source),
+      fetchImpl: (async () => new Response(JSON.stringify({ ok: true, data: {} }), { status: 200 })) as typeof fetch,
+    })
+    const missingMeta = await malformed.listCareers()
+    expect(missingMeta.meta.source).toBe('unavailable')
+    expect(observed).toEqual(['neo4j-live'])
+  })
+})
+
 describe('endpointUrl(): relative bases resolve against the page origin', () => {
   it('a same-origin relative base hits /functions/v1/<fn> on this host', async () => {
     const seen: string[] = []

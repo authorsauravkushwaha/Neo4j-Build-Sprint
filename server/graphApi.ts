@@ -1,18 +1,11 @@
 /**
  * Repo-owned Graph API server.
  *
- * Primary graph backend: NEO4J (official driver, bolt/wss). Every graph read
- * executes real Cypher against a live Neo4j instance when NEO4J_* credentials
- * are present. When no credentials are configured the service starts but the
- * /health endpoint reports `unreachable` and graph endpoints answer with a
- * plain "no database configured" error — the UI then falls back to its bundled
- * demo dataset (labelled DEMO DATA, never LIVE NEO4J).
- *
- * Legacy PostgreSQL (PGlite) graph store is kept ONLY as an opt-in fallback
- * when GRAPH_DATABASE_URL or GM_GRAPH_DATABASE_DIR is set *and* Neo4j is not
- * configured; it is reported separately as `postgres-live` and never masquerades
- * as Neo4j. This keeps old Render Blueprints working while making Neo4j the
- * default for new deployments.
+ * Graph backend selection is explicit and ordered: configured Neo4j via the
+ * official driver, then an explicitly configured PostgreSQL graph store, then
+ * no graph reader. Each API response carries the reader's actual provenance;
+ * browser-bundled demo data is never returned as a live backend response.
+ * Neo4j-backed results use the native Bolt driver and parameterised Cypher.
  */
 import './denoShim.ts'
 
@@ -113,7 +106,7 @@ type LedgerEntry = {
   dbAvailableMs?: number
   dbConsumedMs?: number
   entities?: string[]
-  servedBy: 'neo4j-live' | 'postgres-live'
+  servedBy: 'neo4j-live' | 'postgres-live' | 'unavailable'
   message?: string
 }
 const ledger: LedgerEntry[] = []
@@ -289,36 +282,44 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
   }
 
   // Simple named-query allow-list for /api/query — never arbitrary Cypher.
+  const safeId = (value: unknown): string => {
+    const text = typeof value === 'string' ? value : ''
+    return /^[a-zA-Z0-9:_-]{1,96}$/.test(text) ? text : ''
+  }
+  const safeLimit = (value: unknown, fallback: number, ceiling: number): number => {
+    const n = typeof value === 'number' ? value : Number(value)
+    return Number.isFinite(n) ? Math.max(1, Math.min(Math.floor(n), ceiling)) : fallback
+  }
   const NAMED_QUERIES: Record<string, { cypher: (p: Record<string, unknown>) => string; params?: (p: Record<string, unknown>) => Record<string, unknown>; description: string }> = {
     'graph.stats': {
-      description: 'Counts of nodes and relationships returned by Neo4j.',
+      description: 'Count of nodes returned by Neo4j.',
       cypher: () => 'MATCH (n) RETURN count(n) AS nodes',
       params: () => ({}),
     },
     'career.skills': {
       description: 'Skills a given career requires, by traversing REQUIRES_SKILL edges.',
       cypher: (_p) => 'MATCH (c:Career {id: $careerId})-[rs:REQUIRES_SKILL]->(s:Skill) RETURN s.id AS id, s.name AS name, s.difficulty AS difficulty, rs.essential AS essential, rs.weight AS weight ORDER BY essential DESC, s.name ASC LIMIT $limit',
-      params: (p) => ({ careerId: String(p.careerId ?? ''), limit: Math.min(Number(p.limit) || 40, 200) }),
+      params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 40, 200) }),
     },
     'skill.routes-to-career': {
       description: 'Shortest prerequisite paths from a skill to a skill a target career requires.',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(target:Skill) MATCH p = shortestPath((start:Skill {id: $fromSkillId})-[:REQUIRES*0..6]->(target)) WHERE length(p) >= 1 RETURN [n IN nodes(p) | n.id] AS ids, [n IN nodes(p) | n.name] AS names, length(p) AS hops, target.id AS targetId, target.name AS targetName ORDER BY hops ASC LIMIT $limit',
-      params: (p) => ({ careerId: String(p.careerId ?? ''), fromSkillId: String(p.fromSkillId ?? ''), limit: Math.min(Number(p.limit) || 5, 20) }),
+      params: (p) => ({ careerId: safeId(p.careerId), fromSkillId: safeId(p.fromSkillId), limit: safeLimit(p.limit, 5, 20) }),
     },
     'skill.prerequisite-chain': {
       description: 'Recursive prerequisite chain for a skill up to N hops deep.',
       cypher: () => 'MATCH p=(s:Skill {id: $skillId})-[:REQUIRES*1..6]->(base:Skill) WHERE NOT (base)-[:REQUIRES]->(:Skill) RETURN [n IN nodes(p) | n.id] AS ids, [n IN nodes(p) | n.name] AS names, length(p) AS depth ORDER BY depth DESC LIMIT $limit',
-      params: (p) => ({ skillId: String(p.skillId ?? ''), limit: Math.min(Number(p.limit) || 10, 50) }),
+      params: (p) => ({ skillId: safeId(p.skillId), limit: safeLimit(p.limit, 10, 50) }),
     },
     'career.resources-covering-required-skills': {
       description: 'Free resources that cover required skills for a career (multi-hop: Career→Skill←Resource).',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill)<-[:COVERS]-(r:Resource) RETURN r.id AS resourceId, r.name AS resource, r.accessModel AS accessModel, collect(DISTINCT s.id) AS coveredSkillIds, count(DISTINCT s) AS covers ORDER BY covers DESC, r.name ASC LIMIT $limit',
-      params: (p) => ({ careerId: String(p.careerId ?? ''), limit: Math.min(Number(p.limit) || 20, 100) }),
+      params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 20, 100) }),
     },
     'career.longest-prereq-chain': {
       description: 'Multi-hop traversal: longest prerequisite chain feeding each required skill.',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill) MATCH path = (s)-[:REQUIRES*1..6]->(base:Skill) WHERE NOT (base)-[:REQUIRES]->(:Skill) RETURN c.name AS career, s.name AS skill, length(path) AS depth, [n IN nodes(path) | n.name] AS chain ORDER BY depth DESC LIMIT $limit',
-      params: (p) => ({ careerId: String(p.careerId ?? ''), limit: Math.min(Number(p.limit) || 10, 50) }),
+      params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 10, 50) }),
     },
   }
 
@@ -358,7 +359,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
           connected: true,
           backend: 'neo4j',
           uri: opened.driver.uri.replace(/:\/\/[^@]+@/, '://<redacted>@'),
-          database: (process.env.NEO4J_DATABASE ?? 'neo4j'),
+          database: (env.NEO4J_DATABASE ?? 'neo4j'),
           pingMs: Date.now() - start,
           nodes: nodesR.value.nodes,
           relationships: nodesR.value.relationships,
@@ -370,7 +371,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
           ok: false,
           connected: false,
           backend: 'neo4j',
-          reason: error instanceof Error ? error.message : 'Ping failed.',
+          reason: 'Neo4j connectivity check failed; verify server-side credentials, network access, database name, and query timeout.',
           time: new Date().toISOString(),
         })
       }
@@ -381,8 +382,12 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       if (opened.kind !== 'neo4j' || !opened.driver) {
         return json(503, { ok: false, error: 'Neo4j unavailable', reason: opened.reason })
       }
-      const totals = await opened.driver.totals()
-      return json(200, { ok: true, source: 'neo4j-live', ...totals.value, queryMs: totals.ms, checkedAt: new Date().toISOString() })
+      try {
+        const totals = await opened.driver.totals()
+        return json(200, { ok: true, source: 'neo4j-live', ...totals.value, queryMs: totals.ms, checkedAt: new Date().toISOString() })
+      } catch {
+        return json(503, { ok: false, error: 'neo4j_unavailable', reason: 'Neo4j statistics query failed.' })
+      }
     }
 
     // POST /api/query — execute a named, allow-listed Cypher query.
@@ -430,7 +435,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
             queryId: qid,
             executedAt: entry.timestamp,
             driver: 'neo4j-javascript-driver',
-            database: process.env.NEO4J_DATABASE ?? 'neo4j',
+            database: env.NEO4J_DATABASE ?? 'neo4j',
           },
         })
       } catch (error) {
@@ -530,7 +535,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
           queryId: `REST:${restName}`,
           status: result.status >= 500 ? 'error' : 'ok',
           executionMs: Date.now() - started,
-          servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'neo4j-live',
+          servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'unavailable',
         })
         await sendFetchResponse(response, finish(result, { cors }))
         return
@@ -548,7 +553,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
         queryId: fn ?? 'unknown',
         status: result.status >= 500 ? 'error' : 'ok',
         executionMs: Date.now() - started,
-        servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'neo4j-live',
+        servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'unavailable',
       })
       await sendFetchResponse(response, finish(result, { cors }))
     } catch (error) {
@@ -577,11 +582,12 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
   }
 }
 
-/** Expose the named queries for documentation / testing. */
-export const NAMED_QUERIES = {
-  'graph.stats': 'RETURN count(n) AS nodes',
-  'career.skills': 'MATCH (c:Career {id:$careerId})-[rs:REQUIRES_SKILL]->(s:Skill) RETURN s.*, rs.*',
-  'skill.routes-to-career': 'MATCH (c:Career)-[:REQUIRES_SKILL]->(target) MATCH p=shortestPath((start)-[:REQUIRES*0..6]->(target)) ...',
-  'career.resources-covering-required-skills': 'MATCH (c:Career)-[:REQUIRES_SKILL]->(s:Skill)<-[:COVERS]-(r:Resource) ...',
-  'career.longest-prereq-chain': 'MATCH (c:Career)-[:REQUIRES_SKILL]->(s) MATCH path=(s)-[:REQUIRES*1..6]->(base) ...',
-}
+/** Public list of fixed, supported query IDs; Cypher text stays in the allow-list above. */
+export const NAMED_QUERY_IDS = [
+  'graph.stats',
+  'career.skills',
+  'skill.routes-to-career',
+  'skill.prerequisite-chain',
+  'career.resources-covering-required-skills',
+  'career.longest-prereq-chain',
+] as const

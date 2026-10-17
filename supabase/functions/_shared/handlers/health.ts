@@ -70,6 +70,7 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
       configured: false,
       reachable: false,
       source: 'unavailable',
+      backend: 'none',
       nodeCount: 0,
       relationshipCount: 0,
       labels: [],
@@ -87,6 +88,7 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
         configured: true,
         reachable: true,
         source: sourceFor(runtime.reader),
+        backend: runtime.reader.kind === 'neo4j' ? 'neo4j' : runtime.reader.kind === 'postgres' ? 'postgres' : 'local',
         nodeCount: value.nodes,
         relationshipCount: value.relationships,
         labels: value.labels.map((entry) => ({ label: entry.label as GraphHealth['labels'][number]['label'], count: entry.count })),
@@ -101,11 +103,12 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
         configured: true,
         reachable: false,
         source: 'unavailable',
+        backend: runtime.reader.kind === 'neo4j' ? 'neo4j' : runtime.reader.kind === 'postgres' ? 'postgres' : 'local',
         nodeCount: 0,
         relationshipCount: 0,
         labels: [],
-        message:
-          'The knowledge graph is configured but could not be reached. Check the Neo4j instance status and the NEO4J_* secrets, then try again.',
+        message: `The ${runtime.reader.kind === 'neo4j' ? 'Neo4j' : runtime.reader.kind === 'postgres' ? 'PostgreSQL' : 'local'} graph is configured but could not be reached. Check that graph service and its server-side configuration are available, then try again.`,
+
         setupHint: emptyGraphHint(),
         checkedAt,
       }

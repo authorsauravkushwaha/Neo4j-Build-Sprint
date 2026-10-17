@@ -17,10 +17,10 @@
 #   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_SITE_URL
 # Repository variables (optional — both are derived from the repository when unset):
 #   VITE_BASE_PATH            override the computed base path, e.g. "/" to force the root
-#   VITE_API_BASE_URL         the graph API the published site should call for live
-#                             data — e.g. https://<your-service>/functions/v1 on the
-#                             project's own Node backend (render.yaml), or the Supabase
-#                             Edge Functions URL. Its origin is added to the CSP below.
+#   VITE_API_BASE_URL         public backend API base embedded into the build
+#                             (e.g. https://<actual-service>/functions/v1). This is
+#                             not a secret. Empty means the published site runs demo data.
+#                             Set it and trigger a new Pages build to update the artifact.
 #   VITE_CSP_EXTRA_CONNECT_SRC  extra connect-src host when the API sits behind a
 #                             different hostname than VITE_API_BASE_URL (rare)
 name: Build and deploy
@@ -188,6 +188,27 @@ jobs:
           VITE_BASE_PATH: ${{ steps.target.outputs.base }}
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
         run: npm run build
+
+      - name: Verify embedded API configuration
+        env:
+          API_BASE: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE" ]; then
+            echo 'No VITE_API_BASE_URL repository variable is set; this Pages artifact is demo-capable and will use bundled sample data.'
+            echo '::warning title=Demo deployment::Set the public Actions repository variable VITE_API_BASE_URL to the actual backend /functions/v1 URL and run a new Pages build to connect live data.'
+          else
+            case "$API_BASE" in
+              https://*) ;;
+              *) echo '::error title=Invalid API base::VITE_API_BASE_URL must be an absolute HTTPS backend URL on GitHub Pages.'; exit 1 ;;
+            esac
+            case "$API_BASE" in
+              *localhost*|*127.0.0.1*) echo '::error title=Invalid API base::A production Pages build cannot call localhost.'; exit 1 ;;
+              */functions/v1) ;;
+              *) echo '::error title=Invalid API base::VITE_API_BASE_URL must end in /functions/v1.'; exit 1 ;;
+            esac
+            grep -R -F -- "$API_BASE" dist/assets >/dev/null || { echo '::error::The configured backend URL was not embedded in the built assets.'; exit 1; }
+            echo "Verified backend API base is embedded in the Pages artifact: $API_BASE"
+          fi
 
       - name: Scan built artifact
         run: npm run lint:secrets

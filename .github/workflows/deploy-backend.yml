@@ -1,9 +1,9 @@
 # Backend deployment, driven entirely by GitHub Actions.
 #
-# This is path B from docs/graph-database.md: the published site calls Supabase
-# Edge Functions, which read the curriculum from a Neo4j AuraDB instance.
-# (Path A — the project's own Node backend with its own PostgreSQL graph
-# store — needs no Supabase or Neo4j account at all; see render.yaml.)
+# Alternative backend deployment: Supabase Edge Functions use the HTTPS Query
+# API to read Neo4j. The Node/Bolt backend is separately described by render.yaml.
+# Neither workflow implies that the public Pages site is connected; the frontend
+# requires a build-time API URL and a fresh Pages build. See docs/architecture.md.
 #
 # Trigger: Actions -> "Deploy backend" -> Run workflow. Nothing runs on push.
 #
@@ -154,6 +154,12 @@ jobs:
             console.log('health-check:', JSON.stringify(graph, null, 2))
             if (!graph.reachable) throw new Error(\`The API is up but the graph is not reachable: \${graph.message}\`)
             if (graph.source !== 'neo4j-live') throw new Error(\`Unexpected graph source: \${graph.source}\`)
+            const queryUrl = 'https://' + process.env.SUPABASE_PROJECT_REF + '.supabase.co/functions/v1/get-career-details?id=career:software-engineer'
+            const queryResponse = await fetch(queryUrl)
+            const query = await queryResponse.json()
+            if (!queryResponse.ok || query?.ok !== true || query?.meta?.source !== 'neo4j-live') throw new Error('Career detail query did not return neo4j-live provenance: HTTP ' + queryResponse.status)
+            if (query?.data?.career?.id !== 'career:software-engineer' || !Array.isArray(query?.data?.career?.skills) || query.data.career.skills.length === 0) throw new Error('Career detail query returned no valid non-empty career/skill records')
+            console.log(\`Backend query verified: \${query.data.career.name}, \${query.data.career.skills.length} skills, source \${query.meta.source}.\`)
             console.log(\`Backend verified: \${graph.nodeCount} nodes, \${graph.relationshipCount} relationships, source \${graph.source}.\`)
           "
 
@@ -161,10 +167,11 @@ jobs:
         if: success()
         run: |
           {
-            echo '## Backend is live'
+            echo '## Supabase Edge Functions deployment completed'
             echo
-            echo 'Final step — point the published site at it:'
-            echo '1. Set repository secret `VITE_SUPABASE_URL` to `https://'"$SUPABASE_PROJECT_REF"'.supabase.co`'
-            echo '2. Set repository secret `VITE_SUPABASE_ANON_KEY` to the project anon/publishable key'
-            echo '3. Merge to main (or re-run "Build and deploy") — the site then opens in live mode.'
+            echo 'This workflow verifies backend health and one non-empty career-detail read with neo4j-live provenance; it does not run the separate named multi-hop query or prove the GitHub Pages frontend is connected.'
+            echo 'Set repository configuration for the actual API endpoint, then trigger a new Pages build. For this Supabase deployment, the API base is:'
+            echo "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1"
+            echo 'For the separate Render/Bolt service, run node scripts/verify-neo4j.mjs against its origin to verify the named multi-hop query; do not pass this Supabase /functions/v1 URL to that script.'
+            echo 'Do not claim LIVE NEO4J from health alone; use successful response provenance from the actual read path.'
           } >> "$GITHUB_STEP_SUMMARY"

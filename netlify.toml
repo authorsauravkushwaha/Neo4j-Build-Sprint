@@ -1,5 +1,6 @@
-# Optional alternative host (Netlify free tier). Documented in DEPLOYMENT.md.
-# Supabase Edge Functions still provide the API — Netlify only serves static files.
+# Optional static frontend host. Netlify serves the built files only; configure
+# VITE_API_BASE_URL at build time to call an external backend, or leave it empty
+# for the bundled demo. See docs/architecture.md.
 [build]
   command = "npm ci && npm run build"
   publish = "dist"

@@ -218,8 +218,8 @@ describe('about page states limits, not marketing', () => {
     )
     expect(screen.getByRole('heading', { name: /what this app does, and what it cannot do/i })).toBeInTheDocument()
     expect(screen.getByText(/no guarantees about jobs/i)).toBeInTheDocument()
-    // Honesty about what was never run in this environment.
-    expect(screen.getByText(/not verified here/i)).toBeInTheDocument()
+    // Deployment evidence is kept distinct from local implementation tests.
+    expect(screen.getByText(/production not established/i)).toBeInTheDocument()
   })
 
   it('contains no invented social proof', () => {

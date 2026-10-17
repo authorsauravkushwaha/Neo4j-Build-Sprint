@@ -156,7 +156,7 @@ function nodeStatements(rows: NodeRow[]): Statement[] {
         tag: `nodes:${label}:${batch}`,
         template: `UNWIND $rows AS row
 MERGE (n:${label} {id: row.id})
-SET ${assignments}`,
+ON CREATE SET ${assignments}`,
         props,
         // row payload attached below by the caller
       })
@@ -199,8 +199,7 @@ function edgeStatements(edges: SeedEdge[]): Statement[] {
 
     const assignments =
       props.length > 0
-        ? '\n  ON CREATE SET ' + props.map((p) => `r.${safeKey(p)} = row.${safeKey(p)}`).join(', ') +
-          '\n  ON MATCH SET ' + props.map((p) => `r.${safeKey(p)} = row.${safeKey(p)}`).join(', ')
+        ? '\n  ON CREATE SET ' + props.map((p) => `r.${safeKey(p)} = row.${safeKey(p)}`).join(', ')
         : ''
 
     for (const [batch, chunk] of chunks(items, 200).entries()) {
@@ -285,9 +284,10 @@ function schemaFile(): string {
 function seedFile(statements: StatementWithRows[], counts: Record<string, number>): string {
   const parts: string[] = [
     header('GraphMentor AI — knowledge graph seed (idempotent)', [
-      'Run after schema.cypher. Every statement is a MERGE keyed on `id`, so',
-      're-running this file converges on the authored dataset instead of',
-      'duplicating rows.',
+      'Run after schema.cypher. Nodes are MERGEd by `id`; relationships by endpoints and type.',
+      'Default writes set properties only on creation: reruns do not duplicate data or',
+      'overwrite existing node/relationship properties. The loader has an explicit',
+      '--update-existing option for an operator-authorized refresh.',
       '',
       'In Neo4j Browser: paste the whole file and run it (statements are',
       'separated by `;`). With cypher-shell:',

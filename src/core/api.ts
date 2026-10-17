@@ -8,8 +8,8 @@
  *     bundled dataset, entirely in the browser. This is what makes the app
  *     useful with no database and no AI key — and it is why demo mode can never
  *     drift from live mode: both call the same modules.
- *   - `createLiveClient()` calls the deployed Edge Functions and expects the
- *     `{ ok, data, meta }` envelope defined in core/contracts.ts.
+ *   - `createLiveClient()` calls the configured backend API (Node or Edge
+ *     Functions) and expects the `{ ok, data, meta }` envelope.
  *
  * Every response carries `meta.source`, so the UI can state plainly whether the
  * learner is looking at live Neo4j data, the bundled sample dataset, or nothing.
@@ -229,6 +229,7 @@ export interface HealthReport {
    *   - `unreachable`   -> the API answered but its graph is down.
    */
   graph: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'unreachable'
+  graphBackend?: 'neo4j' | 'postgres' | 'local' | 'none'
   graphDetail: string
   aiConfigured: boolean
   aiProvider: string
@@ -1005,6 +1006,12 @@ export interface LiveClientOptions {
    * (Capacitor, a test, a proxy) may need to supply its own.
    */
   fetchImpl?: typeof fetch
+  /** Clears prior live evidence as a new graph-data request begins. */
+  onRequestStart?: (endpoint: string) => void
+  /** Switches the UI to an explicitly labelled bundled fallback on transport failure. */
+  onBackendUnavailable?: (reason: string) => void
+  /** Called only after a successful non-health response carries valid provenance metadata. */
+  onDataSource?: (source: ApiMeta['source']) => void
 }
 
 /** The fields both sides of the request-signature contract must agree on. */
@@ -1067,6 +1074,7 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
       if (value !== undefined && value !== '') url.searchParams.set(key, value)
     }
 
+    if (fn !== 'health-check') options.onRequestStart?.(fn)
     const headers: Record<string, string> = { accept: 'application/json' }
     const token = await options.getToken()
     if (token) headers.authorization = `Bearer ${token}`
@@ -1102,9 +1110,11 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
         ...(bodyText !== undefined ? { body: bodyText } : {}),
       })
     } catch (error) {
+      const reason = error instanceof Error ? error.message : 'network failure'
+      options.onBackendUnavailable?.(reason)
       throw new ApiError(
         'network_error',
-        `Could not reach the backend (${error instanceof Error ? error.message : 'network failure'}). Check your connection, or keep working in demo mode.`,
+        `Could not reach the backend (${reason}). Check your connection, or keep working in demo mode.`,
         0,
       )
     }
@@ -1125,12 +1135,20 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
       const message = parsed.error?.message ?? `Request failed (HTTP ${response.status}).`
       throw new ApiError(code, message, response.status, parsed.error?.retryAfterSeconds)
     }
-    return { data: parsed.data, meta: parsed.meta ?? { source: 'neo4j-live', generatedAt: new Date().toISOString() } }
+    const source = parsed.meta?.source
+    const validSources: ApiMeta['source'][] = ['neo4j-live', 'postgres-live', 'local-sample', 'cache', 'unavailable']
+    const meta: ApiMeta = parsed.meta && validSources.includes(parsed.meta.source)
+      ? parsed.meta
+      : { source: 'unavailable', generatedAt: new Date().toISOString() }
+    if (fn !== 'health-check' && parsed.meta && validSources.includes(source as ApiMeta['source'])) {
+      options.onDataSource?.(source as ApiMeta['source'])
+    }
+    return { data: parsed.data, meta }
   }
 
   return {
     mode: 'live',
-    provenance: 'Live deployment: careers, skills, projects and resources are read from a Neo4j knowledge graph through the deployed backend API. All graph queries execute parameterised Cypher on the server.',
+    provenance: 'Graph data is requested from the configured backend. The actual source is reported in each successful response; it may be Neo4j, an explicitly configured PostgreSQL alternative, or unavailable.',
 
     async health() {
       /* The shape health-check actually returns (handlers/health.ts). A
@@ -1141,6 +1159,7 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
           configured: boolean
           reachable: boolean
           source: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'cache' | 'unavailable'
+          backend?: 'neo4j' | 'postgres' | 'local' | 'none'
           nodeCount?: number
           relationshipCount?: number
           message?: string
@@ -1161,6 +1180,7 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
       return {
         mode: 'live',
         graph,
+        graphBackend: data.graph.backend,
         graphDetail: [data.graph.message, data.graph.setupHint].filter(Boolean).join(' ') || 'Graph status reported by the backend.',
         aiConfigured: data.ai.configured,
         aiProvider: data.ai.provider,

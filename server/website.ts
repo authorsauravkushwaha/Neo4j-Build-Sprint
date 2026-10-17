@@ -1,13 +1,12 @@
 /**
  * Production website + same-origin APIs. Deploy with ONE replica and a persistent disk.
  *
- * One process serves three things:
- *   - the static site (`dist/`),
- *   - the account API at `/api/*` (sign-in, sync — the project's own database),
- *   - the graph API at `/functions/v1/*` (the same endpoints the Supabase Edge
- *     Functions serve, backed by this deployment's own PostgreSQL graph store).
- * Build the frontend with `VITE_API_BASE_URL=/functions/v1` and this one
- * service is the whole live app, no third-party accounts involved.
+ * One process serves the static site (`dist/`), account API, and graph API.
+ * The graph API shares the `/functions/v1/*` contract with the Supabase Edge
+ * Functions and uses the configured server-side graph reader: Neo4j via the
+ * official Bolt driver, an explicitly configured PostgreSQL alternative, or
+ * no reader (in which case graph endpoints report unavailable). Build with
+ * `VITE_API_BASE_URL=/functions/v1` for this same-origin Node deployment.
  */
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'

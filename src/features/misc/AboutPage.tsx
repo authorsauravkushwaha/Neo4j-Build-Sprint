@@ -6,15 +6,19 @@
  * this build. Nothing here is aspirational: if a capability is untested in this
  * environment, it says so.
  */
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { Callout, Card, Chip, LinkButton, List, PageHeader, SectionTitle, Stat } from '@/components/ui.tsx'
 import { datasetCounts, knowledgeGraph } from '@/data/seed/knowledgeGraph.ts'
 import { config } from '@/core/env.ts'
+import { sourceStatus, subscribeSession, type SessionState } from '@/core/session.ts'
 import { Stagger } from '@/skiper/components/Stagger.tsx'
 import { formatNumber } from '@/core/format.ts'
 
 export function AboutPage(): ReactNode {
+  const [sessionInfo, setSessionInfo] = useState<SessionState | null>(null)
+  useEffect(() => subscribeSession(setSessionInfo), [])
+
   return (
     <div>
       <PageHeader
@@ -92,16 +96,15 @@ export function AboutPage(): ReactNode {
           <SectionTitle hint="what was actually run">Verification status of this build</SectionTitle>
           <div className="space-y-2 text-sm">
             <p>
-              <Chip tone="success">Verified here</Chip> dataset validation (no dangling references, no prerequisite cycles, coverage
-              targets met), the local reader, both engines for all 17 careers, the deployment-owned PostgreSQL graph store end to end
-              (the embedded engine serves the exact contract the Supabase functions serve, exercised in the integration tests),
-              generated Cypher up to date with the dataset, secret scan clean, unit and integration tests, production build, typecheck.
+              <Chip tone="success">Implemented</Chip> The repository includes a Neo4j driver reader, an explicit PostgreSQL alternative,
+              bundled demo data, and source metadata on API results. The local recommendation engine is validated for all 17 careers.
+              Regression tests and local checks are listed in the repository's
+              verification report; the current command output, not an old count in this page, is authoritative.
             </p>
             <p>
-              <Chip tone="warning">Not verified here</Chip> live queries against a hosted Neo4j Aura (no credentials in the build
-              environment), Supabase migrations against a real Postgres, AI provider calls, the Android build (no Android SDK
-              available), and resource links (outbound network access is restricted). Each of those has a script or command listed in
-              the README so you can run it yourself and see the real result.
+              <Chip tone="warning">Production not established</Chip> This page cannot infer that Render, GitHub Pages, or a hosted Neo4j
+              instance is configured. The actual service must pass the deployed HTTP verifier before a live production claim is made.
+              See docs/architecture.md for the current evidence requirements.
             </p>
           </div>
         </Card>
@@ -109,16 +112,11 @@ export function AboutPage(): ReactNode {
         <Card>
           <SectionTitle hint="how the pieces fit">Architecture in one paragraph</SectionTitle>
           <p className="text-sm text-muted">
-            The frontend (React + TypeScript + Vite + Tailwind) never talks to the graph database directly. It calls function
-            endpoints — either Supabase Edge Functions holding Neo4j credentials (parameterised Cypher through the HTTPS Query API) or
-            the deployment's own Node server (<code className="rounded bg-[var(--gm-surface-2)] px-1">server/graphApi.ts</code>),
-            which serves the same endpoints from the project's own PostgreSQL graph store
-            (<code className="rounded bg-[var(--gm-surface-2)] px-1">server/graphStore.ts</code>) — no third-party account needed for
-            that path. The same engine modules
-            (<code className="rounded bg-[var(--gm-surface-2)] px-1">supabase/functions/_shared/core</code>) are imported by the
-            browser, so demo mode runs the identical recommendation logic against the bundled dataset. The account store holds only
-            per-user records (profiles, roadmaps, tasks, ratings, bookmarks, feedback) plus rate-limit and nonce tables used for abuse
-            and replay protection.
+            The frontend never connects to the graph database directly. It calls the configured backend API. The Node backend can use
+            Neo4j through the official Bolt driver, or PostgreSQL when explicitly configured; the separate Supabase Edge Functions
+            deployment can use Neo4j's HTTPS Query API. With no reachable backend, the browser can use its bundled demo dataset. Each
+            successful API response reports its actual source, and the UI does not infer LIVE NEO4J from configuration or a health ping.
+            See docs/architecture.md for the request diagram and deployment settings.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <LinkButton to="/graph" variant="secondary">
@@ -131,7 +129,15 @@ export function AboutPage(): ReactNode {
         </Card>
 
         <Callout kind="info" title="Data provenance of what you are looking at right now">
-          {knowledgeGraph.provenance}
+          {sessionInfo
+            ? `${sourceStatus(sessionInfo)} — ${sessionInfo.verifiedSource === 'neo4j-live'
+                ? 'the most recent successful graph response included Neo4j source metadata.'
+                : sessionInfo.verifiedSource === 'postgres-live'
+                  ? 'the most recent successful graph response included PostgreSQL source metadata.'
+                  : sessionInfo.verifiedSource === 'local-sample'
+                    ? 'the current data is the bundled sample, not database results.'
+                    : sessionInfo.health?.graphDetail ?? sessionInfo.fallbackReason ?? 'No successful graph-data response has confirmed a live source yet.'}`
+            : 'Checking the current backend and graph source. A configured URL or health response alone does not prove that graph data was served.'}
         </Callout>
       </div>
     </div>
