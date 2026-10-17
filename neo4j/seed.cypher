@@ -4,9 +4,10 @@
 // GENERATED FILE — do not edit by hand.
 // Source: src/data/seed/knowledgeGraph.ts
 // Regenerate: npm run emit:cypher
-// Run after schema.cypher. Every statement is a MERGE keyed on `id`, so
-// re-running this file converges on the authored dataset instead of
-// duplicating rows.
+// Run after schema.cypher. Nodes are MERGEd by `id`; relationships by endpoints and type.
+// Default writes set properties only on creation: reruns do not duplicate data or
+// overwrite existing node/relationship properties. The loader has an explicit
+// --update-existing option for an operator-authorized refresh.
 // 
 // In Neo4j Browser: paste the whole file and run it (statements are
 // separated by `;`). With cypher-shell:
@@ -38,7 +39,7 @@ UNWIND [
   {id: 'assessment:sql-basics', name: 'SQL check', summary: 'SELECT, JOIN and keys.', skillId: 'skill:databases-and-sql', difficulty: 'beginner', questions: ['Which clause filters rows before grouping?|HAVING|WHERE|ORDER BY|LIMIT|#1', 'A foreign key enforces…|uniqueness|referential integrity|encryption|ordering|#1', 'Which JOIN returns rows from the left table even without a match?|INNER JOIN|LEFT JOIN|CROSS JOIN|FULL JOIN|#1', 'Aggregate functions are generally used with…|WHERE|GROUP BY|ORDER BY only|DISTINCT only|#1']}
 ] AS row
 MERGE (n:Assessment {id: row.id})
-SET n.difficulty = row.difficulty,
+ON CREATE SET n.difficulty = row.difficulty,
   n.name = row.name,
   n.questions = row.questions,
   n.skillId = row.skillId,
@@ -65,7 +66,7 @@ UNWIND [
   {id: 'career:web-mobile-developer', name: 'Web and mobile developer', summary: 'Builds user-facing applications for the browser and phones.', description: 'Web and mobile developers work closest to users: layouts, state, accessibility, performance and release cycles. The route needs programming fundamentals plus a frontend or mobile specialisation and at least one shipped, accessible application.', responsibilities: ['Build interfaces from designs, including keyboard and screen-reader use', 'Manage client state and integrate APIs', 'Measure and improve loading performance', 'Ship updates and handle user-reported defects'], portfolioIdeas: ['A responsive, accessible web application deployed publicly', 'An installable progressive web app with offline support', 'A mobile app built with a cross-platform toolchain'], assumptions: ['Design skills are not required, but basic layout, typography and accessibility literacy are expected.'], typicalRoles: ['Frontend developer', 'Web developer', 'Mobile app developer', 'Full-stack developer', 'Website or online-store developer'], difficulty: 'beginner', verification: 'community', keywords: ['web', 'frontend', 'react', 'mobile', 'app', 'javascript', 'pwa']}
 ] AS row
 MERGE (n:Career {id: row.id})
-SET n.assumptions = row.assumptions,
+ON CREATE SET n.assumptions = row.assumptions,
   n.description = row.description,
   n.difficulty = row.difficulty,
   n.keywords = row.keywords,
@@ -117,7 +118,7 @@ UNWIND [
   {id: 'concept:variables-and-control-flow', name: 'Variables and control flow', summary: 'State, branches and loops — the grammar of programming.', difficulty: 'beginner'}
 ] AS row
 MERGE (n:Concept {id: row.id})
-SET n.difficulty = row.difficulty,
+ON CREATE SET n.difficulty = row.difficulty,
   n.name = row.name,
   n.summary = row.summary;
 
@@ -141,7 +142,7 @@ UNWIND [
   {id: 'branch:software', name: 'Software engineering', summary: 'Building, testing and operating reliable software at scale.'}
 ] AS row
 MERGE (n:EngineeringBranch {id: row.id})
-SET n.name = row.name,
+ON CREATE SET n.name = row.name,
   n.summary = row.summary;
 
 // --- [5/36] nodes:LearningModule:0
@@ -161,7 +162,7 @@ UNWIND [
   {id: 'module:software-engineering-core', name: 'Software engineering core', summary: 'Data structures to system design, with an API you can demonstrate.', description: 'The bridge from “can code” to “can build systems”: algorithmic reasoning, design, databases and a deployed service.', estimatedHoursLow: 120, estimatedHoursHigh: 300}
 ] AS row
 MERGE (n:LearningModule {id: row.id})
-SET n.description = row.description,
+ON CREATE SET n.description = row.description,
   n.estimatedHoursHigh = row.estimatedHoursHigh,
   n.estimatedHoursLow = row.estimatedHoursLow,
   n.name = row.name,
@@ -179,7 +180,7 @@ UNWIND [
   {id: 'lang:typescript', name: 'TypeScript', summary: 'JavaScript with static types; standard in larger web codebases.', difficulty: 'intermediate'}
 ] AS row
 MERGE (n:ProgrammingLanguage {id: row.id})
-SET n.difficulty = row.difficulty,
+ON CREATE SET n.difficulty = row.difficulty,
   n.name = row.name,
   n.summary = row.summary;
 
@@ -220,7 +221,7 @@ UNWIND [
   {id: 'project:weather-station-iot', name: 'Connected weather station', summary: 'A solar-or-battery powered station that publishes measurements securely and survives outages.', description: 'Adds connectivity, power budgeting and security to the sensor logger: per-device credentials, offline buffering, and measured power consumption.', difficulty: 'intermediate', objectives: ['Publish measurements over MQTT with per-device credentials', 'Buffer data during network outages and forward it later', 'Measure and report current consumption'], tools: ['ESP32', 'MQTT broker', 'Solar panel or battery pack', 'Grafana'], deliverables: ['Working station', 'Data pipeline to a dashboard', 'Power budget and measured runtime'], milestones: ['Stable publishing', 'Offline buffering verified', 'Runtime measured over 48 hours'], testingIdeas: ['Disconnect the access point for two hours and verify no data loss', 'Measure sleep current and calculate battery life'], extensions: ['Add a web dashboard', 'Add over-the-air firmware update with rollback', 'Add a second sensor with calibration'], safetyNotes: ['Use a charge controller with any solar panel; never connect a panel directly to a battery.', 'Weatherproof enclosures must not trap heat around batteries.'], estimatedHoursLow: 35, estimatedHoursHigh: 90, tags: ['intermediate', 'iot', 'power']}
 ] AS row
 MERGE (n:Project {id: row.id})
-SET n.deliverables = row.deliverables,
+ON CREATE SET n.deliverables = row.deliverables,
   n.description = row.description,
   n.difficulty = row.difficulty,
   n.estimatedHoursHigh = row.estimatedHoursHigh,
@@ -299,7 +300,7 @@ UNWIND [
   {id: 'resource:linux-from-scratch', name: 'Linux From Scratch', summary: 'Build a working Linux system from source, package by package, and in doing so learn what a distribution actually is.', provider: 'Gerard Beekmans and the LFS community', url: 'https://www.linuxfromscratch.org/', format: 'book', difficulty: 'advanced', language: 'en', accessModel: 'free-open', accessNote: 'Free to read online under an open licence; a printed copy is optional.', outcomes: ['Explain what a bootloader, toolchain and init actually do', 'Compile, patch and install packages in a dependency-correct order', 'Debug a build failure instead of reinstalling'], assumes: 'Comfort at a Linux shell and patience for long builds; a spare machine or virtual machine is strongly advised.', limits: 'By design a minimal command-line system: no desktop, no package manager, no hardening. A learning exercise, not a daily driver.', commitment: 'Days of build time, spread over weeks.', estimatedHoursLow: 60, estimatedHoursHigh: 120, lastVerified: '2026-10-14', verification: 'verified'}
 ] AS row
 MERGE (n:Resource {id: row.id})
-SET n.accessModel = row.accessModel,
+ON CREATE SET n.accessModel = row.accessModel,
   n.accessNote = row.accessNote,
   n.assumes = row.assumes,
   n.commitment = row.commitment,
@@ -381,7 +382,7 @@ UNWIND [
   {id: 'resource:owasp-top-ten', name: 'OWASP Top 10', summary: 'The reference list of the most critical web application security risks.', provider: 'OWASP Foundation', url: 'https://owasp.org/www-project-top-ten/', format: 'reference', difficulty: 'intermediate', language: 'en', accessModel: 'free-open', accessNote: 'Free and openly licensed. No account needed.', outcomes: ['Name the ten risk categories and what causes each one', 'Map a finding from a code review or scan to a category', 'Read the prevention guidance for an application you maintain'], assumes: 'Basic familiarity with web applications.', limits: 'A categorisation, not a course: it tells you what to worry about, not how to test for it. Pair it with the labs.', commitment: 'An hour or two of reading; longer to act on.', estimatedHoursLow: 2, estimatedHoursHigh: 6, lastVerified: '2026-10-14', verification: 'verified'}
 ] AS row
 MERGE (n:Resource {id: row.id})
-SET n.accessModel = row.accessModel,
+ON CREATE SET n.accessModel = row.accessModel,
   n.accessNote = row.accessNote,
   n.assumes = row.assumes,
   n.commitment = row.commitment,
@@ -437,7 +438,7 @@ UNWIND [
   {id: 'resource:wireshark-users-guide', name: 'Wireshark User’s Guide', summary: 'Official manual for capturing and filtering packets, following streams and reading protocols at the wire level.', provider: 'Wireshark Foundation', url: 'https://www.wireshark.org/docs/wsug_html_chunked/', format: 'docs', difficulty: 'intermediate', language: 'en', accessModel: 'free-open', accessNote: 'Free and open source; no account needed for the manual or the software.', outcomes: ['Capture traffic on an interface and filter it down to what matters', 'Follow a TCP stream and explain a handshake, a retransmission or a reset', 'Recognise an anomalous pattern in traffic you are lawfully capturing'], assumes: 'Network basics: layers, ports, protocols.', limits: 'A tool manual rather than a security course. It teaches you to see packets, not to interpret an attack — and capture legality is your responsibility.', commitment: 'A weekend to be genuinely useful with it; reference afterwards.', estimatedHoursLow: 10, estimatedHoursHigh: 25, lastVerified: '2026-10-14', verification: 'verified'}
 ] AS row
 MERGE (n:Resource {id: row.id})
-SET n.accessModel = row.accessModel,
+ON CREATE SET n.accessModel = row.accessModel,
   n.accessNote = row.accessNote,
   n.assumes = row.assumes,
   n.commitment = row.commitment,
@@ -519,7 +520,7 @@ UNWIND [
   {id: 'skill:probability-statistics', name: 'Probability and statistics', summary: 'Describing uncertainty, sampling, distributions and testing claims with data.', description: 'Statistics is what makes measurements trustworthy. You will use it to decide whether a sensor is biased, whether a model is better than a baseline, and whether a difference is real or noise.', difficulty: 'intermediate', estimatedHoursLow: 30, estimatedHoursHigh: 80, practice: ['Compute mean and standard deviation of a real sensor log and interpret them.', 'Run a simple two-sample comparison on synthetic data and interpret the p-value honestly.'], completionCriteria: ['You can explain why a small sample can mislead, with an example.', 'You can describe the difference between correlation and causation in your own words.'], mustBeSelfReported: true, verification: 'community', tags: ['mathematics', 'data', 'ml']}
 ] AS row
 MERGE (n:Skill {id: row.id})
-SET n.completionCriteria = row.completionCriteria,
+ON CREATE SET n.completionCriteria = row.completionCriteria,
   n.description = row.description,
   n.difficulty = row.difficulty,
   n.estimatedHoursHigh = row.estimatedHoursHigh,
@@ -564,7 +565,7 @@ UNWIND [
   {id: 'skill:work-design-and-ergonomics', name: 'Work design, ergonomics and human factors', summary: 'Designing the task around a person who is tired, interrupted and built like an actual body.', description: 'The cheapest improvement is often a change in how the work is arranged. You learn work measurement and standard time, task analysis, lifting and posture risk, attention and error, and how to change a workstation so the work is both faster and less damaging to the person doing it.', difficulty: 'intermediate', estimatedHoursLow: 20, estimatedHoursHigh: 50, practice: ['Analyse one repetitive task for posture and force risk and propose two changes that remove the risk rather than the symptom.', 'Time-study a task and state the allowances and rating assumptions behind your standard time.'], completionCriteria: ['You can distinguish a human error from a system that made the error likely.', 'You can justify a workstation change on both output and injury-risk grounds.'], mustBeSelfReported: true, verification: 'community', tags: ['industrial', 'ergonomics', 'human-factors']}
 ] AS row
 MERGE (n:Skill {id: row.id})
-SET n.completionCriteria = row.completionCriteria,
+ON CREATE SET n.completionCriteria = row.completionCriteria,
   n.description = row.description,
   n.difficulty = row.difficulty,
   n.estimatedHoursHigh = row.estimatedHoursHigh,
@@ -604,7 +605,7 @@ UNWIND [
   {id: 'subject:thermodynamics', name: 'Thermodynamics and heat transfer', summary: 'Energy, work, efficiency and how heat moves.', difficulty: 'intermediate'}
 ] AS row
 MERGE (n:Subject {id: row.id})
-SET n.difficulty = row.difficulty,
+ON CREATE SET n.difficulty = row.difficulty,
   n.name = row.name,
   n.summary = row.summary;
 
@@ -649,7 +650,7 @@ UNWIND [
   {id: 'tool:wireshark', name: 'Wireshark', summary: 'Packet capture and analysis tool for network troubleshooting and security work.', openSource: true}
 ] AS row
 MERGE (n:Tool {id: row.id})
-SET n.name = row.name,
+ON CREATE SET n.name = row.name,
   n.openSource = row.openSource,
   n.summary = row.summary;
 
@@ -1780,8 +1781,7 @@ UNWIND [
 MATCH (a:Career {id: row.from})
 MATCH (b:Skill {id: row.to})
 MERGE (a)-[r:REQUIRES_SKILL]->(b)
-  ON CREATE SET r.essential = row.essential, r.weight = row.weight
-  ON MATCH SET r.essential = row.essential, r.weight = row.weight;
+  ON CREATE SET r.essential = row.essential, r.weight = row.weight;
 
 // --- [30/36] edges:REQUIRES:Skill->Skill:0
 UNWIND [
@@ -1933,8 +1933,7 @@ UNWIND [
 MATCH (a:Skill {id: row.from})
 MATCH (b:Skill {id: row.to})
 MERGE (a)-[r:REQUIRES]->(b)
-  ON CREATE SET r.weight = row.weight
-  ON MATCH SET r.weight = row.weight;
+  ON CREATE SET r.weight = row.weight;
 
 // --- [31/36] edges:SUGGESTS_PROJECT:Career->Project:0
 UNWIND [

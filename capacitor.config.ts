@@ -4,11 +4,12 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * GraphMentor AI — Capacitor configuration.
  *
  * The Android app loads the *same* built web app (dist/) inside a hardened
- * WebView. It talks to the *same* Edge Functions and the *same* Supabase
- * database as the website — there is no second copy of any user data.
+ * WebView. It uses the same build-time API base as the web frontend; depending
+ * on deployment that can be the Node API or the Supabase Edge Functions.
+ * The app can also use bundled demo data when no backend is configured.
  *
- * Secrets: nothing sensitive is bundled here. The Neo4j password and AI keys
- * exist only as Supabase Edge Function secrets.
+ * Secrets: nothing sensitive is bundled here. Neo4j passwords and AI keys stay
+ * in the selected backend's server-side configuration.
  */
 const config: CapacitorConfig = {
   appId: 'ai.graphmentor.app',

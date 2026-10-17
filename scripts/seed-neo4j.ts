@@ -10,6 +10,7 @@
  *   --only=nodes     write nodes only
  *   --only=edges     write relationships only
  *   --batch=N        stop after N statements (useful to inspect partial progress)
+ *   --update-existing explicitly overwrite seed-owned properties on matching nodes/edges
  *
  * Safety properties:
  *   - the query text comes from the generated file, never from user input,
@@ -18,6 +19,8 @@
  *   - credentials are read from the environment only and never printed or logged,
  *   - http:// endpoints are refused unless NEO4J_ALLOW_HTTP=true, because the
  *     Query API carries the password in a Basic auth header,
+ *   - default writes use MERGE + ON CREATE SET, preserving existing properties on reruns;
+ *   - overwriting matching properties requires the explicit --update-existing flag;
  *   - the run ends by re-counting the graph and comparing it with the manifest.
  */
 import { readFileSync } from 'node:fs'
@@ -88,6 +91,7 @@ async function main(): Promise<void> {
     }),
   )
   const dryRun = flags.has('dry-run')
+  const updateExisting = flags.has('update-existing')
   const only = flags.get('only')
   const batchLimit = flags.has('batch') ? Math.max(1, Number(flags.get('batch'))) : Number.POSITIVE_INFINITY
 
@@ -102,7 +106,11 @@ async function main(): Promise<void> {
   const rows = statements.reduce((sum, s) => sum + s.parameters.rows.length, 0)
   console.log(`Dataset ${seed.generatedFrom.version} (${seed.generatedFrom.updated})`)
   console.log(`Provenance: ${seed.generatedFrom.provenance}`)
-  console.log(`${statements.length} statement(s), ${rows} row(s) to write${only ? ` (only=${only})` : ''}\n`)
+  console.log(`${statements.length} statement(s), ${rows} row(s) to write${only ? ` (only=${only})` : ''}`)
+  console.log(updateExisting
+    ? 'OVERWRITE MODE: matching node/relationship properties will be updated by the seed payload.'
+    : 'SAFE MODE: existing node/relationship properties are preserved on reruns.')
+  console.log('')
 
   const url = (process.env.NEO4J_QUERY_URL ?? '').trim()
   const username = (process.env.NEO4J_USERNAME ?? '').trim()
@@ -145,7 +153,10 @@ async function main(): Promise<void> {
       response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ statement: statement.query, parameters: statement.parameters }),
+        body: JSON.stringify({
+          statement: updateExisting ? statement.query.replaceAll('ON CREATE SET', 'SET') : statement.query,
+          parameters: statement.parameters,
+        }),
       })
     } catch (error) {
       console.error(`${label} — transport failure: ${error instanceof Error ? error.message : 'unknown'}`)

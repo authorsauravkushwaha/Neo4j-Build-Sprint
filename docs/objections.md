@@ -14,7 +14,7 @@ Nothing in this file is aspirational. Where a number appears, it was produced by
 this repository; where no measurement exists, the item says so.
 
 Last sweep: 2026-10-14, against the build whose dataset is `datasetVersion 1.1.0`
-(444 nodes, 1,585 relationships, checksum `4da024ddaef1` in `neo4j/MANIFEST.json`).
+(444 nodes, 1,585 relationships, checksum `4da024ddaef1` in `neo4j/MANIFEST.json`). This is a historical product-objection log, not a current deployment verification. Current graph/backend architecture and the production verification boundary are in [architecture.md](architecture.md); no external LIVE NEO4J claim follows from this log.
 
 ---
 

@@ -18,7 +18,7 @@
     "edges": 1585
   },
   "statements": 36,
-  "seedChecksum": "4da024ddaef1316c8a7d00163e1ed671cb69901e4170f719b5f40f5161dd570d",
+  "seedChecksum": "32dd48fa21365b53c97f72799a7f883b140e3ce81d94f9c463824403aed4b9d6",
   "files": [
     "schema.cypher",
     "seed.cypher",

@@ -15,7 +15,7 @@ Environment used for this build:
 | Local infrastructure used in §5 | PostgreSQL **17.11** on `127.0.0.1` with the project's migrations; headless **Chromium 156** via Playwright 1.64.0 with WebGL 2.0 (ANGLE/SwiftShader) |
 | Credentials available | **none** — no Neo4j instance, no Supabase project, no AI provider key. §5 runs against local infrastructure only, and is described that way throughout |
 
-Re-run everything yourself with the commands in the last section.
+Re-run everything yourself with the commands in the last section. This is a **historical 2026-10-14/16 snapshot**, not evidence for the current working tree or an external deployment. For current architecture and production verification, see [architecture.md](architecture.md). In particular, this old log does not establish that the public Pages site reaches a deployed backend or that a current hosted Neo4j query succeeds; those remain unverified until the current HTTP verifier returns PASS.
 
 ---
 
@@ -280,7 +280,7 @@ same thing at runtime (health check, empty states, settings copy).
 
 | Not verified | Why | What would verify it |
 | --- | --- | --- |
-| Live Neo4j reads | No Neo4j AuraDB instance and no password available here | Create the free instance, `npm run seed:neo4j`, open any screen and check `/health-check` reports `graph.source: neo4j-live` |
+| Live Neo4j query (historical entry) | No Neo4j AuraDB instance and no password available for that 2026-10-16 run | For a current proof, configure the backend, seed only after reviewing the target, and run `node scripts/verify-neo4j.mjs https://ACTUAL-BACKEND-ORIGIN`; health alone is insufficient. |
 | Cypher correctness against a real server | The Query API was never contacted; only the generated statements and the local reader were exercised | Run `neo4j/sample-queries.cypher` in Neo4j Browser or via `npm run seed:neo4j` and inspect the returned rows |
 | The Supabase-hosted backend | The handlers run against a local Postgres (§5), but PostgREST, the gateway, cold starts, timeouts and secret storage were never exercised | `supabase db push` + `supabase functions deploy …`, then sign in as two accounts and confirm each sees only their own rows |
 | GoTrue, end to end | There is no project and no SMTP, so `signInWithPassword` was never called against a real provider and **no email was ever sent** | Create the project, configure SMTP, enable password sign-in, and sign in from `/login`; then request a link and a reset |

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react'
 
 import { Toasts } from '@/components/ui.tsx'
-import { subscribeSession, refreshHealth, type SessionState } from '@/core/session.ts'
+import { subscribeSession, refreshHealth, sourceStatus, type SessionState } from '@/core/session.ts'
 import { onAuthChange } from '@/core/supabase.ts'
 import { config } from '@/core/env.ts'
 import { useAppStore } from '@/state/store.ts'
@@ -146,14 +146,73 @@ function DataSourceBanner(): ReactNode {
     )
   }
 
-  if (session.mode === 'live' && !session.graphWarning && !session.fallbackReason) {
+  const status = sourceStatus(session)
+  const recheckButton = (
+    <button
+      type="button"
+      className="gm-btn gm-btn-ghost min-h-9 px-2.5 text-xs"
+      disabled={checking}
+      onClick={async () => { setChecking(true); await refreshHealth(); setChecking(false) }}
+    >
+      {checking ? 'Re-checking…' : 'Re-check connection'}
+    </button>
+  )
+
+  if (status === 'BACKEND UNAVAILABLE') {
     return (
-      <p className="border-b border-line bg-[var(--gm-surface-2)] px-3 py-1.5 text-center text-xs text-muted">
-        {session.health?.graph === 'postgres-live'
-          ? 'Live data: reading the knowledge graph from this deployment’s own PostgreSQL database.'
-          : session.health?.graph === 'neo4j-live'
-            ? 'Live data: reading the Neo4j knowledge graph through the deployed backend.'
-            : 'Live data: reading the knowledge graph through the deployed backend.'}
+      <div className="border-b border-line bg-[var(--gm-accent-soft)] px-3 py-2 text-xs text-center">
+        <p role="status"><strong>BACKEND UNAVAILABLE</strong>{session.verifiedSource === 'local-sample' && <> · <strong>DEMO DATA</strong></>} · {session.fallbackReason}</p>
+        {recheckButton}
+      </div>
+    )
+  }
+
+  if (status === 'NEO4J UNAVAILABLE') {
+    return (
+      <div className="border-b border-line bg-[var(--gm-accent-soft)] px-3 py-2 text-xs text-center">
+        <p role="status"><strong>NEO4J UNAVAILABLE</strong> · Backend is reachable, but graph data is not being served. {session.health?.graphDetail}</p>
+        {recheckButton}
+      </div>
+    )
+  }
+
+  if (status === 'GRAPH SOURCE UNAVAILABLE') {
+    return (
+      <p role="status" className="border-b border-line bg-[var(--gm-accent-soft)] px-3 py-2 text-center text-xs">
+        <strong>GRAPH SOURCE UNAVAILABLE</strong> · The backend is reachable, but its configured PostgreSQL graph could not be read. {session.health?.graphDetail}
+      </p>
+    )
+  }
+
+  if (status === 'LIVE NEO4J') {
+    return (
+      <p role="status" className="border-b border-line bg-[var(--gm-surface-2)] px-3 py-1.5 text-center text-xs text-muted">
+        <strong>LIVE NEO4J</strong> · The most recent successful graph response confirms Neo4j as its data source.
+      </p>
+    )
+  }
+
+  if (status === 'LIVE POSTGRESQL') {
+    return (
+      <p role="status" className="border-b border-line bg-[var(--gm-surface-2)] px-3 py-1.5 text-center text-xs text-muted">
+        <strong>LIVE POSTGRESQL</strong> · The most recent successful graph response confirms PostgreSQL as its data source.
+      </p>
+    )
+  }
+
+  if (status === 'DEMO DATA') {
+    return (
+      <div className="border-b border-line bg-[var(--gm-accent-soft)] px-3 py-2 text-xs text-center">
+        <p role="status"><strong>DEMO DATA</strong> · Bundled sample curriculum; not live database results.</p>
+        {recheckButton}
+      </div>
+    )
+  }
+
+  if (session.mode === 'live') {
+    return (
+      <p role="status" className="border-b border-line bg-[var(--gm-surface-2)] px-3 py-1.5 text-center text-xs text-muted">
+        Backend connected, but no successful graph-data response has confirmed its source yet. {session.graphWarning ?? ''}
       </p>
     )
   }

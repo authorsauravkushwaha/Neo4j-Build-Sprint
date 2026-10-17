@@ -1,8 +1,6 @@
 # Security policy
 
-GraphMentor AI is a browser-first application with an optional Supabase backend. This file is
-the short contract; `docs/security.md` is the long one, including the threat-by-threat table
-and the code and test that address each item.
+GraphMentor AI is a browser-first application with selectable Node, Supabase Edge Functions, and bundled demo paths. This file is the short security contract; `docs/security.md` is the long one, including the threat-by-threat table and the code and test that address each item. The supported data paths are described in `docs/architecture.md`.
 
 Two audit passes have been run against this repository, both white-box and both remediated:
 `docs/security-audit-2026-10-16.md` (A01–A11) and
@@ -13,10 +11,7 @@ neither attacked a live deployment — there was none.
 
 ## Reporting a vulnerability
 
-There is no production deployment and no hosting provider behind this repository, so there is
-no vendor to notify. Once the repository is published, report privately through GitHub's
-"Report a security vulnerability" (Security → Advisories), which keeps the report out of the
-public issue tracker until a fix exists.
+This repository does not establish whether a production deployment currently exists or has been audited. Report code vulnerabilities privately through GitHub's "Report a security vulnerability" (Security → Advisories), which keeps the report out of the public issue tracker until a fix exists. For a deployed service, also follow its hosting provider's incident process.
 
 Please include: what you did, what you expected, what happened, and the smallest reproduction
 you can manage. Do not attach real credentials or personal data.

@@ -8,7 +8,7 @@
   "statements": [
     {
       "tag": "nodes:Assessment:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Assessment {id: row.id})\nSET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.questions = row.questions,\n  n.skillId = row.skillId,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:Assessment {id: row.id})\nON CREATE SET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.questions = row.questions,\n  n.skillId = row.skillId,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -224,7 +224,7 @@
     },
     {
       "tag": "nodes:Career:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Career {id: row.id})\nSET n.assumptions = row.assumptions,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.keywords = row.keywords,\n  n.name = row.name,\n  n.portfolioIdeas = row.portfolioIdeas,\n  n.responsibilities = row.responsibilities,\n  n.summary = row.summary,\n  n.typicalRoles = row.typicalRoles,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Career {id: row.id})\nON CREATE SET n.assumptions = row.assumptions,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.keywords = row.keywords,\n  n.name = row.name,\n  n.portfolioIdeas = row.portfolioIdeas,\n  n.responsibilities = row.responsibilities,\n  n.summary = row.summary,\n  n.typicalRoles = row.typicalRoles,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -881,7 +881,7 @@
     },
     {
       "tag": "nodes:Concept:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Concept {id: row.id})\nSET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:Concept {id: row.id})\nON CREATE SET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -1111,7 +1111,7 @@
     },
     {
       "tag": "nodes:EngineeringBranch:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:EngineeringBranch {id: row.id})\nSET n.name = row.name,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:EngineeringBranch {id: row.id})\nON CREATE SET n.name = row.name,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -1199,7 +1199,7 @@
     },
     {
       "tag": "nodes:LearningModule:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:LearningModule {id: row.id})\nSET n.description = row.description,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.name = row.name,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:LearningModule {id: row.id})\nON CREATE SET n.description = row.description,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.name = row.name,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -1311,7 +1311,7 @@
     },
     {
       "tag": "nodes:ProgrammingLanguage:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:ProgrammingLanguage {id: row.id})\nSET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:ProgrammingLanguage {id: row.id})\nON CREATE SET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -1367,7 +1367,7 @@
     },
     {
       "tag": "nodes:Project:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Project {id: row.id})\nSET n.deliverables = row.deliverables,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.extensions = row.extensions,\n  n.milestones = row.milestones,\n  n.name = row.name,\n  n.objectives = row.objectives,\n  n.safetyNotes = row.safetyNotes,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.testingIdeas = row.testingIdeas,\n  n.tools = row.tools",
+      "query": "UNWIND $rows AS row\nMERGE (n:Project {id: row.id})\nON CREATE SET n.deliverables = row.deliverables,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.extensions = row.extensions,\n  n.milestones = row.milestones,\n  n.name = row.name,\n  n.objectives = row.objectives,\n  n.safetyNotes = row.safetyNotes,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.testingIdeas = row.testingIdeas,\n  n.tools = row.tools",
       "parameters": {
         "rows": [
           {
@@ -2905,7 +2905,7 @@
     },
     {
       "tag": "nodes:Resource:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nSET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nON CREATE SET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -4352,7 +4352,7 @@
     },
     {
       "tag": "nodes:Resource:1",
-      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nSET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nON CREATE SET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -5797,7 +5797,7 @@
     },
     {
       "tag": "nodes:Resource:2",
-      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nSET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Resource {id: row.id})\nON CREATE SET n.accessModel = row.accessModel,\n  n.accessNote = row.accessNote,\n  n.assumes = row.assumes,\n  n.commitment = row.commitment,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.format = row.format,\n  n.language = row.language,\n  n.lastVerified = row.lastVerified,\n  n.limits = row.limits,\n  n.name = row.name,\n  n.outcomes = row.outcomes,\n  n.provider = row.provider,\n  n.summary = row.summary,\n  n.url = row.url,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -6621,7 +6621,7 @@
     },
     {
       "tag": "nodes:Skill:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Skill {id: row.id})\nSET n.completionCriteria = row.completionCriteria,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.mustBeSelfReported = row.mustBeSelfReported,\n  n.name = row.name,\n  n.practice = row.practice,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Skill {id: row.id})\nON CREATE SET n.completionCriteria = row.completionCriteria,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.mustBeSelfReported = row.mustBeSelfReported,\n  n.name = row.name,\n  n.practice = row.practice,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -8058,7 +8058,7 @@
     },
     {
       "tag": "nodes:Skill:1",
-      "query": "UNWIND $rows AS row\nMERGE (n:Skill {id: row.id})\nSET n.completionCriteria = row.completionCriteria,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.mustBeSelfReported = row.mustBeSelfReported,\n  n.name = row.name,\n  n.practice = row.practice,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.verification = row.verification",
+      "query": "UNWIND $rows AS row\nMERGE (n:Skill {id: row.id})\nON CREATE SET n.completionCriteria = row.completionCriteria,\n  n.description = row.description,\n  n.difficulty = row.difficulty,\n  n.estimatedHoursHigh = row.estimatedHoursHigh,\n  n.estimatedHoursLow = row.estimatedHoursLow,\n  n.mustBeSelfReported = row.mustBeSelfReported,\n  n.name = row.name,\n  n.practice = row.practice,\n  n.summary = row.summary,\n  n.tags = row.tags,\n  n.verification = row.verification",
       "parameters": {
         "rows": [
           {
@@ -8756,7 +8756,7 @@
     },
     {
       "tag": "nodes:Subject:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Subject {id: row.id})\nSET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:Subject {id: row.id})\nON CREATE SET n.difficulty = row.difficulty,\n  n.name = row.name,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -8908,7 +8908,7 @@
     },
     {
       "tag": "nodes:Tool:0",
-      "query": "UNWIND $rows AS row\nMERGE (n:Tool {id: row.id})\nSET n.name = row.name,\n  n.openSource = row.openSource,\n  n.summary = row.summary",
+      "query": "UNWIND $rows AS row\nMERGE (n:Tool {id: row.id})\nON CREATE SET n.name = row.name,\n  n.openSource = row.openSource,\n  n.summary = row.summary",
       "parameters": {
         "rows": [
           {
@@ -12650,7 +12650,7 @@
     },
     {
       "tag": "edges:REQUIRES_SKILL:Career->Skill:0",
-      "query": "UNWIND $rows AS row\nMATCH (a:Career {id: row.from})\nMATCH (b:Skill {id: row.to})\nMERGE (a)-[r:REQUIRES_SKILL]->(b)\n  ON CREATE SET r.essential = row.essential, r.weight = row.weight\n  ON MATCH SET r.essential = row.essential, r.weight = row.weight",
+      "query": "UNWIND $rows AS row\nMATCH (a:Career {id: row.from})\nMATCH (b:Skill {id: row.to})\nMERGE (a)-[r:REQUIRES_SKILL]->(b)\n  ON CREATE SET r.essential = row.essential, r.weight = row.weight",
       "parameters": {
         "rows": [
           {
@@ -13696,7 +13696,7 @@
     },
     {
       "tag": "edges:REQUIRES:Skill->Skill:0",
-      "query": "UNWIND $rows AS row\nMATCH (a:Skill {id: row.from})\nMATCH (b:Skill {id: row.to})\nMERGE (a)-[r:REQUIRES]->(b)\n  ON CREATE SET r.weight = row.weight\n  ON MATCH SET r.weight = row.weight",
+      "query": "UNWIND $rows AS row\nMATCH (a:Skill {id: row.from})\nMATCH (b:Skill {id: row.to})\nMERGE (a)-[r:REQUIRES]->(b)\n  ON CREATE SET r.weight = row.weight",
       "parameters": {
         "rows": [
           {

@@ -7,7 +7,7 @@
  * rest of the UI uses, which is the point:
  *
  *   * in sample mode the calls run the bundled engine in this tab;
- *   * in live mode the same calls go to the Edge Functions over Neo4j;
+ *   * in live mode the same calls go to the configured backend, which reports its actual graph source;
  *   * a workflow therefore behaves identically in both, and the run log's
  *     `dataSource` reflects which one answered.
  *

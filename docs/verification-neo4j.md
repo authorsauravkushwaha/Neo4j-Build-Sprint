@@ -1,103 +1,49 @@
-# Neo4j Integration — Verification Report
+# Neo4j verification
 
-Generated: 2026-10-17.
+Architecture and deployment facts are maintained in [architecture.md](architecture.md). This guide records how to verify the **actual backend**, not just whether this source tree compiles.
 
-## What changed
+## Verify a local backend
 
-The Node backend (`server/website.ts`) now connects to a **real Neo4j instance
-using the official `neo4j-driver`** (Bolt / `neo4j+s://` for AuraDB) and runs
-parameterised Cypher for every graph query. It exposes:
+Start the Node service after configuring `NEO4J_URI`, `NEO4J_USERNAME`, and `NEO4J_PASSWORD` in your untracked local environment:
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/health` | Liveness, reports which graph backend is active (`neo4j` / `postgres` / `none`). |
-| `GET /api/health/neo4j` | Real connectivity ping (`RETURN 1`) against Neo4j. Returns 503 with a truthful reason when credentials are missing or the instance is unreachable — never pretends to be connected. |
-| `GET /api/graph/stats` | Node / relationship / label counts, executed live against Neo4j. |
-| `POST /api/query` | Dispatches to a fixed allow-list of named Cypher queries (no arbitrary Cypher accepted from the public internet). See `server/graphApi.ts` `NAMED_QUERIES`. |
-| `GET /api/graph/explore` | Bounded subgraph for the canvas/visualisation. |
-| `GET /api/evidence/:id` | Retrieves the node(s) and outgoing edges that support an answer for a given entity id. |
-| `GET /api/ledger/recent` | The **read ledger** — a ring buffer of the most recent 50 query executions with request id, query id, row count, execution time, and `servedBy` label. Honest about errors. |
-| `GET/POST /functions/v1/*` | The existing Edge Function-shaped API (kept for the React live client, which already targets those endpoints). |
-
-When no Neo4j credentials are configured, the server still starts but every
-Neo4j endpoint answers 503 and the legacy `/functions/v1/health-check` reports
-`source: "unavailable"`. The React UI reads that and shows **DEMO DATA**, not
-**LIVE NEO4J**. The only way to get `neo4j-live` provenance is a successful
-real Cypher round-trip.
-
-## Static checks (all pass locally)
-
-- `npm run typecheck` — clean.
-- `npm test` — **777 tests pass in 58 files** (including the existing 16 end-to-end
-  graph API tests over HTTP, plus the new Neo4j driver module).
-- `npm run build` — production build succeeds.
-- `npm run lint:secrets` — no credential-shaped strings in the tree.
-
-## Live Neo4j verification
-
-Run `npm run verify:neo4j`. It prints one of the contract banners verbatim:
-
-```
-PASS — LIVE NEO4J VERIFIED
-BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE
-FAIL — LIVE NEO4J INTEGRATION FAILED
+```bash
+npm run build
+npm start
+# in another terminal
+npm run verify:neo4j
 ```
 
-Result in this environment (no Aura credentials available to the agent):
+The default target is `http://127.0.0.1:3000` (or `PORT` if set). To verify a deployed Render backend, pass its actual origin:
 
-```
-============================================================
-BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE
-============================================================
-{
-  "status": "BLOCKED",
-  "reason": "NEO4J_URI / NEO4J_PASSWORD not set — no live instance to verify against."
-}
+```bash
+node scripts/verify-neo4j.mjs https://ACTUAL-SERVICE.onrender.com
 ```
 
-This is the honest answer. No credentials, no instance, no fake "connected"
-banner. After setting `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` (see
-`.env.example`) and running `npm run seed:neo4j` to load `neo4j/seed.cypher`,
-rerunning the same command produces `PASS — LIVE NEO4J VERIFIED` along with
-actual record output.
+Do not add `/functions/v1` to this URL: verification calls the backend's `/api/*` endpoints. The script calls liveness, Neo4j health, live graph statistics, and the allow-listed multi-hop career query, then checks that the returned data identifies Neo4j as its source. It prints each HTTP status, query ID, record count, execution time, a small record sample, and the returned Cypher.
 
-## Read ledger honesty
+Verdicts and exit codes are intentionally distinct:
 
-Every Cypher execution the backend performs is recorded in the in-memory
-ledger served at `/api/ledger/recent`. Entries include:
+- **PASS** (exit 0): an actual non-empty query response came back from the Neo4j-backed API with `servedBy: "neo4j-live"` and the official driver evidence field.
+- **BLOCKED** (exit 2): backend/infrastructure is unreachable, not deployed, or its Neo4j connection is unavailable.
+- **FAIL** (exit 1): a reachable service returned an invalid response or the required live query failed.
 
-- `requestId` — generated per request.
-- `timestamp` — ISO-8601.
-- `queryId` — the named query or Cypher tag (e.g. `CAREER_DETAILS`, `NAMED:career.longest-prereq-chain`, `REST:health/neo4j`).
-- `status` — `ok` / `error` / `connect`.
-- `rowsReturned`, `executionMs`, `dbAvailableMs`, `dbConsumedMs`.
-- `servedBy` — `neo4j-live` only when the native Neo4j driver ran the query; `postgres-live` for the opt-in legacy fallback.
+This checkout has no Neo4j credentials or confirmed deployed service URL. Therefore live verification is **BLOCKED unless the command above is run against an available instance and reports PASS**. A build, local mock test, or health ping is not a live-query result.
 
-When the backend is started without credentials, every entry for a REST graph
-endpoint is recorded with `status: "error"` rather than a fabricated success,
-and the corresponding HTTP response is 503.
+## Demonstration query
 
-## Why Neo4j is not "just a JSON file"
+The API allow-list includes `career.longest-prereq-chain`, using the verified seed schema (`Career`, `Skill`, `REQUIRES_SKILL`, `REQUIRES`, and properties `id`, `name`). The career ID exists in `neo4j/seed.cypher`. The exact parameterized Cypher returned by the API is:
 
-The principal GraphMentor query is **multi-hop traversal with path
-semantics**: "given a target career, and a learner's known starting skill,
-find the shortest prerequisite chains through REQUIRES edges into every
-required skill, rank them by weight, and return the supporting free resources
-and practice projects along the way." That is a native graph problem
-(variable-length path patterns, `shortestPath`, path predicates) expressed
-naturally in Cypher (`neo4j/live-demo.cypher`). Running it over the bundled
-JSON requires re-implementing BFS plus label and edge-type filtering in
-JavaScript (which exists in demo mode — it has to, for the offline demo — but
-is clearly labelled as bundled sample data). The honest engineering
-comparison is in `docs/objections.md` — JSON works for small static data;
-Neo4j is used because the core product question is a graph traversal.
+```cypher
+MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill)
+MATCH path = (s)-[:REQUIRES*1..6]->(base:Skill)
+WHERE NOT (base)-[:REQUIRES]->(:Skill)
+RETURN c.name AS career, s.name AS skill, length(path) AS depth,
+       [n IN nodes(path) | n.name] AS chain
+ORDER BY depth DESC LIMIT $limit
+```
 
-## Deployment status after these changes
+Example parameters are `$careerId = "career:software-engineer"` and `$limit = 10`. In Neo4j Browser, set those parameters or substitute the literal career ID and limit. The script only reports PASS if actual non-empty rows with career, skill, depth, and chain shape return. Its sample rows, when available, are the evidence; expected counts should not be invented in advance.
 
-- **Frontend (GitHub Pages):** unchanged URL, but must be rebuilt with
-  `VITE_API_BASE_URL=https://<your-backend>` pointing at the deployed Node
-  service. Without that, it remains in clearly-labelled demo mode.
-- **Backend:** deployable to Render via `render.yaml` (Blueprint updated).
-  Set `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` in the Render dashboard.
-- **Neo4j:** AuraDB Free. Seed once with `npm run seed:neo4j` (the same
-  command that existed before; the dataset it loads is unchanged).
+## Seed safety
+
+`npm run seed:neo4j` loads generated parameterized data via Neo4j Query API. Seed statements use `MERGE`; by default, properties are set only on create, so reruns do not duplicate records or overwrite existing properties. `npm run seed:neo4j -- --update-existing` explicitly opts into updating seed-owned properties on matched records; review and authorize the target before using it. Normal seeding never clears or resets the database. The script compares counts to the generated manifest.

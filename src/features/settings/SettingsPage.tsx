@@ -27,7 +27,7 @@ import {
 import type { Difficulty } from '@core/types.ts'
 import { config, hasBackend } from '@/core/env.ts'
 import { resetWebGLCache } from '@/components/three/webgl.ts'
-import { api, refreshHealth, subscribeSession, type SessionState } from '@/core/session.ts'
+import { api, refreshHealth, sourceStatus, subscribeSession, type SessionState } from '@/core/session.ts'
 import { ApiError } from '@/core/api.ts'
 import { probeAccounts, type AccountsProbe } from '@/core/authApi.ts'
 import { sendMagicLink, signOut, signOutEverywhere } from '@/core/auth.ts'
@@ -529,7 +529,14 @@ export function SettingsPage(): ReactNode {
             </div>
             <div>
               <p className="gm-label">Data provenance</p>
-              <p className="text-sm text-muted">{api().provenance}</p>
+              <p className="text-sm text-muted">
+                {sessionInfo ? `${sourceStatus(sessionInfo)} — ${sessionInfo.verifiedSource === 'neo4j-live'
+                  ? 'confirmed by the most recent successful API data response.'
+                  : sessionInfo.verifiedSource === 'postgres-live'
+                    ? 'confirmed by the most recent successful API data response.'
+                    : sessionInfo.health?.graphDetail ?? sessionInfo.fallbackReason ?? 'No graph-data response has confirmed its source.'}`
+                  : 'Checking which data source is currently serving graph data.'}
+              </p>
               <p className="mt-2 text-xs text-muted">
                 Last health check: {formatDate(sessionInfo?.health ? new Date().toISOString() : null)}
               </p>

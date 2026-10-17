@@ -1,120 +1,112 @@
 #!/usr/bin/env node
-/**
- * Smoke/integration verification against the Neo4j backend.
- *
- * Exit codes and the printed banner follow the hackathon contract:
- *   PASS — LIVE NEO4J VERIFIED
- *   BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE
- *   FAIL — LIVE NEO4J INTEGRATION FAILED
- *
- * Runs against NEO4J_URI/NEO4J_USERNAME/NEO4J_PASSWORD when present, or
- * against a base URL supplied on the command line (for a deployed backend).
- *
- * Usage:
- *   node scripts/verify-neo4j.mjs                  # local driver check
- *   node scripts/verify-neo4j.mjs http://host:port  # deployed HTTP API check
- */
-import { createRequire } from 'node:module'
-const require = createRequire(import.meta.url)
+/** Verify the actual GraphMentor HTTP backend (local or deployed). */
+const target = process.argv[2] ?? `http://127.0.0.1:${process.env.PORT ?? '3000'}`
+let base
+try {
+  base = new URL(target)
+  if (!['http:', 'https:'].includes(base.protocol)) throw new Error('HTTP(S) URL required')
+} catch {
+  console.error(`FAIL — invalid backend URL: ${target}`)
+  process.exit(1)
+}
+base.pathname = base.pathname.replace(/\/$/, '')
+base.search = ''
+base.hash = ''
+const root = base.toString().replace(/\/$/, '')
+const checks = []
 
-async function driverCheck() {
-  const uri = process.env.NEO4J_URI?.trim()
-  const user = process.env.NEO4J_USERNAME?.trim()
-  const pass = process.env.NEO4J_PASSWORD
-  const database = process.env.NEO4J_DATABASE?.trim() || 'neo4j'
-  if (!uri || !pass) {
-    return { status: 'BLOCKED', reason: 'NEO4J_URI / NEO4J_PASSWORD not set — no live instance to verify against.' }
-  }
+async function request(path, init = {}) {
+  const started = Date.now()
   try {
-    const neo4j = require('neo4j-driver')
-    const driver = neo4j.driver(uri, neo4j.auth.basic(user || 'neo4j', pass), { connectionTimeout: 8000 })
-    try {
-      await driver.verifyConnectivity({ database })
-      const session = driver.session({ database, defaultAccessMode: neo4j.session.READ })
-      try {
-        // Multi-hop representative query: longest prerequisite chain for a career.
-        const result = await session.run(`
-          MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill)
-          MATCH path = (s)-[:REQUIRES*1..6]->(base:Skill)
-          WHERE NOT (base)-[:REQUIRES]->(:Skill)
-          RETURN c.name AS career, s.name AS skill, length(path) AS depth,
-                 [n IN nodes(path) | n.name] AS chain
-          ORDER BY depth DESC LIMIT 3
-        `, { careerId: 'career:software-engineer' })
-        const records = result.records.map((r) => ({
-          career: r.get('career'),
-          skill: r.get('skill'),
-          depth: r.get('depth').toNumber ? r.get('depth').toNumber() : Number(r.get('depth')),
-          chain: r.get('chain'),
-        }))
-        const summary = result.summary
-        // Also confirm graph counts.
-        const countsRes = await session.run(`
-          MATCH (n) RETURN count(n) AS nodes;
-          MATCH ()-[r]->() RETURN count(r) AS relationships;
-        `)
-        return {
-          status: 'PASS',
-          database,
-          uri: uri.replace(/:\/\/([^:]+):[^@]+@/, '://<redacted>@'),
-          recordsReturned: records.length,
-          sampleRecords: records,
-          resultAvailableAfterMs: Number(summary.resultAvailableAfter),
-          nodes: Number.NaN,
-          relationships: Number.NaN,
-        }
-      } finally {
-        await session.close()
-      }
-    } finally {
-      await driver.close()
-    }
+    const response = await fetch(`${root}${path}`, { ...init, signal: AbortSignal.timeout(12_000) })
+    const text = await response.text()
+    let body
+    try { body = text ? JSON.parse(text) : null } catch { body = null }
+    return { response, body, ms: Date.now() - started }
   } catch (error) {
-    return { status: 'FAIL', reason: error instanceof Error ? error.message : String(error) }
+    return { error: error instanceof Error ? error.message : String(error), ms: Date.now() - started }
   }
 }
 
-async function httpCheck(baseUrl) {
-  const base = baseUrl.replace(/\/$/, '')
-  try {
-    const health = await fetch(`${base}/api/health/neo4j`)
-    const body = await health.json().catch(() => ({}))
-    if (!body.connected) {
-      return { status: 'BLOCKED', reason: body.reason ?? 'backend reports Neo4j unavailable', body }
+function logCheck(name, result) {
+  const status = result.response?.status ?? 'NO HTTP RESPONSE'
+  console.log(`${name}: HTTP ${status}${result.ms !== undefined ? ` (${result.ms} ms)` : ''}`)
+  checks.push({ name, ...result })
+}
+
+let verdict = 'PASS'
+let reason = ''
+
+const health = await request('/api/health')
+logCheck('/api/health', health)
+if (health.error) {
+  verdict = 'BLOCKED'
+  reason = `Backend could not be reached: ${health.error}`
+} else if (!health.response.ok || health.body?.ok !== true || typeof health.body?.graphBackend !== 'string') {
+  verdict = health.response.status === 404 ? 'BLOCKED' : 'FAIL'
+  reason = `Backend liveness response was invalid (HTTP ${health.response.status}).`
+}
+
+if (verdict === 'PASS') {
+  const neoHealth = await request('/api/health/neo4j')
+  logCheck('/api/health/neo4j', neoHealth)
+  if (neoHealth.error) {
+    verdict = 'BLOCKED'
+    reason = `Neo4j health check could not be reached: ${neoHealth.error}`
+  } else if (neoHealth.response.status === 503 && neoHealth.body?.connected === false) {
+    verdict = 'BLOCKED'
+    reason = neoHealth.body.reason ?? 'Backend is reachable but Neo4j is unavailable.'
+  } else if (!neoHealth.response.ok || neoHealth.body?.ok !== true || neoHealth.body?.connected !== true || neoHealth.body?.backend !== 'neo4j') {
+    verdict = 'FAIL'
+    reason = `Neo4j health response did not confirm a live Neo4j connection (HTTP ${neoHealth.response.status}).`
+  }
+
+  if (verdict === 'PASS') {
+    const stats = await request('/api/graph/stats')
+    logCheck('/api/graph/stats', stats)
+    const statsValid = stats.body?.ok === true && stats.body?.source === 'neo4j-live' &&
+      Number.isSafeInteger(stats.body?.nodes) && stats.body.nodes > 0 &&
+      Number.isSafeInteger(stats.body?.relationships) && stats.body.relationships >= 0 &&
+      Array.isArray(stats.body?.labels)
+    if (!stats.response?.ok || !statsValid) {
+      verdict = 'FAIL'
+      reason = `Graph statistics were not valid live Neo4j data (HTTP ${stats.response?.status ?? 'none'}).`
     }
-    const q = await fetch(`${base}/api/query`, {
+  }
+
+  if (verdict === 'PASS') {
+    const queryId = 'career.longest-prereq-chain'
+    const query = await request('/api/query', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ queryId: 'career.longest-prereq-chain', params: { careerId: 'career:software-engineer', limit: 3 } }),
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ queryId, params: { careerId: 'career:software-engineer', limit: 10 } }),
     })
-    const qbody = await q.json().catch(() => ({}))
-    if (!qbody.ok) return { status: 'FAIL', reason: 'Named-query endpoint returned non-ok', body: qbody }
-    return {
-      status: 'PASS',
-      uri: body.uri,
-      nodes: body.nodes,
-      relationships: body.relationships,
-      sampleRecords: qbody.records?.slice(0, 2) ?? [],
-      rowCount: qbody.rowCount,
-      executionMs: qbody.executionMs,
+    logCheck('/api/query', query)
+    const resultValid = query.body?.ok === true && query.body?.queryId === queryId &&
+      query.body?.servedBy === 'neo4j-live' && query.body?.evidence?.driver === 'neo4j-javascript-driver' &&
+      Array.isArray(query.body?.records) && query.body.records.length > 0 &&
+      query.body.rowCount === query.body.records.length &&
+      query.body.records.every((row) => typeof row.career === 'string' && typeof row.skill === 'string' &&
+        Number.isFinite(row.depth) && Array.isArray(row.chain) && row.chain.length >= 2)
+    console.log(`Query ID: ${query.body?.queryId ?? queryId}`)
+    console.log(`Record count: ${Number.isInteger(query.body?.rowCount) ? query.body.rowCount : 'unavailable'}`)
+    console.log(`Execution time: ${Number.isFinite(query.body?.executionMs) ? `${query.body.executionMs} ms` : 'unavailable'}`)
+    if (!query.response?.ok || !resultValid) {
+      verdict = 'FAIL'
+      reason = `The named multi-hop query did not return valid, non-empty Neo4j records (HTTP ${query.response?.status ?? 'none'}).`
+    } else {
+      console.log('Query sample:')
+      console.log(JSON.stringify(query.body.records.slice(0, 3), null, 2))
+      console.log(`Cypher: ${query.body.cypher}`)
     }
-  } catch (error) {
-    return { status: 'FAIL', reason: `HTTP check failed: ${error instanceof Error ? error.message : String(error)}` }
   }
 }
-
-const target = process.argv[2]
-const result = target && target.startsWith('http') ? await httpCheck(target) : await driverCheck()
-
-const banner = {
-  PASS: 'PASS — LIVE NEO4J VERIFIED',
-  BLOCKED: 'BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE',
-  FAIL: 'FAIL — LIVE NEO4J INTEGRATION FAILED',
-}[result.status]
 
 console.log('\n============================================================')
-console.log(banner)
+console.log({ PASS: 'PASS — REAL NEO4J QUERY VERIFIED', BLOCKED: 'BLOCKED — EXTERNAL BACKEND OR NEO4J UNAVAILABLE', FAIL: 'FAIL — VERIFICATION FOUND A DEFECT' }[verdict])
 console.log('============================================================')
-console.log(JSON.stringify(result, null, 2))
-
-process.exit(result.status === 'PASS' ? 0 : result.status === 'BLOCKED' ? 0 : 1)
+if (reason) console.log(`Reason: ${reason}`)
+for (const item of checks) {
+  if (item.body?.reason && verdict !== 'PASS') console.log(`${item.name} reason: ${item.body.reason}`)
+}
+process.exit(verdict === 'PASS' ? 0 : verdict === 'BLOCKED' ? 2 : 1)

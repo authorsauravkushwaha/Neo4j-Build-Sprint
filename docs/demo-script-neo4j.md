@@ -1,88 +1,42 @@
-# Judge Demo Script (3–5 minutes) — GraphMentor AI on live Neo4j
+# Judge demo: verify before claiming live Neo4j
 
-Goal: prove to a technical judge that the site really answers a learner's
-question using Cypher executed against a live Neo4j instance, and that the
-evidence and read ledger are truthful.
+This script is evidence-led. If the actual service is not available, demonstrate the demo application and say it uses bundled sample data. Never present expected values as observed results.
 
-## Pre-flight (you do this once)
+## Preflight
 
-1. Create (or reuse) a Neo4j AuraDB Free instance.
-2. Set `NEO4J_URI`, `NEO4J_USERNAME`, `NEO4J_PASSWORD` in the backend host
-   (Render, or a local `npm start`).
-3. Load the curriculum:
+1. Confirm the deployed Node backend URL from the Render dashboard (or use the configured Supabase Functions URL for the alternative deployment).
+2. Check that the server-side Neo4j credentials exist in the host dashboard; do not show or copy the password into a browser or shell transcript.
+3. If the Neo4j graph needs seeding, review the target database and run the idempotent `npm run seed:neo4j` process. The seed uses MERGE and has no reset step.
+4. Verify the actual backend:
+
    ```bash
-   npm run seed:neo4j
-   ```
-4. Verify from your machine:
-   ```bash
-   npm run verify:neo4j
-   # PASS — LIVE NEO4J VERIFIED
-   ```
-5. Deploy the Node backend (`render.yaml` Blueprint works) and set
-   `VITE_API_BASE_URL` for the Pages build to that backend URL.
-
-## Demo flow (3 minutes)
-
-1. **Open the site.** The banner should read **LIVE NEO4J** (green) and show
-   real counts from the database (444 nodes / 1,585 relationships). If you
-   see **DEMO DATA** or **DATABASE UNAVAILABLE**, stop — the banner is honest.
-
-2. **Open Settings → About** and show the provenance string:
-   *"Live deployment: careers, skills, projects and resources are read from a
-   Neo4j knowledge graph through the deployed backend API."*
-
-3. **Pick a career**, e.g. *Software engineer*. The screen shows the required
-   skills, ordered by the prerequisite traversal. Open **Skill gaps** and
-   rate a few skills (e.g. mark `programming-fundamentals` as confident, leave
-   everything else unknown). The gap analysis and roadmap are computed from
-   the multi-hop `REQUIRES` traversal — the same Cypher as
-   `career.longest-prereq-chain` and `skill.routes-to-career` in
-   `neo4j/live-demo.cypher`.
-
-4. **Open the Knowledge Graph**, pick the same career, click a skill, and
-   show the subgraph. The data was fetched from `/api/graph/explore` — it
-   returns actual nodes and edges from Neo4j, not a static bundle.
-
-5. **Open Mentor** and ask: *"What is the longest prerequisite chain from
-   programming fundamentals to a skill a software engineer needs?"* — the
-   answer cites skills you can click through to.
-
-6. **Open DevTools → Network**, hit refresh on the `/functions/v1/health-check`
-   call. Show the payload:
-   ```json
-   "graph": { "configured": true, "reachable": true, "source": "neo4j-live", "nodeCount": 444, "relationshipCount": 1585, ... }
+   node scripts/verify-neo4j.mjs https://ACTUAL-BACKEND-ORIGIN
    ```
 
-7. **Hit the read ledger** directly:
-   ```
-   curl https://<your-backend>/api/ledger/recent
-   ```
-   Show the first few entries — real query ids, timings, row counts, and
-   `servedBy: "neo4j-live"`.
+   Continue with live claims only if the result is **PASS**. Save the real output, including query records and timing. **BLOCKED** means the live demonstration is unavailable; **FAIL** means a defect must be fixed.
+5. Confirm that GitHub Actions variable `VITE_API_BASE_URL` has the actual public API base (Node example: `https://ACTUAL-BACKEND-ORIGIN/functions/v1`) and that a new Pages workflow completed afterward.
 
-8. **Show the judge the Cypher.** Open `neo4j/live-demo.cypher` and paste the
-   *longest prerequisite chain* query into Neo4j Browser. Run it against the
-   Aura instance — the result is the same chain the UI showed. That is the
-   proof: the app's answer is a view onto real graph traversal results.
+## Demonstration flow
 
-## Failure-mode demo (30 seconds)
+1. Open the published Pages URL. The base path is `/Neo4j-Build-Sprint/`. A green or connected health indicator alone is not proof of returned live data.
+2. Navigate to a graph-backed page and wait for a successful response. **LIVE NEO4J** should appear only after response metadata confirms `meta.source: "neo4j-live"`. If the status says DEMO DATA, BACKEND UNAVAILABLE, or NEO4J UNAVAILABLE, report that actual condition.
+3. In DevTools Network, show a request to the deployed backend (not localhost), the CORS response, HTTP status, response `meta.source`, and data. Check for console errors.
+4. For a direct backend demonstration, open the API response from the verifier. Its named query ID is `career.longest-prereq-chain`; it returns the actual records and parameterized Cypher. Paste the Cypher into Neo4j Browser and set `$careerId` and `$limit` to the exact values in the verification output. Do not claim identical results unless the query is run against the same unchanged database.
+5. Optionally inspect `/api/ledger/recent` for a successful `NAMED:career.longest-prereq-chain` entry with row count and duration.
 
-Stop the backend (or use a deliberately wrong password in `.env.local`).
-Reload the site. The banner changes to **DATABASE UNAVAILABLE** and the graph
-screens tell you why — no silent fallback, no fabricated counts.
+## Cypher demonstrated by the API
 
-## Commands to show verbatim
-
-```bash
-# Honest integration verdict
-npm run verify:neo4j
-
-# End-to-end HTTP smoke against a running backend
-node scripts/verify-neo4j.mjs https://<your-backend>
-
-# Seed the Aura instance (idempotent)
-npm run seed:neo4j
-
-# Cypher catalogue used by the app (reviewable)
-cat neo4j/live-demo.cypher
+```cypher
+MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill)
+MATCH path = (s)-[:REQUIRES*1..6]->(base:Skill)
+WHERE NOT (base)-[:REQUIRES]->(:Skill)
+RETURN c.name AS career, s.name AS skill, length(path) AS depth,
+       [n IN nodes(path) | n.name] AS chain
+ORDER BY depth DESC LIMIT $limit
 ```
+
+Schema: `Career`, `Skill`, `REQUIRES_SKILL`, `REQUIRES`; `id` and `name` properties. The query starts at skills required by the selected career and follows prerequisite relationships to terminal prerequisites.
+
+## Safe failure demonstration
+
+Use a test deployment or a local backend with Neo4j intentionally unavailable; do not change production credentials to stage an outage. When the backend itself cannot be reached, the UI labels the bundled fallback **BACKEND UNAVAILABLE · DEMO DATA**. When the backend responds but Neo4j cannot be reached, it shows **NEO4J UNAVAILABLE**, and live graph requests fail rather than silently substituting the bundle.

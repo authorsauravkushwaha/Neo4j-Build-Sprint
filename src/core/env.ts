@@ -2,15 +2,16 @@
  * Build-time configuration.
  *
  * Everything here is public by definition: Vite inlines these values into the
- * bundle. Secrets (Neo4j password, AI keys, service-role key) live only in
- * Supabase Edge Function secrets — see supabase/.env.example.
+ * bundle. Secrets (Neo4j password, AI keys, service-role key) live only in the
+ * selected backend's server-side environment.
  *
  * The app has to work in three situations, and says which one it is in:
  *   1. no backend configured        -> demo mode over the bundled dataset,
- *   2. backend configured + health   -> live mode (Neo4j or Supabase),
- *   3. backend configured but down   -> error state with the real reason, no
- *                                       pretend data and no silent fallback that
- *                                       could be mistaken for live information.
+ *   2. backend configured + health   -> use the API client, but do not claim a
+ *                                       data source until a successful response
+ *                                       supplies provenance metadata,
+ *   3. backend configured but down   -> labelled bundled demo fallback, with
+ *                                       BACKEND UNAVAILABLE shown explicitly.
  */
 export interface AppConfig {
   supabaseUrl: string

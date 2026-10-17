@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createServer, type Server } from 'node:http'
 
 import { createGraphApi, type GraphApi } from '../../server/graphApi.ts'
+import type { DriverReader } from '../../server/neo4jDriverReader.ts'
 
 let api: GraphApi
 let server: Server
@@ -103,9 +104,9 @@ describe('Neo4j health endpoint is honest when no instance is configured', () =>
     const failed = body.entries.filter((e: { status: string }) => e.status === 'error')
     expect(failed.length).toBeGreaterThan(0)
     for (const entry of failed as Array<{ servedBy: string; queryId: string }>) {
-      // Failed ledger entries still claim to have *attempted* Neo4j — never
-      // that they served sample data or postgres.
-      expect(['neo4j-live', 'postgres-live']).toContain(entry.servedBy)
+      // No reader is configured: failed health/stats entries must not claim
+      // that they served Neo4j or PostgreSQL results.
+      expect(entry.servedBy).toBe('unavailable')
       expect(entry.queryId).toMatch(/^(REST:|NAMED:|[A-Z_]+)/)
     }
   })
@@ -117,5 +118,52 @@ describe('Neo4j health endpoint is honest when no instance is configured', () =>
     })
     expect(r.status).toBe(204)
     expect(r.headers.get('access-control-allow-origin')).toBe('http://graph-allowed.test')
+  })
+})
+
+// Contract-only mock: proves source metadata and safe parameter binding without
+// claiming that a real Neo4j instance was reached in this test environment.
+describe('named query contract with an injected Neo4j driver reader', () => {
+  it('returns driver provenance and keeps all user values in bound parameters', async () => {
+    const calls: Array<{ cypher: string; params: Record<string, unknown>; tag: string }> = []
+    const mock = {
+      kind: 'neo4j', configured: true, provenance: 'test reader', uri: 'bolt://test.invalid:7687',
+      async runQuery(cypher: string, params: Record<string, unknown>, tag: string) {
+        calls.push({ cypher, params, tag })
+        return { rows: [{ career: 'Software engineer', skill: 'Testing', depth: 2, chain: ['Testing', 'Programming'] }], ms: 4, summary: {} }
+      },
+      async totals() { return { value: { nodes: 444, relationships: 1585, labels: [{ label: 'Career', count: 17 }] }, ms: 2 } },
+      async close() {},
+    } as unknown as DriverReader
+    const testApi = await createGraphApi({
+      env: { NEO4J_URI: 'bolt://test.invalid:7687', NEO4J_PASSWORD: 'test-only', LOG_LEVEL: 'error' },
+      neo4jReader: mock,
+    })
+    const testServer = createServer((request, response) => void testApi.handle(request, response))
+    await new Promise<void>((resolve) => testServer.listen(0, '127.0.0.1', resolve))
+    const address = testServer.address()
+    if (!address || typeof address === 'string') throw new Error('No test port')
+    const testBase = `http://127.0.0.1:${address.port}`
+    try {
+      const stats = await (await fetch(`${testBase}/api/graph/stats`)).json()
+      expect(stats.source).toBe('neo4j-live')
+      expect(stats.nodes).toBe(444)
+      const response = await fetch(`${testBase}/api/query`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ queryId: 'career.longest-prereq-chain', params: { careerId: 'career:software-engineer', limit: 10 } }),
+      })
+      const body = await response.json()
+      expect(response.status).toBe(200)
+      expect(body.servedBy).toBe('neo4j-live')
+      expect(body.evidence.driver).toBe('neo4j-javascript-driver')
+      expect(body.records).toHaveLength(1)
+      expect(calls[0]?.cypher).toContain('$careerId')
+      expect(calls[0]?.cypher).not.toContain('career:software-engineer')
+      expect(calls[0]?.params.careerId).toBe('career:software-engineer')
+      expect(calls[0]?.tag).toBe('NAMED:career.longest-prereq-chain')
+    } finally {
+      await new Promise<void>((resolve) => { testServer.close(() => resolve()); testServer.closeAllConnections() })
+      await testApi.close()
+    }
   })
 })

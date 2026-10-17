@@ -514,6 +514,8 @@ export interface GraphHealth {
   configured: boolean
   reachable: boolean
   source: ApiMeta['source']
+  /** Configured reader type, retained when a connectivity check fails. */
+  backend?: 'neo4j' | 'postgres' | 'local' | 'none'
   nodeCount: number
   relationshipCount: number
   labels: Array<{ label: NodeLabel; count: number }>
