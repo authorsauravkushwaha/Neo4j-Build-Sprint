@@ -242,7 +242,7 @@ See [docs/database.md](docs/database.md) for supported data, security, persisten
 
 ### Supabase accounts (optional hosted provider)
 
-With Supabase configured, these three entry points use Supabase Auth:
+With Supabase configured, these three entry points use Supabase Auth. Supabase is used for sign-in only; saved roadmaps, progress, bookmarks, feedback, profile preferences and rate-limit/replay records are stored in Neo4j (see [docs/neo4j-schema.md](docs/neo4j-schema.md)):
 
 | Route | What happens |
 | --- | --- |
@@ -328,8 +328,9 @@ graphmentor-ai/
 
 **Data flow:** the browser only ever calls the Edge Functions (Supabase-hosted, or any Deno/Node host that
 mounts the same handlers). They hold the Neo4j credentials and run parameterized Cypher through the HTTPS
-Query API, and they hold the only credential that reaches the account database — on Supabase that is the
-service-role key, on Appwrite the server API key. See [docs/appwrite.md](docs/appwrite.md).
+Query API. Account data (roadmaps, progress, bookmarks, feedback, profiles, rate limits, nonces) is stored in the
+same Neo4j database under `neo4j/user-schema.cypher`; on Supabase, Supabase Auth only verifies sign-in tokens, and
+no service-role key is used. On Appwrite the server API key is the credential. See [docs/appwrite.md](docs/appwrite.md).
 
 The browser can also run the same engine locally over the bundled dataset (demo mode) — the two paths share
 one interface (`GraphMentorClient`), so a screen cannot behave differently in the two modes by accident.
@@ -408,7 +409,7 @@ Privacy posture, in short:
   local data.
 - localStorage holds preferences, self-reported skill states, roadmap progress, bookmarks and (in demo
   mode) feedback drafts. **Never** tokens, passwords or chat transcripts.
-- Server-side data is RLS-scoped to `auth.uid()`. Private responses are `no-store`.
+- Server-side data is scoped to the signed-in account by the server: every Neo4j query takes the verified user id as a parameter. Private responses are `no-store`.
 - You can export your data and delete it yourself, from Settings, at any time. There is no telemetry and
   no third-party analytics in the code.
 - The templates to publish your own privacy policy and terms are in

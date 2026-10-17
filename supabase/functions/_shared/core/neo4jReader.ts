@@ -15,7 +15,7 @@
  *    shapes are decoded, because the shape depends on the Aura instance version,
  *  - errors are mapped to AppError codes; the upstream body never reaches a user.
  */
-import { AppError } from './errors.ts'
+import { createQueryApiClient, type QueryApiEvent } from './neo4jQueryApi.ts'
 import type {
   Difficulty,
   GraphEdge,
@@ -89,7 +89,7 @@ export interface Neo4jConfig {
   /** Injectable for tests. Defaults to global fetch. */
   fetchImpl?: typeof fetch
   /** Optional logger sink (already redacted by the caller). */
-  onEvent?: (event: { type: 'query' | 'error'; cypherTag?: string; ms?: number; status?: number; rows?: number }) => void
+  onEvent?: (event: QueryApiEvent) => void
 }
 
 interface QueryResult {
@@ -97,170 +97,29 @@ interface QueryResult {
   ms: number
 }
 
-const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504])
-
-function base64(input: string): string {
-  const globalBtoa = (globalThis as { btoa?: (s: string) => string }).btoa
-  if (globalBtoa) return globalBtoa(input)
-  // Node fallback (scripts/tests).
-  const bufferCtor = (globalThis as unknown as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } })
-    .Buffer
-  if (bufferCtor) return bufferCtor.from(input, 'utf8').toString('base64')
-  throw new Error('No base64 implementation available')
-}
-
-/** Decodes both Query API response shapes into an array of flat row objects. */
-export function decodeQueryApiResponse(payload: unknown): { rows: RawRow[]; errors: Array<{ code: string; message: string }> } {
-  const errors: Array<{ code: string; message: string }> = []
-  if (!payload || typeof payload !== 'object') return { rows: [], errors }
-  const body = payload as Record<string, unknown>
-
-  if (Array.isArray(body.errors)) {
-    for (const item of body.errors.slice(0, 10)) {
-      if (item && typeof item === 'object') {
-        const err = item as Record<string, unknown>
-        errors.push({
-          code: asString(err.code, 64) ?? 'Neo.ClientError',
-          message: asString(err.message, 400) ?? 'Unknown graph error',
-        })
-      }
-    }
-  }
-
-  // ---- Query API v2: { data: { fields: [...], values: [[...]] } }
-  const data = body.data
-  if (data && typeof data === 'object' && !Array.isArray(data)) {
-    const v2 = data as Record<string, unknown>
-    const fields = Array.isArray(v2.fields) ? v2.fields.map((f) => asString(f, 64) ?? '') : []
-    const values = Array.isArray(v2.values) ? v2.values : []
-    const rows: RawRow[] = []
-    for (const rowValues of values.slice(0, 5000)) {
-      if (!Array.isArray(rowValues)) continue
-      const row: RawRow = {}
-      fields.forEach((field, index) => {
-        row[field || `col${index}`] = rowValues[index]
-      })
-      rows.push(row)
-    }
-    return { rows, errors }
-  }
-
-  // ---- Query API v1: { results: [ { columns: [...], data: [ { row: [...] } ] } ] }
-  const results = Array.isArray(body.results) ? body.results : []
-  const first = results[0]
-  if (first && typeof first === 'object') {
-    const v1 = first as Record<string, unknown>
-    const columns = Array.isArray(v1.columns) ? v1.columns.map((c) => asString(c, 64) ?? '') : []
-    const dataRows = Array.isArray(v1.data) ? v1.data : []
-    const rows: RawRow[] = []
-    for (const entry of dataRows.slice(0, 5000)) {
-      if (!entry || typeof entry !== 'object') continue
-      const rowArray = (entry as Record<string, unknown>).row
-      if (!Array.isArray(rowArray)) continue
-      const row: RawRow = {}
-      columns.forEach((column, index) => {
-        row[column || `col${index}`] = rowArray[index]
-      })
-      rows.push(row)
-    }
-    return { rows, errors }
-  }
-
-  return { rows: [], errors }
-}
-
+/**
+ * Builds the read-only graph reader on top of the shared Query API client
+ * (`neo4jQueryApi.ts`). The client owns transport, auth, timeouts, retries and
+ * response decoding; this function owns the row-to-domain mapping.
+ */
 export function createNeo4jReader(config: Neo4jConfig): GraphReader {
-  const fetchImpl = config.fetchImpl ?? fetch
-  const maxRows = Math.max(1, Math.min(config.maxRows, 2000))
-  const timeoutMs = Math.max(1000, Math.min(config.timeoutMs, 30_000))
-  const authHeader = `Basic ${base64(`${config.username}:${config.password}`)}`
-
-  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+  const client = createQueryApiClient({
+    queryUrl: config.queryUrl,
+    username: config.username,
+    password: config.password,
+    timeoutMs: config.timeoutMs,
+    maxRows: config.maxRows,
+    fetchImpl: config.fetchImpl,
+    onEvent: config.onEvent,
+  })
+  const maxRows = client.maxRows
 
   async function runQuery(cypher: string, params: Record<string, unknown>, options: { signal?: AbortSignal; tag?: string; retries?: number } = {}): Promise<QueryResult> {
-    const started = Date.now()
-    const attempts = Math.max(0, Math.min(options.retries ?? 2, 3))
-    let lastError: unknown = null
     const safeParams: Record<string, unknown> = { ...params }
     if (!('limit' in safeParams)) safeParams.limit = maxRows
     safeParams.limit = Math.min(asNumber(safeParams.limit, maxRows) || maxRows, maxRows)
-
-    for (let attempt = 0; attempt <= attempts; attempt++) {
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), timeoutMs)
-      const onOuterAbort = () => controller.abort()
-      options.signal?.addEventListener('abort', onOuterAbort)
-
-      try {
-        const response = await fetchImpl(config.queryUrl, {
-          method: 'POST',
-          headers: {
-            authorization: authHeader,
-            'content-type': 'application/json',
-            accept: 'application/json',
-            'user-agent': 'GraphMentorAI/1.0 (+edge-function)',
-          },
-          body: JSON.stringify({ statement: cypher, parameters: safeParams }),
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          const retryable = RETRYABLE_STATUS.has(response.status)
-          // Drain the body so the socket is released, but never log it verbatim.
-          await response.text().catch(() => '')
-          if (retryable && attempt < attempts) {
-            await sleep(150 * (attempt + 1) + Math.floor(Math.random() * 120))
-            continue
-          }
-          throw new AppError(retryable ? 'dependency_unavailable' : 'internal', {
-            internal: `neo4j http ${response.status}`,
-            context: { status: response.status },
-            retryAfterSeconds: response.status === 429 ? 5 : undefined,
-          })
-        }
-
-        const payload = await response.json().catch(() => null)
-        const { rows, errors } = decodeQueryApiResponse(payload)
-        if (errors.length > 0) {
-          // Cypher/syntax problems are our bug, not the user's: log internally,
-          // return a generic dependency error so nothing about the schema leaks.
-          throw new AppError('internal', { internal: `neo4j query error: ${errors[0].code}` })
-        }
-
-        const clamped = rows.slice(0, maxRows)
-        const ms = Date.now() - started
-        config.onEvent?.({ type: 'query', cypherTag: options.tag, ms, status: response.status, rows: clamped.length })
-        return { rows: clamped, ms }
-      } catch (error) {
-        lastError = error
-        const isAbort = error instanceof Error && error.name === 'AbortError'
-        if (isAbort) {
-          if (attempt < attempts) {
-            await sleep(120 * (attempt + 1))
-            continue
-          }
-          throw new AppError('timeout', { internal: 'neo4j timeout' })
-        }
-        if (error instanceof AppError) {
-          if (attempt < attempts && error.code === 'dependency_unavailable') {
-            await sleep(180 * (attempt + 1))
-            continue
-          }
-          throw error
-        }
-        if (attempt < attempts) {
-          await sleep(180 * (attempt + 1))
-          continue
-        }
-        config.onEvent?.({ type: 'error' })
-        throw new AppError('dependency_unavailable', { internal: 'neo4j request failed' })
-      } finally {
-        clearTimeout(timer)
-        options.signal?.removeEventListener('abort', onOuterAbort)
-      }
-    }
-
-    throw new AppError('dependency_unavailable', { internal: `neo4j exhausted retries: ${String(lastError)}` })
+    // Reads only: accessMode "Read" is sent by the client for every call made here.
+    return client.run(cypher, safeParams, { tag: options.tag, signal: options.signal, retries: options.retries })
   }
 
   /* ---------------------------------------------------------------------- */

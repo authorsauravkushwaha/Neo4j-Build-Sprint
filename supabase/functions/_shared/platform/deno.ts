@@ -5,18 +5,18 @@
  * (`Deno.env`, `Deno.serve`, the `npm:` Supabase client). Everything below it is
  * plain TypeScript that also runs in Node and the browser.
  *
- * Two backends, one API. `selectBackend` reads the environment and the storage
- * seam below it is injected either way, so handlers, repositories and the
+ * Two storage backends, one API. `selectBackend` reads the environment and the
+ * storage seam below it is injected either way, so handlers, repositories and the
  * middleware are identical on both; see `appwrite.ts` and `docs/appwrite.md` for
- * what genuinely differs (no row-level security, sessions instead of JWTs, no
- * stored procedures) and how the adapter covers each gap.
+ * what genuinely differs and how the adapter covers each gap.
  *
- * On Supabase, two clients are used deliberately:
- *  - `userClient`: anon key + the caller's `Authorization` header, so Row Level
- *    Security is enforced by Postgres for all user-owned records (primary control),
- *  - `adminClient`: service-role key, used ONLY for the rate-limit and nonce
- *    functions, which must work for anonymous callers too (secondary control).
- * The service-role key is never returned, logged, or forwarded anywhere.
+ * On Supabase, Supabase is used for sign-in only: the caller's bearer token is
+ * verified with Supabase Auth (anon key, no service-role key). Every other kind
+ * of data (saved roadmaps and tasks, skill progress, bookmarks, feedback, profile
+ * preferences, data export and deletion, rate-limit windows and nonce replay
+ * records) is stored in Neo4j through `platform/neo4jStore.ts` and the Query API
+ * client in `core/neo4jQueryApi.ts`. No Supabase table or RPC is reached, and
+ * there is no Postgres fallback. Neo4j credentials stay in server-side secrets.
  *
  * An Appwrite configuration that is present but incomplete is *not* a fallback to
  * Supabase: `selectBackend` reports it, and the deployment stays read-only rather
@@ -41,11 +41,11 @@ import {
 import { AppError } from '../core/errors.ts'
 import {
   createAuthVerifier,
-  createPostgresFixedWindowStore,
-  createPostgresNonceStore,
   createUserRepositories,
   type SupabaseLikeClient,
 } from './supabaseStore.ts'
+import { createNeo4jFixedWindowStore, createNeo4jNonceStore, createNeo4jUserRepositories } from './neo4jStore.ts'
+import { createQueryApiClient, type QueryApiClient } from '../core/neo4jQueryApi.ts'
 import {
   appwriteConfigFromEnv,
   createAppwriteAuthVerifier,
@@ -64,6 +64,34 @@ const localNonce = new MemoryNonceStore()
 
 // A single reader per isolate: the Neo4j reader is stateless and safe to reuse.
 let cachedReader: { key: string; reader: GraphReader | null; reason: string | null; hint?: string } | null = null
+
+// One Query API client per isolate, shared by the account store (writes and reads)
+// and the rate-limit and nonce stores. Rebuilt when the endpoint or secrets change.
+let cachedQueryClient: { key: string; client: QueryApiClient } | null = null
+
+type Neo4jRuntimeConfig = NonNullable<ReturnType<typeof readRuntimeConfig>['neo4j']>
+
+function getQueryClient(neo4j: Neo4jRuntimeConfig): QueryApiClient {
+  const key = `${neo4j.queryUrl}|${neo4j.username}|${neo4j.password}|${neo4j.timeoutMs}|${neo4j.maxRows}`
+  if (cachedQueryClient && cachedQueryClient.key === key) return cachedQueryClient.client
+  const client = createQueryApiClient({
+    queryUrl: neo4j.queryUrl,
+    username: neo4j.username,
+    password: neo4j.password,
+    timeoutMs: neo4j.timeoutMs,
+    maxRows: neo4j.maxRows,
+    onEvent: (event) => {
+      // Redacted: tags and classes only; never credentials, statements or row content.
+      if (event.type === 'error') {
+        console.log(
+          JSON.stringify({ ts: new Date().toISOString(), level: 'warn', msg: 'neo4j store request failed', tag: event.cypherTag, failure: event.failure, status: event.status }),
+        )
+      }
+    },
+  })
+  cachedQueryClient = { key, client }
+  return client
+}
 
 function getReader(config: ReturnType<typeof readRuntimeConfig>) {
   const key = config.neo4j ? `${config.neo4j.queryUrl}|${config.neo4j.database}|${config.neo4j.maxRows}` : 'none'
@@ -89,13 +117,13 @@ function getReader(config: ReturnType<typeof readRuntimeConfig>) {
 export function createRequestRuntime(request: Request, config = readRuntimeConfig(env)): Runtime {
   const supabaseUrl = env('SUPABASE_URL') ?? ''
   const anonKey = env('SUPABASE_ANON_KEY') ?? ''
-  const serviceKey = env('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   const authorization = request.headers.get('authorization') ?? undefined
 
   let repos: Runtime['repos'] = null
   let rateLimit: Runtime['rateLimit'] = localRateLimit
   let nonce: Runtime['nonce'] = localNonce
   let verifyAuth: Runtime['verifyAuth'] | undefined
+  let storageBackend: 'appwrite' | 'neo4j' | undefined
 
   const backend = selectBackend(env)
   if (backend.kind === 'appwrite') {
@@ -115,26 +143,27 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
     console.log(
       JSON.stringify({ ts: new Date().toISOString(), level: 'info', msg: 'storage backend selected', backend: backend.kind, reason: backend.reason }),
     )
+    storageBackend = 'appwrite'
   } else if (backend.kind === 'supabase') {
-    // User-scoped client: RLS applies because we forward the caller's token.
-    const userClient = createClient(supabaseUrl, anonKey, {
+    // Sign-in only: the caller's token is verified by Supabase Auth. The anon key is
+    // enough for auth.getUser; no service-role key is read or used.
+    const authClient = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: { headers: authorization ? { Authorization: authorization } : {} },
     }) as unknown as SupabaseLikeClient
+    verifyAuth = async (headers: Headers) => createAuthVerifier(authClient)(headers)
 
-    repos = createUserRepositories(userClient)
-    verifyAuth = async (headers: Headers) => createAuthVerifier(userClient)(headers)
-
-    if (serviceKey) {
-      // Admin client: only for cross-user primitives (rate limiting, nonces).
-      const adminClient = createClient(supabaseUrl, serviceKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      }) as unknown as SupabaseLikeClient
-      rateLimit = createPostgresFixedWindowStore(adminClient)
-      nonce = createPostgresNonceStore(adminClient)
+    if (config.neo4j) {
+      // Everything else lives in Neo4j, scoped to the verified account by the store.
+      const queryClient = getQueryClient(config.neo4j)
+      repos = createNeo4jUserRepositories(queryClient)
+      rateLimit = createNeo4jFixedWindowStore(queryClient)
+      nonce = createNeo4jNonceStore(queryClient)
+      storageBackend = 'neo4j'
     } else {
-      // A fresh per-request memory store silently disables throttling. A hosted
-      // backend needs shared atomic counters/nonces; missing secrets fail closed.
+      // Without Neo4j there is nowhere to keep account data, so no repositories are
+      // mounted (the app runs in guest mode). Shared counters and nonces fail closed:
+      // a per-request memory store would silently disable throttling and replay checks.
       rateLimit = { increment: async () => { throw new Error('shared limiter not configured') } }
       nonce = { claim: async () => { throw new Error('shared nonce store not configured') } }
     }
@@ -148,7 +177,7 @@ export function createRequestRuntime(request: Request, config = readRuntimeConfi
     readerReason: selection.reason,
     ...(selection.hint ? { readerSetupHint: selection.hint } : {}),
     repos,
-    ...(backend.kind === 'appwrite' || backend.kind === 'supabase' ? { storageBackend: backend.kind } : {}),
+    ...(storageBackend ? { storageBackend } : {}),
     ...(rateLimit ? { rateLimit } : {}),
     ...(nonce ? { nonce } : {}),
     ...(verifyAuth ? { verifyAuth } : {}),

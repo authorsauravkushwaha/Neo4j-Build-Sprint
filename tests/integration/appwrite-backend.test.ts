@@ -314,7 +314,7 @@ describe('the API on the Appwrite backend', () => {
     expect(guestStorage.note).toMatch(/guest mode/)
 
     const hosted = await healthCheckHandler(createTestRuntime(), makeRequest({ path: '/health-check' }))
-    expect((hosted.body as { data: { storage: { backend?: string } } }).data.storage.backend).toBe('supabase')
+    expect((hosted.body as { data: { storage: { backend?: string } } }).data.storage.backend).toBe('neo4j')
   })
 
   it('rate-limits through the same provider interface, on document counters', async () => {

@@ -1,5 +1,8 @@
 /**
- * Loads neo4j/seed.parameters.json into a Neo4j instance.
+ * Applies the Neo4j schema, then loads neo4j/seed.parameters.json into a Neo4j instance.
+ *
+ * Schema first: neo4j/schema.cypher (curriculum) and neo4j/user-schema.cypher (accounts,
+ * roadmaps, progress, rate limits, nonces). Both are idempotent, so every write run applies them.
  *
  * Two transports, one payload:
  *   - Bolt (the official `neo4j-driver`): used when NEO4J_URI is set. This is
@@ -31,6 +34,8 @@
  *   - overwriting matching properties requires the explicit --update-existing flag,
  *   - the run ends by re-counting the graph and comparing it with the manifest.
  */
+import { loadSchemaStatements } from './neo4j-schema-statements.ts'
+import { parseQueryApiUrl } from '../supabase/functions/_shared/core/neo4jQueryApi.ts'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -71,6 +76,26 @@ interface Decoded {
 }
 
 type Transport = 'bolt' | 'query-api'
+
+/**
+ * The Query API URL names the database (/db/<name>/query/v2). A separately declared
+ * NEO4J_DATABASE must agree, otherwise the seed and the app could write and read
+ * different databases. Exits with status 2 on a problem; returns the database name.
+ */
+function validateQueryApiConfig(queryUrl: string, allowHttp: boolean): string {
+  const urlCheck = parseQueryApiUrl(queryUrl, { allowHttp })
+  if (!urlCheck.ok) {
+    console.error(urlCheck.reason)
+    process.exit(2)
+  }
+  const declared = (process.env.NEO4J_DATABASE ?? '').trim()
+  if (declared && declared !== urlCheck.database) {
+    console.error(`NEO4J_DATABASE ("${declared}") does not match the database in NEO4J_QUERY_URL ("${urlCheck.database}").`)
+    console.error('Remove NEO4J_DATABASE or make the two agree.')
+    process.exit(2)
+  }
+  return urlCheck.database
+}
 
 /** Handles both Query API response shapes (v1 `results[].data[].row` and v2 `data.values`). */
 function decode(body: unknown): Decoded {
@@ -114,10 +139,15 @@ async function main(): Promise<void> {
   const seed = JSON.parse(readFileSync(resolve(root, 'neo4j', 'seed.parameters.json'), 'utf8')) as SeedFile
   const manifest = JSON.parse(readFileSync(resolve(root, 'neo4j', 'MANIFEST.json'), 'utf8')) as Manifest
 
-  let statements = seed.statements
-  if (only === 'nodes') statements = statements.filter((s) => s.tag.startsWith('nodes:'))
-  if (only === 'edges') statements = statements.filter((s) => s.tag.startsWith('edges:'))
-  statements = statements.slice(0, batchLimit)
+  let seedStatements = seed.statements
+  if (only === 'nodes') seedStatements = seedStatements.filter((s) => s.tag.startsWith('nodes:'))
+  if (only === 'edges') seedStatements = seedStatements.filter((s) => s.tag.startsWith('edges:'))
+  seedStatements = seedStatements.slice(0, batchLimit)
+  // Schema first (constraints and indexes, both idempotent), then the seed. The
+  // schema is applied on every write so a new deployment is never missing a constraint
+  // that MERGE relies on; --only and --batch limit the seed data only.
+  const schemaStatements = loadSchemaStatements(root)
+  const statements = [...schemaStatements, ...seedStatements]
 
   const rows = statements.reduce((sum, s) => sum + s.parameters.rows.length, 0)
   console.log(`Dataset ${seed.generatedFrom.version} (${seed.generatedFrom.updated})`)
@@ -140,6 +170,10 @@ async function main(): Promise<void> {
       console.log(`      ${statement.query.split('\n').join('\n      ')}`)
     }
     if (statements.length > 8) console.log(`  ... ${statements.length - 8} more statement(s)`)
+    if (queryUrl) {
+      const database = validateQueryApiConfig(queryUrl, allowHttp)
+      console.log(`Query API URL: ok (database "${database}").`)
+    }
     console.log('\nDry run: nothing was written.')
     return
   }
@@ -178,6 +212,7 @@ async function main(): Promise<void> {
     console.error('For a local Neo4j with a self-signed certificate, set NEO4J_ALLOW_HTTP=true knowingly.')
     process.exit(2)
   }
+  if (transport === 'query-api') validateQueryApiConfig(queryUrl, allowHttp)
   if (transport === 'bolt' && /^neo4j:\/\//i.test(uri) && (process.env.NODE_ENV ?? '') === 'production') {
     console.warn('Warning: NEO4J_URI uses an unencrypted scheme. Use neo4j+s:// for a hosted instance.')
   }

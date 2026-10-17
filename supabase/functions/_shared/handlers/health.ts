@@ -10,6 +10,7 @@ import { json, readClientIpOptions } from '../core/http.ts'
 import type { GraphHealth } from '../core/types.ts'
 import { describeProvider } from '../core/aiAdapter.ts'
 import { emptyGraphHint } from '../core/neo4jReader.ts'
+import { failureOf, NEO4J_FAILURE_HINTS } from '../core/neo4jQueryApi.ts'
 import { BUCKET_KEY_UNPEPPERED } from '../core/rateLimit.ts'
 import type { Runtime } from '../runtime.ts'
 import { signingStatus, sourceFor } from './shared.ts'
@@ -24,7 +25,7 @@ export interface HealthPayload {
   storage: {
     configured: boolean
     /** Which backend holds the rows. Absent in guest mode, where nothing does. */
-    backend?: 'supabase' | 'appwrite'
+    backend?: 'neo4j' | 'appwrite'
     note: string
   }
   security: {
@@ -99,6 +100,7 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
         checkedAt,
       }
     } catch (error) {
+      const failureClass = failureOf(error)
       graph = {
         configured: true,
         reachable: false,
@@ -108,13 +110,13 @@ export async function healthCheckHandler(runtime: Runtime, request: ApiRequest):
         relationshipCount: 0,
         labels: [],
         message: `The ${runtime.reader.kind === 'neo4j' ? 'Neo4j' : runtime.reader.kind === 'postgres' ? 'PostgreSQL' : 'local'} graph is configured but could not be reached. Check that graph service and its server-side configuration are available, then try again.`,
-
-        setupHint: emptyGraphHint(),
+        // The hint is a fixed sentence chosen by failure class; no upstream text reaches the browser.
+        setupHint: failureClass ? NEO4J_FAILURE_HINTS[failureClass] : emptyGraphHint(),
         checkedAt,
       }
       request.logger.warn('graph unreachable during health check', {
         code: 'dependency_unavailable',
-        detail: error instanceof Error ? error.name : 'unknown',
+        detail: failureClass ?? (error instanceof Error ? error.name : 'unknown'),
       })
     }
   }
@@ -175,8 +177,11 @@ function describeStorage(runtime: Runtime): string {
   if (!runtime.repos) {
     return 'Account storage is not configured here. The app runs in guest mode with progress kept in this browser only.'
   }
+  if (runtime.storageBackend === 'neo4j') {
+    return 'Accounts and saved data are stored in this deployment’s Neo4j database. Sign-in is handled by Supabase Auth, and every query is scoped to your account by the server.'
+  }
   if (runtime.storageBackend === 'appwrite') {
     return 'Accounts, saved roadmaps and progress are stored in this deployment’s Appwrite project, and every query is scoped to your account by the server.'
   }
-  return 'Accounts, saved roadmaps and progress are stored in your Supabase project under Row Level Security.'
+  return 'Accounts and saved data are stored in this deployment’s Neo4j database. Sign-in is handled by Supabase Auth, and every query is scoped to your account by the server.'
 }
