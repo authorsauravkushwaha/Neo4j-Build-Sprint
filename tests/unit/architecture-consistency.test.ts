@@ -34,6 +34,21 @@ describe('architecture documentation consistency', () => {
     expect(workflow).toContain('VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}')
     expect(workflow).toContain('VITE_BASE_PATH: ${{ steps.target.outputs.base }}')
     expect(workflow).toContain('Verify embedded API configuration')
-    expect(workflow).toContain('cannot call localhost')
+    // The rules live in one place (scripts/resolve-api-base.ts) so the build
+    // and the workflow cannot drift apart, and the workflow must use that
+    // place rather than re-implementing the checks.
+    expect(workflow).toContain('scripts/resolve-api-base.ts')
+    expect(read('scripts/resolve-api-base.ts')).toContain('must not point at localhost')
+  })
+
+  it('keeps one source of truth for the backend URL', () => {
+    // The committed configuration and the environment variable are read by the
+    // same resolver, and the workflow validates what the build embedded.
+    const resolver = read('scripts/resolve-api-base.ts')
+    expect(resolver).toContain('VITE_API_BASE_URL')
+    expect(resolver).toContain('config/production-backend.json')
+    const workflow = read('.github/workflows/deploy.yml')
+    expect(workflow).toContain('config/production-backend.json')
+    expect(read('config/production-backend.json')).toContain('/functions/v1')
   })
 })

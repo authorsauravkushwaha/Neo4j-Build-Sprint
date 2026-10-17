@@ -1,6 +1,6 @@
 # GraphMentor AI architecture and deployment truth
 
-**Status as of 2026-10-17:** the code supports live Neo4j and an explicitly configured PostgreSQL graph-reader alternative. This repository checkout does not prove that any external Render service, Neo4j instance, GitHub Pages build variable, or public-site request is configured. Treat production connectivity as **unverified until the HTTP verification script returns PASS against the deployed backend**.
+**Status as of 2026-10-17:** the code supports live Neo4j and an explicitly configured PostgreSQL graph-reader alternative. The verification tooling that can prove either one is in place (`node scripts/verify-neo4j.mjs`, and the `Verify Neo4j (live)` workflow that runs it with the repository's server-side credentials). This repository checkout does not prove that any external Render service, Neo4j instance, GitHub Pages build variable, or public-site request is configured. Treat production connectivity as **unverified until the HTTP verification script returns PASS against the deployed backend**.
 
 ## Production live architecture (deployment not verified)
 
@@ -43,21 +43,34 @@ The Neo4j credentials must be stored in the hosting dashboard, not in frontend v
 
 ## GitHub Pages frontend configuration
 
-The `.github/workflows/deploy.yml` computes and preserves the project Pages base path (`/Neo4j-Build-Sprint/`) and embeds `VITE_API_BASE_URL` at build time. For the Node service, the repository Actions **variable** must be set to the actual deployed service API base, for example `https://<actual-render-host>/functions/v1` (replace the example only with the real service URL). This variable is public configuration, not a secret. Never use a `VITE_*` variable for Neo4j credentials. Setting the variable does not change an existing Pages artifact: run a new Pages build after setting it. If the variable is empty, the Pages workflow deliberately builds the demo-capable frontend.
+The `.github/workflows/deploy.yml` computes and preserves the project Pages base path (`/Neo4j-Build-Sprint/`) and embeds the backend API base at build time.
+
+That base has exactly one resolver, `scripts/resolve-api-base.ts`, and two possible sources:
+
+1. `VITE_API_BASE_URL` — the repository Actions **variable** (public configuration, not a secret). It wins when it is set.
+2. `config/production-backend.json` — the committed configuration. It is the fallback, and it makes a build reproducible from the repository alone: the URL that ends up in the published artifact is visible in a pull request instead of hidden in a settings page.
+
+When both are set they must agree; a build that silently prefers one of them is how a site ends up pointing at a backend nobody is looking at. The rules the resolver enforces are the same rules the workflow checks with: an absolute `https://` URL in a production build, no credentials in it, no localhost, and the shared function contract `/functions/v1` at the end. The Node service genuinely serves that contract (`server/graphApi.ts` mounts every function route under `/functions/v1/`), so the suffix is not Supabase-specific.
+
+Never use a `VITE_*` variable for Neo4j credentials. Changing either source does not change an existing Pages artifact: run a new Pages build afterwards. If both are empty, the Pages workflow deliberately builds the demo-capable frontend, which labels itself DEMO DATA.
 
 ## Seed and data safety
 
 `neo4j/seed.cypher` and `scripts/seed-neo4j.ts` are repeatable upserts: nodes are `MERGE`d by schema `id`, relationships by endpoints/type, and default generated writes set properties only on create. Reruns do not duplicate graph records or overwrite existing properties. `npm run seed:neo4j -- --update-existing` is an explicit operator action that updates seed-owned properties on matched records; review/authorize the target before using it. There is no database reset/delete in the Neo4j seed. The script posts generated, parameterized row payloads and verifies node counts. Separately, `npm run seed:graphdb -- --wipe` is destructive to the alternative PostgreSQL store and requires an explicit command; it is not part of normal deployment.
+
+The seed script writes the same generated payload over two transports, so it can fill the database the backend actually reads: **Bolt** through the official `neo4j-driver` (when `NEO4J_URI` is set) and the **HTTPS Query API** (when `NEO4J_QUERY_URL` is set, which is what the Supabase Edge Functions read through). `npm run seed:neo4j -- --check` is read-only: it reports the identity of the configured database, what it already holds, and whether that matches the generated manifest, without writing anything. That is the step to run before seeding.
 
 ## Verification levels
 
 | Capability | Implemented in code | Tested in this checkout | Verified in production |
 | --- | --- | --- | --- |
 | Official Neo4j driver, parameterized named queries, driver/session lifecycle | Yes | Unit/integration tests can exercise contracts | **Not established here** |
-| Neo4j seed uses MERGE, no reset | Yes | Generated seed validation | Not established here |
+| Neo4j seed uses MERGE, no reset, over Bolt or the Query API | Yes | Generated seed validation | Not established here |
 | Render backend blueprint and GitHub Pages API-base build input | Yes | Workflow/config checks | **Not established here** |
-| Actual Neo4j query through deployed API | Verification script supports it | No external credentials/service available in this environment | **BLOCKED until deployed endpoint returns PASS** |
+| Actual Neo4j query through deployed API | Verification script and the `Verify Neo4j (live)` workflow support it | Verifier verdicts are unit-tested against mock backends | **BLOCKED until the verifier returns PASS against a real instance** |
 | Public Pages-to-backend request and live UI badge | Implemented based on response metadata | Frontend/API tests | **Not established here** |
+
+The verifier's verdicts are pinned by unit tests against mock backends. Those tests prove the *verifier's* logic; they are not a live database verification, and the script never reports a mock as one — it only reports what the service actually returned.
 
 ## Useful commands
 
@@ -66,10 +79,15 @@ npm run typecheck
 npm test
 npm run build
 npm run lint:secrets
+npm run verify:api-config                    # the backend URL a build would embed
+npm run seed:neo4j -- --check                # read-only: which database, and what it holds
 npm run verify:neo4j                         # local backend defaults to http://127.0.0.1:3000
-node scripts/verify-neo4j.mjs https://ACTUAL_BACKEND
+node scripts/verify-neo4j.mjs https://ACTUAL_BACKEND            # Node backend: the origin
+node scripts/verify-neo4j.mjs https://ACTUAL.supabase.co/functions/v1   # Edge Functions
 ```
 
-The verifier expects a backend root where `/api/health` exists. For the Render Node backend, pass its origin (no `/functions/v1` suffix): `node scripts/verify-neo4j.mjs https://ACTUAL_BACKEND`. It requires health, Neo4j health, graph stats, and a non-empty `career.longest-prereq-chain` query response. Exit codes: `0` PASS, `1` FAIL, `2` BLOCKED.
+The verifier detects the contract from the target URL (a `/functions/v1` base is a Supabase deployment; anything else is the Node backend) and can be forced with `--kind=node|supabase`. For the Node backend, pass its origin (no `/functions/v1` suffix): `node scripts/verify-neo4j.mjs https://ACTUAL_BACKEND`. It requires liveness, Neo4j health, live graph statistics, a non-empty `career.longest-prereq-chain` query response, and proof that arbitrary Cypher and injected parameters are refused. Exit codes: `0` PASS, `1` FAIL, `2` BLOCKED.
+
+The `Verify Neo4j (live)` workflow runs exactly that script inside GitHub Actions with the repository's server-side credentials, and publishes the verdict as a pull-request comment. It is the shortest path to evidence that a real Neo4j instance answered.
 
 See [Neo4j verification](verification-neo4j.md), [deployment](deployment.md), [graph database options](graph-database.md), and [judge demo](demo-script-neo4j.md). These pages defer to this document for architecture facts.

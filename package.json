@@ -52,7 +52,8 @@
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "start": "tsx server/website.ts",
     "seed:graphdb": "tsx scripts/seed-graph-db.ts",
-    "verify:neo4j": "node scripts/verify-neo4j.mjs"
+    "verify:neo4j": "node scripts/verify-neo4j.mjs",
+    "verify:api-config": "tsx scripts/resolve-api-base.ts"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",

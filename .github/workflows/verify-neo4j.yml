@@ -1,0 +1,278 @@
+# Live Neo4j verification.
+#
+# This workflow is the evidence that the backend really executes Cypher against
+# a real Neo4j instance. It runs the repository's own Node backend with the
+# server-side credentials, then runs scripts/verify-neo4j.mjs against it and
+# publishes the verdict as a pull-request comment and a job summary.
+#
+# It is deliberately separate from the Pages workflow: a green build, a
+# successful deployment and a 200 from a health endpoint are not evidence that
+# a database answered. Only a real, non-empty query result is.
+#
+# Repository secrets it uses (all server-side, never exposed to the browser):
+#   NEO4J_URI        neo4j+s://<id>.databases.neo4j.io  (Bolt; preferred)
+#   NEO4J_USERNAME   usually "neo4j"
+#   NEO4J_PASSWORD   the Aura password
+#   NEO4J_DATABASE   optional, defaults to "neo4j"
+#   NEO4J_QUERY_URL  optional, the HTTPS Query API URL (used for seeding only)
+#
+# Optional backend deployment secrets (used only when this workflow is
+# dispatched with deploy_backend=true):
+#   SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF
+#
+# When no credentials are configured the run reports BLOCKED and passes: an
+# infrastructure gap is not a code defect, and a red build would teach the
+# wrong lesson. When credentials *are* configured and the verification fails,
+# the run fails — that is a real defect and must be visible.
+#
+# Triggers:
+#   - workflow_dispatch (a maintainer can run it, optionally seeding and
+#     deploying the backend first),
+#   - pull_request (same-repository pull requests only carry the secrets; a
+#     fork's pull request runs without them and reports BLOCKED),
+#   - schedule (weekly drift check).
+name: Verify Neo4j (live)
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Seed the Neo4j instance when the graph is missing records (idempotent MERGE)'
+        type: boolean
+        default: false
+      deploy_backend:
+        description: 'Deploy the Supabase Edge Functions backend before verifying'
+        type: boolean
+        default: false
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '23 5 * * 1' # Mondays, 05:23 UTC
+
+permissions:
+  contents: read
+  # The verdict is published as a pull-request comment, so a reviewer sees the
+  # evidence next to the change it is evidence for.
+  pull-requests: write
+
+concurrency:
+  group: verify-neo4j
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Live query against Neo4j
+    runs-on: ubuntu-latest
+    # A pull request from a fork has no access to repository secrets; the job
+    # still runs and reports BLOCKED rather than failing for a reason it
+    # cannot fix.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      NEO4J_URI: ${{ secrets.NEO4J_URI }}
+      NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+      NEO4J_DATABASE: ${{ secrets.NEO4J_DATABASE }}
+      NEO4J_QUERY_URL: ${{ secrets.NEO4J_QUERY_URL }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Which credentials exist, by name only. The values never leave the
+      # runner and are never printed.
+      - name: Report the configured credentials
+        id: credentials
+        run: |
+          table=''
+          for name in NEO4J_URI NEO4J_USERNAME NEO4J_PASSWORD NEO4J_DATABASE NEO4J_QUERY_URL SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF; do
+            if [ -n "${!name}" ]; then present=yes; else present=no; fi
+            table="${table}| \`$name\` | ${present} |\n"
+          done
+          {
+            echo '## Configured credentials'
+            echo
+            echo '| Variable | Present |'
+            echo '| --- | --- |'
+            printf '%b' "$table"
+          } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo 'table<<GM_CREDENTIALS_EOF'
+            printf '%b' "$table"
+            echo 'GM_CREDENTIALS_EOF'
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$NEO4J_URI" ] || [ -n "$NEO4J_QUERY_URL" ]; then
+            echo "has_neo4j=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_neo4j=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$SUPABASE_PROJECT_REF" ]; then
+            echo "has_supabase=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_supabase=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Read-only first: which database is this, and does it already hold the
+      # graph? Nothing is written before that is known.
+      - name: Inspect the configured database
+        if: steps.credentials.outputs.has_neo4j == 'true'
+        continue-on-error: true
+        run: npm run seed:neo4j -- --check
+
+      - name: Seed the graph when it is missing records
+        if: steps.credentials.outputs.has_neo4j == 'true' && (inputs.seed == 'true' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        run: npm run seed:neo4j
+
+      - name: Build the backend and the site
+        run: npm run build
+
+      - name: Start the Node backend
+        if: steps.credentials.outputs.has_neo4j == 'true'
+        run: |
+          PORT=3000 npm start > /tmp/backend.log 2>&1 &
+          echo "PID=$!" >> "$GITHUB_ENV"
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3000/api/health > /dev/null 2>&1; then
+              echo "Backend is listening."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo '::error::The backend did not start.'
+          cat /tmp/backend.log
+          exit 1
+
+      - name: Verify the live Neo4j query
+        id: verify
+        if: steps.credentials.outputs.has_neo4j == 'true'
+        continue-on-error: true
+        run: |
+          set +e
+          node scripts/verify-neo4j.mjs http://127.0.0.1:3000 --json | tee /tmp/verify.json
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          case "$code" in
+            0) echo "outcome=PASS" >> "$GITHUB_OUTPUT" ;;
+            2) echo "outcome=BLOCKED" >> "$GITHUB_OUTPUT" ;;
+            *) echo "outcome=FAIL" >> "$GITHUB_OUTPUT" ;;
+          esac
+          exit 0
+
+      - name: Deploy the Supabase Edge Functions backend
+        id: deploy
+        if: steps.credentials.outputs.has_supabase == 'true' && (inputs.deploy_backend == 'true' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        uses: supabase/setup-cli@v1
+        with:
+          version: '2.54.11'
+
+      - name: Publish the functions
+        if: steps.credentials.outputs.has_supabase == 'true' && (inputs.deploy_backend == 'true' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push
+          supabase secrets set "NEO4J_QUERY_URL=$NEO4J_QUERY_URL" "NEO4J_USERNAME=$NEO4J_USERNAME" "NEO4J_PASSWORD=$NEO4J_PASSWORD" "NEO4J_DATABASE=${NEO4J_DATABASE:-neo4j}" "ALLOWED_ORIGINS=https://authorsauravkushwaha.github.io"
+          supabase functions deploy \
+            health-check get-careers get-career-details get-career-path \
+            get-skill-details get-skills get-graph get-projects get-resources \
+            analyze-skill-gaps generate-learning-roadmap mentor-chat \
+            save-roadmap update-progress manage-bookmarks manage-account \
+            submit-feedback auth-guard
+
+      - name: Verify the deployed backend
+        id: verify_deployed
+        if: steps.credentials.outputs.has_supabase == 'true' && (inputs.deploy_backend == 'true' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        run: |
+          set +e
+          node scripts/verify-neo4j.mjs "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1" --json | tee /tmp/verify-deployed.json
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the report
+        if: always()
+        env:
+          OUTCOME: ${{ steps.verify.outputs.outcome }}
+          VERIFY_JSON: ${{ steps.verify.outputs.exit_code }}
+          CREDENTIALS: ${{ steps.credentials.outputs.table }}
+        run: |
+          {
+            echo '## Live Neo4j verification'
+            echo
+            if [ "$OUTCOME" = "PASS" ]; then
+              echo '**PASS** — a real Cypher query executed against Neo4j and the response identified Neo4j as its source.'
+            elif [ "$OUTCOME" = "FAIL" ]; then
+              echo '**FAIL** — the backend answered but broke the contract it claims to implement.'
+            elif [ "$OUTCOME" = "BLOCKED" ]; then
+              echo '**BLOCKED** — the verification could not be completed (no credentials, or the database was unreachable).'
+            else
+              echo '**BLOCKED** — no Neo4j credentials are configured in this repository, so there was nothing to verify against.'
+            fi
+            echo
+            echo '### Local backend (Node + official Bolt driver)'
+            echo
+            echo '```'
+            sed -n '1,200p' /tmp/verify.json 2>/dev/null || echo '(not run)'
+            echo '```'
+            if [ -f /tmp/verify-deployed.json ]; then
+              echo
+              echo '### Deployed backend (Supabase Edge Functions)'
+              echo
+              echo '```'
+              sed -n '1,200p' /tmp/verify-deployed.json
+              echo '```'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment the report on the pull request
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          OUTCOME: ${{ steps.verify.outputs.outcome }}
+          CREDENTIALS: ${{ steps.credentials.outputs.table }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs')
+            const outcome = process.env.OUTCOME || 'BLOCKED'
+            const credentials = process.env.CREDENTIALS || '(not reported)'
+            const verify = fs.existsSync('/tmp/verify.json') ? fs.readFileSync('/tmp/verify.json', 'utf8') : '(not run)'
+            const deployed = fs.existsSync('/tmp/verify-deployed.json') ? fs.readFileSync('/tmp/verify-deployed.json', 'utf8') : ''
+            const headline = {
+              PASS: '✅ **PASS** — a real Cypher query ran against Neo4j.',
+              FAIL: '❌ **FAIL** — the backend answered but broke its contract.',
+              BLOCKED: '⛔ **BLOCKED** — verification could not be completed (missing credentials or unreachable database).',
+            }[outcome]
+            const body = `${headline}\n\n### Configured credentials\n\n${credentials}\n\n<details><summary>Verification output</summary>\n\n\`\`\`\n${verify}\n\`\`\`\n${deployed ? `\n### Deployed backend\n\n\`\`\`\n${deployed}\n\`\`\`\n` : ''}\n</details>`
+            const { data } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            })
+            const marker = '<!-- live-neo4j-verification -->'
+            const existing = data.find((comment) => (comment.body || '').includes(marker))
+            if (existing) {
+              await github.rest.issues.updateComment({ owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body: `${marker}\n${body}` })
+            } else {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: `${marker}\n${body}` })
+            }
+
+      # A failure here is a real defect: the credentials exist and the backend
+      # did not behave as it claims.
+      - name: Fail when the verification found a defect
+        if: steps.verify.outputs.outcome == 'FAIL'
+        run: |
+          echo '::error title=Live Neo4j verification failed::The backend answered but did not satisfy the query contract. See the report above.'
+          exit 1

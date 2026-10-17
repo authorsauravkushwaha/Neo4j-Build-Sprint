@@ -42,6 +42,7 @@ import {
   updateProgressHandler,
 } from '../supabase/functions/_shared/handlers/user.ts'
 import { AppError } from '../supabase/functions/_shared/core/errors.ts'
+import { NODE_ID_REGEX } from '../supabase/functions/_shared/core/validate.ts'
 import { createNeo4jDriverReader, resolveNeo4jUri, type DriverReader, type LedgerEvent } from './neo4jDriverReader.ts'
 import { openGraphDatabase, seedGraphDatabase, type TransactionalGraphDatabase } from './graphStore.ts'
 import { createPostgresGraphReader } from './graphReader.ts'
@@ -96,6 +97,16 @@ export function isGraphApiPath(path: string): boolean {
 
 /** In-memory ring buffer of the most recent ledger entries (read ledger). */
 const LEDGER_LIMIT = 200
+/**
+ * The provenance of one ledger entry.
+ *
+ * `servedBy` records where *that request's* data came from — never a global
+ * "the database is connected" flag. A liveness check that read no graph is
+ * `none`; a read that really executed Cypher is `neo4j-live`; a request that
+ * could not be served is `unavailable`. Collapsing those into one value is how
+ * a deployment ends up claiming Neo4j for rows it never read.
+ */
+type LedgerSource = 'neo4j-live' | 'postgres-live' | 'local-sample' | 'unavailable' | 'none'
 type LedgerEntry = {
   requestId: string
   timestamp: string
@@ -106,13 +117,28 @@ type LedgerEntry = {
   dbAvailableMs?: number
   dbConsumedMs?: number
   entities?: string[]
-  servedBy: 'neo4j-live' | 'postgres-live' | 'unavailable'
+  servedBy: LedgerSource
   message?: string
 }
 const ledger: LedgerEntry[] = []
 function recordLedger(entry: LedgerEntry) {
   ledger.unshift(entry)
   if (ledger.length > LEDGER_LIMIT) ledger.length = LEDGER_LIMIT
+}
+
+/**
+ * Reads the provenance a handler put in its own response envelope.
+ *
+ * The shared handlers label every response with `meta.source`
+ * (`neo4j-live`, `postgres-live` or `local-sample`), so the ledger can repeat
+ * that label instead of inferring one from the deployment's configuration.
+ * A response without a label did not read a graph, and says so.
+ */
+function sourceOfResponse(result: HttpResponse): LedgerSource {
+  const body = result.body as { meta?: { source?: unknown } } | null
+  const source = body?.meta?.source
+  if (source === 'neo4j-live' || source === 'postgres-live' || source === 'local-sample') return source
+  return result.status >= 500 ? 'unavailable' : 'none'
 }
 
 function toFetchRequest(request: IncomingMessage): Request {
@@ -283,14 +309,28 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
 
   // Simple named-query allow-list for /api/query — never arbitrary Cypher.
   const safeId = (value: unknown): string => {
-    const text = typeof value === 'string' ? value : ''
-    return /^[a-zA-Z0-9:_-]{1,96}$/.test(text) ? text : ''
+    const text = typeof value === 'string' ? value.trim() : ''
+    return NODE_ID_REGEX.test(text) ? text : ''
   }
   const safeLimit = (value: unknown, fallback: number, ceiling: number): number => {
     const n = typeof value === 'number' ? value : Number(value)
     return Number.isFinite(n) ? Math.max(1, Math.min(Math.floor(n), ceiling)) : fallback
   }
-  const NAMED_QUERIES: Record<string, { cypher: (p: Record<string, unknown>) => string; params?: (p: Record<string, unknown>) => Record<string, unknown>; description: string }> = {
+  /** Rejects a missing or malformed id instead of silently matching nothing. */
+  const requireId = (value: unknown, name: string, prefix: string): string | null => {
+    const text = typeof value === 'string' ? value.trim() : ''
+    if (!text) return `"${name}" is required.`
+    if (!NODE_ID_REGEX.test(text)) return `"${name}" is not a valid node identifier.`
+    if (!text.startsWith(`${prefix}:`)) return `"${name}" must be a ${prefix} identifier.`
+    return null
+  }
+  const NAMED_QUERIES: Record<string, {
+    cypher: (p: Record<string, unknown>) => string
+    params?: (p: Record<string, unknown>) => Record<string, unknown>
+    /** Returns a message when the caller's parameters cannot be used. */
+    validate?: (p: Record<string, unknown>) => string | null
+    description: string
+  }> = {
     'graph.stats': {
       description: 'Count of nodes returned by Neo4j.',
       cypher: () => 'MATCH (n) RETURN count(n) AS nodes',
@@ -300,93 +340,141 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       description: 'Skills a given career requires, by traversing REQUIRES_SKILL edges.',
       cypher: (_p) => 'MATCH (c:Career {id: $careerId})-[rs:REQUIRES_SKILL]->(s:Skill) RETURN s.id AS id, s.name AS name, s.difficulty AS difficulty, rs.essential AS essential, rs.weight AS weight ORDER BY essential DESC, s.name ASC LIMIT $limit',
       params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 40, 200) }),
+      validate: (p) => requireId(p.careerId, 'careerId', 'career'),
     },
     'skill.routes-to-career': {
       description: 'Shortest prerequisite paths from a skill to a skill a target career requires.',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(target:Skill) MATCH p = shortestPath((start:Skill {id: $fromSkillId})-[:REQUIRES*0..6]->(target)) WHERE length(p) >= 1 RETURN [n IN nodes(p) | n.id] AS ids, [n IN nodes(p) | n.name] AS names, length(p) AS hops, target.id AS targetId, target.name AS targetName ORDER BY hops ASC LIMIT $limit',
       params: (p) => ({ careerId: safeId(p.careerId), fromSkillId: safeId(p.fromSkillId), limit: safeLimit(p.limit, 5, 20) }),
+      validate: (p) => requireId(p.careerId, 'careerId', 'career') ?? requireId(p.fromSkillId, 'fromSkillId', 'skill'),
     },
     'skill.prerequisite-chain': {
       description: 'Recursive prerequisite chain for a skill up to N hops deep.',
       cypher: () => 'MATCH p=(s:Skill {id: $skillId})-[:REQUIRES*1..6]->(base:Skill) WHERE NOT (base)-[:REQUIRES]->(:Skill) RETURN [n IN nodes(p) | n.id] AS ids, [n IN nodes(p) | n.name] AS names, length(p) AS depth ORDER BY depth DESC LIMIT $limit',
       params: (p) => ({ skillId: safeId(p.skillId), limit: safeLimit(p.limit, 10, 50) }),
+      validate: (p) => requireId(p.skillId, 'skillId', 'skill'),
     },
     'career.resources-covering-required-skills': {
       description: 'Free resources that cover required skills for a career (multi-hop: Career→Skill←Resource).',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill)<-[:COVERS]-(r:Resource) RETURN r.id AS resourceId, r.name AS resource, r.accessModel AS accessModel, collect(DISTINCT s.id) AS coveredSkillIds, count(DISTINCT s) AS covers ORDER BY covers DESC, r.name ASC LIMIT $limit',
       params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 20, 100) }),
+      validate: (p) => requireId(p.careerId, 'careerId', 'career'),
     },
     'career.longest-prereq-chain': {
       description: 'Multi-hop traversal: longest prerequisite chain feeding each required skill.',
       cypher: () => 'MATCH (c:Career {id: $careerId})-[:REQUIRES_SKILL]->(s:Skill) MATCH path = (s)-[:REQUIRES*1..6]->(base:Skill) WHERE NOT (base)-[:REQUIRES]->(:Skill) RETURN c.name AS career, s.name AS skill, length(path) AS depth, [n IN nodes(path) | n.name] AS chain ORDER BY depth DESC LIMIT $limit',
       params: (p) => ({ careerId: safeId(p.careerId), limit: safeLimit(p.limit, 10, 50) }),
+      validate: (p) => requireId(p.careerId, 'careerId', 'career'),
     },
   }
 
-  async function handleRest(request: ApiRequest): Promise<HttpResponse> {
+  /**
+   * Why the Neo4j endpoints are unavailable on this deployment.
+   *
+   * A deployment that serves another database says so plainly: "Neo4j is not
+   * configured" on a PostgreSQL-backed deployment reads like a fault, when the
+   * accurate statement is that this deployment is not the Neo4j one.
+   */
+  const neo4jUnavailableReason = (): string => {
+    if (opened.kind === 'postgres') {
+      return 'This deployment serves the PostgreSQL graph store, not Neo4j. No Neo4j instance is configured for it.'
+    }
+    return opened.reason ?? 'Neo4j is not configured on this deployment.'
+  }
+
+  /**
+   * The provenance of one REST response.
+   *
+   * `neo4j-live` is only ever set for a request that really executed Cypher
+   * against Neo4j in this request. A liveness check that read no graph is
+   * `none`, and a request that could not be served is `unavailable`.
+   */
+  type RestResult = { response: HttpResponse; servedBy: LedgerSource }
+
+  async function handleRest(request: ApiRequest): Promise<RestResult> {
     const path = (request.url.pathname ?? '').replace(/\/+$/, '')
     const method = request.method.toUpperCase()
 
     // GET /health — liveness.
     if (path === '/api/health' && method === 'GET') {
-      return json(200, {
-        ok: true,
-        service: 'graphmentor-neo4j-backend',
-        version: '1.1.0',
-        time: new Date().toISOString(),
-        graphBackend: opened.kind,
-      })
+      return {
+        servedBy: 'none',
+        response: json(200, {
+          ok: true,
+          service: 'graphmentor-neo4j-backend',
+          version: '1.1.0',
+          time: new Date().toISOString(),
+          graphBackend: opened.kind,
+        }),
+      }
     }
 
     // GET /health/neo4j — real connectivity status (fails honestly).
     if (path === '/api/health/neo4j' && method === 'GET') {
       if (opened.kind !== 'neo4j' || !opened.driver) {
-        return json(503, {
-          ok: false,
-          connected: false,
-          backend: opened.kind,
-          reason: opened.reason ?? 'Neo4j is not configured.',
-          hint: opened.setupHint,
-          time: new Date().toISOString(),
-        })
+        return {
+          servedBy: 'unavailable',
+          response: json(503, {
+            ok: false,
+            connected: false,
+            backend: opened.kind,
+            reason: neo4jUnavailableReason(),
+            hint: opened.setupHint,
+            time: new Date().toISOString(),
+          }),
+        }
       }
       try {
         const start = Date.now()
         await opened.driver.runQuery('RETURN 1 AS ok, $pid AS connectedFrom', { pid: 'graphmentor-backend' }, 'HEALTH_PING')
         const nodesR = await opened.driver.totals()
-        return json(200, {
-          ok: true,
-          connected: true,
-          backend: 'neo4j',
-          uri: opened.driver.uri.replace(/:\/\/[^@]+@/, '://<redacted>@'),
-          database: (env.NEO4J_DATABASE ?? 'neo4j'),
-          pingMs: Date.now() - start,
-          nodes: nodesR.value.nodes,
-          relationships: nodesR.value.relationships,
-          labels: nodesR.value.labels,
-          time: new Date().toISOString(),
-        })
+        // The identity of the database this request actually reached, so an
+        // operator can confirm it is the intended instance and not a default.
+        const identity = await opened.driver.identity()
+        return {
+          servedBy: 'neo4j-live',
+          response: json(200, {
+            ok: true,
+            connected: true,
+            backend: 'neo4j',
+            uri: opened.driver.uri.replace(/:\/\/[^@]+@/, '://<redacted>@'),
+            database: identity.name,
+            configuredDatabase: (env.NEO4J_DATABASE ?? 'neo4j'),
+            databaseStatus: identity.status,
+            pingMs: Date.now() - start,
+            nodes: nodesR.value.nodes,
+            relationships: nodesR.value.relationships,
+            labels: nodesR.value.labels,
+            time: new Date().toISOString(),
+          }),
+        }
       } catch (error) {
-        return json(503, {
-          ok: false,
-          connected: false,
-          backend: 'neo4j',
-          reason: 'Neo4j connectivity check failed; verify server-side credentials, network access, database name, and query timeout.',
-          time: new Date().toISOString(),
-        })
+        return {
+          servedBy: 'unavailable',
+          response: json(503, {
+            ok: false,
+            connected: false,
+            backend: 'neo4j',
+            reason: 'Neo4j connectivity check failed; verify server-side credentials, network access, database name, and query timeout.',
+            time: new Date().toISOString(),
+          }),
+        }
       }
     }
 
     // GET /api/graph/stats — live counts from Neo4j.
     if (path === '/api/graph/stats' && method === 'GET') {
       if (opened.kind !== 'neo4j' || !opened.driver) {
-        return json(503, { ok: false, error: 'Neo4j unavailable', reason: opened.reason })
+        return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'Neo4j unavailable', reason: neo4jUnavailableReason() }) }
       }
       try {
         const totals = await opened.driver.totals()
-        return json(200, { ok: true, source: 'neo4j-live', ...totals.value, queryMs: totals.ms, checkedAt: new Date().toISOString() })
+        return {
+          servedBy: 'neo4j-live',
+          response: json(200, { ok: true, source: 'neo4j-live', ...totals.value, queryMs: totals.ms, checkedAt: new Date().toISOString() }),
+        }
       } catch {
-        return json(503, { ok: false, error: 'neo4j_unavailable', reason: 'Neo4j statistics query failed.' })
+        return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'neo4j_unavailable', reason: 'Neo4j statistics query failed.' }) }
       }
     }
 
@@ -399,12 +487,22 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       // Validate the query id BEFORE touching Neo4j so unknown ids always 400
       // even when the database is down — never silently 503 a malformed request.
       if (!def) {
-        return json(400, { ok: false, error: 'unknown_query', allowedQueryIds: Object.keys(NAMED_QUERIES) })
+        return { servedBy: 'none', response: json(400, { ok: false, error: 'unknown_query', allowedQueryIds: Object.keys(NAMED_QUERIES) }) }
+      }
+      // Parameters are validated before the database is touched: a request with
+      // a missing or malformed id is a client mistake (400), not an outage.
+      const rawParams = body.params ?? {}
+      if (typeof rawParams !== 'object' || Array.isArray(rawParams)) {
+        return { servedBy: 'none', response: json(400, { ok: false, error: 'invalid_params', message: '"params" must be an object.' }) }
+      }
+      const invalid = def.validate?.(rawParams)
+      if (invalid) {
+        return { servedBy: 'none', response: json(400, { ok: false, error: 'invalid_params', queryId: qid, message: invalid }) }
       }
       if (opened.kind !== 'neo4j' || !opened.driver) {
-        return json(503, { ok: false, error: 'Neo4j unavailable', reason: opened.reason })
+        return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'Neo4j unavailable', reason: neo4jUnavailableReason() }) }
       }
-      const params = def.params ? def.params(body.params ?? {}) : {}
+      const params = def.params ? def.params(rawParams) : {}
       const requestId = randomUUID()
       const started = Date.now()
       try {
@@ -420,38 +518,54 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
           entities: result.rows.slice(0, 5).map((r) => String(r.id ?? r.career ?? r.skillId ?? r.resourceId ?? '')).filter(Boolean),
         }
         recordLedger(entry)
-        return json(200, {
-          ok: true,
-          requestId,
-          queryId: qid,
-          description: def.description,
-          cypher: def.cypher(params),
-          params,
-          records: result.rows,
-          rowCount: result.rows.length,
-          executionMs: entry.executionMs,
+        return {
           servedBy: 'neo4j-live',
-          evidence: {
+          response: json(200, {
+            ok: true,
+            requestId,
             queryId: qid,
-            executedAt: entry.timestamp,
-            driver: 'neo4j-javascript-driver',
-            database: env.NEO4J_DATABASE ?? 'neo4j',
-          },
-        })
+            queryTemplateId: qid,
+            description: def.description,
+            cypher: def.cypher(params),
+            params,
+            records: result.rows,
+            rowCount: result.rows.length,
+            executionMs: entry.executionMs,
+            /** The data source of *this* response. */
+            source: 'neo4j-live',
+            servedBy: 'neo4j-live',
+            evidence: {
+              queryId: qid,
+              executedAt: entry.timestamp,
+              driver: 'neo4j-javascript-driver',
+              database: env.NEO4J_DATABASE ?? 'neo4j',
+            },
+          }),
+        }
       } catch (error) {
         recordLedger({
           requestId, timestamp: new Date().toISOString(), queryId: qid, status: 'error',
           executionMs: Date.now() - started, servedBy: 'neo4j-live',
           message: error instanceof Error ? error.message : 'Query failed',
         })
-        return json(502, { ok: false, error: 'query_failed', requestId, message: 'The Neo4j query did not complete.' })
+        return {
+          servedBy: 'neo4j-live',
+          response: json(502, {
+            ok: false,
+            error: 'query_failed',
+            errorCode: 'query_failed',
+            requestId,
+            queryId: qid,
+            message: 'The Neo4j query did not complete.',
+          }),
+        }
       }
     }
 
     // GET /api/graph/explore — bounded subgraph for visualisation.
     if (path === '/api/graph/explore' && method === 'GET') {
       if (opened.kind !== 'neo4j' || !opened.driver) {
-        return json(503, { ok: false, error: 'Neo4j unavailable', reason: opened.reason })
+        return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'Neo4j unavailable', reason: neo4jUnavailableReason() }) }
       }
       const url = request.url
       const seedId = url.searchParams.get('seedId')
@@ -462,7 +576,10 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       const result = await opened.driver.getNeighborhood({
         seedId: seedId ?? undefined, careerId: careerId ?? undefined, depth, limit,
       })
-      return json(200, { ok: true, source: 'neo4j-live', ...result.value, queryMs: result.ms, executionMs: Date.now() - started })
+      return {
+        servedBy: 'neo4j-live',
+        response: json(200, { ok: true, source: 'neo4j-live', ...result.value, queryMs: result.ms, executionMs: Date.now() - started }),
+      }
     }
 
     // GET /api/evidence/:id — retrieve evidence/provenance for an answer.
@@ -470,7 +587,7 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
     if (evidenceMatch && method === 'GET') {
       const id = decodeURIComponent(evidenceMatch[1] ?? '')
       if (opened.kind !== 'neo4j' || !opened.driver) {
-        return json(503, { ok: false, error: 'Neo4j unavailable', reason: opened.reason })
+        return { servedBy: 'unavailable', response: json(503, { ok: false, error: 'Neo4j unavailable', reason: neo4jUnavailableReason() }) }
       }
       // Fetch up to one node of each known label with this id.
       const labels = ['Career','Skill','Project','Resource','Concept','Tool','Subject','EngineeringBranch','LearningModule','Assessment','ProgrammingLanguage']
@@ -487,15 +604,21 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
           // skip label on error
         }
       }
-      return json(200, { ok: true, id, source: 'neo4j-live', matches: evidence, retrievedAt: new Date().toISOString() })
+      return {
+        servedBy: 'neo4j-live',
+        response: json(200, { ok: true, id, source: 'neo4j-live', matches: evidence, retrievedAt: new Date().toISOString() }),
+      }
     }
 
     // GET /api/ledger/recent — honest read ledger.
     if (path === '/api/ledger/recent' && method === 'GET') {
-      return json(200, { ok: true, entries: ledger.slice(0, 50), totalRecorded: ledger.length, backend: opened.kind })
+      return {
+        servedBy: 'none',
+        response: json(200, { ok: true, entries: ledger.slice(0, 50), totalRecorded: ledger.length, backend: opened.kind }),
+      }
     }
 
-    return notFound()
+    return { servedBy: 'none', response: notFound() }
   }
 
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -528,14 +651,15 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
       const restName = restRouteName(path)
       if (restName) {
         const started = Date.now()
-        const result = await handleRest(apiRequest)
+        const { response: result, servedBy } = await handleRest(apiRequest)
         recordLedger({
           requestId,
           timestamp: new Date().toISOString(),
           queryId: `REST:${restName}`,
           status: result.status >= 500 ? 'error' : 'ok',
           executionMs: Date.now() - started,
-          servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'unavailable',
+          // The source of *this* response, not of the deployment.
+          servedBy,
         })
         await sendFetchResponse(response, finish(result, { cors }))
         return
@@ -553,7 +677,9 @@ export async function createGraphApi(options: GraphApiOptions = {}): Promise<Gra
         queryId: fn ?? 'unknown',
         status: result.status >= 500 ? 'error' : 'ok',
         executionMs: Date.now() - started,
-        servedBy: opened.kind === 'neo4j' ? 'neo4j-live' : opened.kind === 'postgres' ? 'postgres-live' : 'unavailable',
+        // The handler labels its own response; the ledger repeats that label
+        // instead of guessing from the deployment's configuration.
+        servedBy: sourceOfResponse(result),
       })
       await sendFetchResponse(response, finish(result, { cors }))
     } catch (error) {

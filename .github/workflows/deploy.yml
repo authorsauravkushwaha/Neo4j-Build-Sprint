@@ -21,6 +21,10 @@
 #                             (e.g. https://<actual-service>/functions/v1). This is
 #                             not a secret. Empty means the published site runs demo data.
 #                             Set it and trigger a new Pages build to update the artifact.
+#
+# The same value can be committed in config/production-backend.json, which is
+# what makes a build reproducible from the repository alone. The environment
+# variable wins when both are set, and the build fails if they disagree.
 #   VITE_CSP_EXTRA_CONNECT_SRC  extra connect-src host when the API sits behind a
 #                             different hostname than VITE_API_BASE_URL (rare)
 name: Build and deploy
@@ -75,6 +79,12 @@ jobs:
 
       - name: Check generated Cypher is current
         run: npm run emit:cypher -- --check
+
+      # The backend URL a build would embed must be usable *before* anything is
+      # published: an https absolute URL that ends in /functions/v1, no
+      # credentials, no localhost. An empty value is a legitimate demo build.
+      - name: Validate backend configuration
+        run: npm run verify:api-config -- --check
 
   build:
     name: Build and deploy
@@ -182,6 +192,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # The repository variable still wins. When it is empty the build
+          # falls back to config/production-backend.json (scripts/resolve-api-base.ts).
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
           VITE_CSP_EXTRA_CONNECT_SRC: ${{ vars.VITE_CSP_EXTRA_CONNECT_SRC }}
           VITE_SITE_URL: ${{ steps.target.outputs.url }}
@@ -189,25 +201,21 @@ jobs:
           VITE_APP_VERSION: ${{ github.ref_name }}-${{ github.sha }}
         run: npm run build
 
+      # The same resolver the build used, so this step checks the value that
+      # was actually embedded rather than a second, possibly different, one.
       - name: Verify embedded API configuration
-        env:
-          API_BASE: ${{ vars.VITE_API_BASE_URL }}
         run: |
-          if [ -z "$API_BASE" ]; then
-            echo 'No VITE_API_BASE_URL repository variable is set; this Pages artifact is demo-capable and will use bundled sample data.'
-            echo '::warning title=Demo deployment::Set the public Actions repository variable VITE_API_BASE_URL to the actual backend /functions/v1 URL and run a new Pages build to connect live data.'
+          set -e
+          api_json="$(npx tsx scripts/resolve-api-base.ts --json)"
+          echo "$api_json"
+          api_base="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).apiBaseUrl)' "$api_json")"
+          if [ -z "$api_base" ]; then
+            echo 'No backend URL is configured; this Pages artifact is demo-capable and will use bundled sample data.'
+            echo '::warning title=Demo deployment::Set VITE_API_BASE_URL (repository variable) or config/production-backend.json to the deployed backend /functions/v1 URL, then run a new Pages build to connect live data.'
           else
-            case "$API_BASE" in
-              https://*) ;;
-              *) echo '::error title=Invalid API base::VITE_API_BASE_URL must be an absolute HTTPS backend URL on GitHub Pages.'; exit 1 ;;
-            esac
-            case "$API_BASE" in
-              *localhost*|*127.0.0.1*) echo '::error title=Invalid API base::A production Pages build cannot call localhost.'; exit 1 ;;
-              */functions/v1) ;;
-              *) echo '::error title=Invalid API base::VITE_API_BASE_URL must end in /functions/v1.'; exit 1 ;;
-            esac
-            grep -R -F -- "$API_BASE" dist/assets >/dev/null || { echo '::error::The configured backend URL was not embedded in the built assets.'; exit 1; }
-            echo "Verified backend API base is embedded in the Pages artifact: $API_BASE"
+            npx tsx scripts/resolve-api-base.ts --check
+            grep -R -F -- "$api_base" dist/assets >/dev/null || { echo '::error::The configured backend URL was not embedded in the built assets.'; exit 1; }
+            echo "Verified backend API base is embedded in the Pages artifact: $api_base"
           fi
 
       - name: Scan built artifact

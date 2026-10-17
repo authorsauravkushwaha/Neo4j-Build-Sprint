@@ -1,12 +1,13 @@
 import { accountsPlugin } from './server/vite.ts'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa'
 
 import { canonicalSiteUrl, escapeRegExp, normalizeBase, spaFallbackDocument, withManifestBaseUrl } from './scripts/pages-target.ts'
+import { resolveApiBase } from './scripts/resolve-api-base.ts'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
@@ -171,6 +172,23 @@ export default defineConfig(({ mode, command }) => {
    * this value onto paths with string concatenation — see `normalizeBase`.
    */
   const base = normalizeBase(env.VITE_BASE_PATH)
+  /**
+   * The backend URL this build talks to.
+   *
+   * `VITE_API_BASE_URL` still wins; `config/production-backend.json` is the
+   * committed fallback that makes a build reproducible from the repository. The
+   * resolved value is written back into `env` so that the CSP allow-list, the
+   * embedded client configuration and the workflow's own validation step all
+   * read the same string (scripts/resolve-api-base.ts holds the rules).
+   */
+  const apiBase = resolveApiBase({ env, production: mode === 'production' })
+  if (apiBase.problems.length > 0) {
+    for (const problem of apiBase.problems) console.warn(`[api-base] ${problem}`)
+  }
+  env.VITE_API_BASE_URL = apiBase.apiBaseUrl
+  console.log(
+    `[api-base] backend ${apiBase.kind}, base ${apiBase.apiBaseUrl || '(none — demo build)'} (from ${apiBase.source})`,
+  )
   /** The site's own URL including the base path and a trailing slash, or null. */
   const siteCanonical = canonicalSiteUrl(env.VITE_SITE_URL, base)
   /**
@@ -208,13 +226,39 @@ export default defineConfig(({ mode, command }) => {
       : []),
   ]
 
+  /**
+   * A same-origin graph API for the dev and preview servers. Set
+   * GM_GRAPH_API_TARGET to a running backend (for example
+   * "http://127.0.0.1:3000") and the server forwards the shared function
+   * contract to it, so the site can be previewed against a real backend
+   * without a cross-origin request — which is also how the built site behaves
+   * when its API base is a relative path. Local tooling only: the built site
+   * is static files and never runs this server.
+   */
+  const graphApiProxy: Record<string, ProxyOptions> = env.GM_GRAPH_API_TARGET
+    ? {
+        '/functions/v1': {
+          target: env.GM_GRAPH_API_TARGET,
+          changeOrigin: false,
+          xfwd: false,
+        },
+      }
+    : {}
+
   const connectHosts = [
     "'self'",
     'https://*.supabase.co',
     'https://*.supabase.in',
     // A relative base ("/functions/v1" for a same-origin backend) is covered by
     // 'self' and is not a valid CSP source, so only absolute URLs are added.
-    env.VITE_API_BASE_URL?.trim().startsWith('http') ? env.VITE_API_BASE_URL.trim() : '',
+    //
+    // The *origin* is what belongs here, not the whole base URL. A CSP source
+    // that carries a path only matches that exact path unless the path ends
+    // with "/", so "https://api.example.com/functions/v1" would have blocked
+    // every real request to "https://api.example.com/functions/v1/health-check"
+    // — the browser blocked the whole API, silently, while the build stayed
+    // green. A real browser check now covers this.
+    apiBase.apiBaseUrl.startsWith('http') ? new URL(apiBase.apiBaseUrl).origin : '',
     env.VITE_CSP_EXTRA_CONNECT_SRC?.trim(),
   ].filter((v): v is string => Boolean(v))
 
@@ -254,7 +298,12 @@ export default defineConfig(({ mode, command }) => {
   return {
     base,
     // The build knows its own version; before this the footer rendered "vdev".
-    define: { 'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion) },
+    define: {
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+      // The client reads the backend base from here, so the value that the
+      // build validated is exactly the value the browser will call.
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBase.apiBaseUrl),
+    },
     plugins: [
       accountsPlugin(env),
       react(),
@@ -400,6 +449,7 @@ export default defineConfig(({ mode, command }) => {
         ...(env.GM_EXTERNAL_API === 'true'
           ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
           : {}),
+        ...graphApiProxy,
       },
     },
     preview: {
@@ -411,6 +461,7 @@ export default defineConfig(({ mode, command }) => {
         ...(env.GM_EXTERNAL_API === 'true'
           ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
           : {}),
+        ...graphApiProxy,
       },
     },
   }
