@@ -238,6 +238,9 @@ jobs:
       - name: Comment the report on the pull request
         if: always() && github.event_name == 'pull_request'
         continue-on-error: true
+        env:
+          OUTCOME: ${{ steps.verify.outputs.outcome }}
+          CREDENTIALS: ${{ steps.credentials.outputs.table }}
         uses: actions/github-script@v7
         with:
           script: |
