@@ -1130,7 +1130,7 @@ export function createLiveClient(options: LiveClientOptions): GraphMentorClient 
 
   return {
     mode: 'live',
-    provenance: 'Live deployment: careers, skills, projects and resources are read from the configured Neo4j knowledge graph through Supabase Edge Functions.',
+    provenance: 'Live deployment: careers, skills, projects and resources are read from a Neo4j knowledge graph through the deployed backend API. All graph queries execute parameterised Cypher on the server.',
 
     async health() {
       /* The shape health-check actually returns (handlers/health.ts). A

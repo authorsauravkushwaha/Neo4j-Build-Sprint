@@ -1,20 +1,23 @@
-# Node website + persistent server-side Postgres (PGlite).
+# Node website + Neo4j graph backend.
 # Review hosting/disk charges before creating this Blueprint.
-# Static hosts such as GitHub Pages cannot run this backend.
+# Static hosts such as GitHub Pages cannot run this backend — deploy this
+# service AND point the Pages build's VITE_API_BASE_URL at this service's URL
+# (see docs/deployment.md).
 #
-# This one service is the whole live app:
-#   - static site (dist/),
-#   - account API at /api/* (this deployment's own account database),
-#   - graph API at /functions/v1/* — the same endpoints the Supabase Edge
-#     Functions serve, backed by THIS deployment's own PostgreSQL graph store
-#     (server/graphStore.ts; seeded automatically on first boot).
-# VITE_API_BASE_URL=/functions/v1 makes the built frontend call that same-origin
-# API, so the site opens in live mode — no Supabase project or Neo4j account
-# required. Paths A (GitHub Pages + this service) and B (Supabase + Neo4j Aura)
-# are documented in docs/graph-database.md and docs/deployment.md.
+# This one service runs:
+#   - static site (dist/) when VITE_BASE_PATH=/ and VITE_API_BASE_URL is the
+#     same origin,
+#   - account API at /api/auth/* (sign-in + sync; this deployment's own DB),
+#   - Neo4j graph API at /api/* and /functions/v1/* (genuine Cypher over Bolt),
+#     with endpoints /api/health, /api/health/neo4j, /api/graph/stats,
+#     /api/query, /api/graph/explore, /api/evidence/:id, /api/ledger/recent.
+#
+# REQUIRED: set the three NEO4J_* env vars (NEO4J_URI, NEO4J_USERNAME,
+# NEO4J_PASSWORD) pointing at your Neo4j Aura instance. Without them the
+# service starts but reports DATABASE UNAVAILABLE and the UI shows demo data.
 services:
   - type: web
-    name: graphmentor
+    name: graphmentor-neo4j
     runtime: node
     plan: starter
     numInstances: 1
@@ -30,19 +33,25 @@ services:
         value: 22
       - key: NODE_ENV
         value: production
+      # Where the disk-backed account database lives.
       - key: GM_DATABASE_DIR
         value: /var/data/postgres
-      # The graph store lives on the same persistent disk, next to accounts.
-      - key: GM_GRAPH_DATABASE_DIR
-        value: /var/data/graph-postgres
-      # Same-origin graph API: build the frontend against /functions/v1.
+      # Neo4j connection (REQUIRED for live data). Set these in Render dashboard.
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USERNAME
+        value: neo4j
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: NEO4J_DATABASE
+        value: neo4j
+      # Build the frontend against same-origin /functions/v1 when serving the
+      # static site from this service. For GitHub Pages cross-origin, rebuild
+      # with VITE_API_BASE_URL pointing at this service instead.
       - key: VITE_API_BASE_URL
         value: /functions/v1
       - key: VITE_BASE_PATH
         value: /
-      # Browsers calling the API cross-origin (e.g. a GitHub Pages build whose
-      # VITE_API_BASE_URL points at this service) need the site's origin here,
-      # comma separated. Same-origin deployments can leave it unset. Example:
-      # https://authorsauravkushwaha.github.io
+      # Cross-origin callers: add your GitHub Pages URL here.
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: http://localhost:5173,http://localhost:4173,https://authorsauravkushwaha.github.io

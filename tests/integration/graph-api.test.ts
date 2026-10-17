@@ -22,9 +22,11 @@ const json = (body: unknown) => ({ headers: { 'content-type': 'application/json'
 
 beforeAll(async () => {
   const db = await createInMemoryGraphStore()
+  // Inject Postgres explicitly (without NEO4J_* env) so we can test the legacy
+  // postgres-live path deterministically in CI.
   api = await createGraphApi({
     env: { ALLOWED_ORIGINS: 'http://graph-allowed.test', LOG_LEVEL: 'error' },
-    db,
+    pgDb: db,
   })
   server = createServer((request, response) => void api.handle(request, response))
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
@@ -216,6 +218,7 @@ describe('the store is the source of truth', () => {
     expect(before.data.career.summary).not.toBe('Changed in the database.')
 
     const db = api.db
+    if (!db) throw new Error('Expected pg db to be wired up in this test.')
     await db.query("update graph.documents set doc = jsonb_set(doc, '{summary}', '\"Changed in the database.\"'::jsonb) where bucket = 'careers' and id = 'career:robotics-engineer'")
     await db.query('select graph.bump()')
 

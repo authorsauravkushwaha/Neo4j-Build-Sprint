@@ -51,7 +51,8 @@
     "server": "tsx server/server.ts",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
     "start": "tsx server/website.ts",
-    "seed:graphdb": "tsx scripts/seed-graph-db.ts"
+    "seed:graphdb": "tsx scripts/seed-graph-db.ts",
+    "verify:neo4j": "node scripts/verify-neo4j.mjs"
   },
   "dependencies": {
     "@capacitor/android": "7.6.9",
@@ -65,6 +66,7 @@
     "cytoscape": "3.34.3",
     "lucide-react": "1.55.0",
     "motion": "^12.43.0",
+    "neo4j-driver": "^6.2.0",
     "pg": "8.23.1",
     "proper-lockfile": "4.1.2",
     "react": "19.3.0",

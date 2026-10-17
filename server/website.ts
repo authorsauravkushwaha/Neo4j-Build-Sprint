@@ -81,7 +81,8 @@ if (isMain) {
   let graph: GraphApi | null = null
   try {
     graph = await createGraphApi({ env: process.env })
-    console.log(`GraphMentor graph API ready at /functions/v1 (${await describeGraphStore(graph.db)}).`)
+    const desc = graph.driver ? `Neo4j (${graph.driver.uri})` : await describeGraphStore(graph.db)
+    console.log(`GraphMentor graph API ready at /functions/v1 and /api (${desc}).`)
   } catch (error) {
     console.error(
       `GraphMentor graph API is unavailable (${error instanceof Error ? error.message : 'unknown error'}); ` +
@@ -96,7 +97,10 @@ if (isMain) {
   const serve = staticWebsite(dist)
   const server = createServer((request, response) => {
     const path = (request.url ?? '').split('?')[0]
-    if (path === '/api' || path.startsWith('/api/')) api.emit('request', request, response)
+    // Auth server owns /api (sign-in, sync). It does NOT own /api/graph, /api/health,
+    // /api/query, /api/evidence, /api/ledger — those live on the graph API.
+    const isAuthPath = path === '/api' || (path.startsWith('/api/') && !/^\/api\/(graph|health|query|evidence|ledger)(\/|$)/.test(path))
+    if (isAuthPath) api.emit('request', request, response)
     else if (graph?.matches(path)) {
       void graph.handle(request, response).catch(() => {
         if (!response.headersSent) response.writeHead(500).end('Unable to serve this request.')

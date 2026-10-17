@@ -4,13 +4,20 @@ A career navigator for engineering students and early-career engineers, built on
 instead of a course list. It answers questions like *"what do I actually need to learn for this role,
 in what order, and what is genuinely free?"* — and it shows the graph edges behind every claim it makes.
 
+**Neo4j is the primary graph database.** The Node backend connects to Neo4j AuraDB (or any reachable
+Neo4j server) with the **official `neo4j-driver`** over Bolt (`neo4j+s://`), executes parameterised
+Cypher for every graph query, and exposes an honest read ledger plus health check. The only way the
+banner says **LIVE NEO4J** is after a successful Cypher round-trip. Without credentials the app runs
+in clearly-labelled **DEMO DATA** mode against the bundled dataset — see `docs/verification-neo4j.md`.
+
 **One codebase, four ways to run it:** responsive website · installable PWA · Android app (Capacitor) ·
 APK (built on your machine — see [docs/deployment.md](docs/deployment.md)).
 
 > **It works with nothing configured.** No Neo4j account, no Supabase project, no AI key: the app starts
 > in a clearly-labelled **local sample mode** using the bundled dataset (`src/data/seed/knowledgeGraph.ts`).
 > Every screen works, and every screenshot-visible claim says "bundled sample dataset" rather than
-> pretending to be live. Add credentials later and the same UI switches to live graph data.
+> pretending to be live. Set `NEO4J_URI` / `NEO4J_USERNAME` / `NEO4J_PASSWORD` (server-side only — see
+> `.env.example`) and the same UI switches to genuine live Neo4j data.
 
 ## Website database — no Supabase setup needed
 
@@ -217,6 +224,45 @@ Notes for Windows users:
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
 | `npm run cap:sync`, `cap:open`, `cap:add:android` | Capacitor helpers — see [Android](#android-app-and-apk). | Yes (Android SDK) |
 
+## Architecture at a glance
+
+```
+┌──────────────┐    HTTPS     ┌────────────────────────┐   Bolt (neo4j+s://)   ┌────────────┐
+│ React + Vite │ ───────────▶ │ Node backend (server/) │ ────────────────────▶ │ Neo4j 5.x  │
+│ (GitHub Pages│              │  /api/health           │   parameterised       │ (AuraDB or  │
+│  or same     │              │  /api/health/neo4j     │   Cypher ONLY,        │  self-hosted)│
+│  origin)     │              │  /api/graph/stats      │   read-only           │             │
+│              │              │  /api/query (named)    │   sessions            │             │
+│              │              │  /api/graph/explore    │                       │             │
+│              │              │  /api/evidence/:id     │                       │             │
+│              │              │  /api/ledger/recent    │                       │             │
+│              │              │  /functions/v1/*       │                       │             │
+│              │              │  + accounts /api/auth  │                       │             │
+└──────────────┘              └────────────────────────┘                       └────────────┘
+                                        │
+                                        ▼
+                                 Optional Postgres
+                                 (accounts only; not
+                                  the graph database)
+```
+
+- Cypher lives in `supabase/functions/_shared/core/graphQuery.ts` (constant
+  strings with `$parameters`) and `neo4j/live-demo.cypher` (judge-demo queries).
+- The driver wrapper lives in `server/neo4jDriverReader.ts` — one Cypher
+  catalogue, two transports (HTTPS Query API for Supabase/Deno, native Bolt
+  driver for Node).
+- Read ledger: every Cypher execution is recorded and served at
+  `/api/ledger/recent` with request id, query id, row count and execution time.
+  When Neo4j is unreachable, entries are recorded as errors rather than
+  fabricated successes.
+- Secrets stay server-side; `.env.example` contains only placeholders.
+
+Verification: `npm run verify:neo4j` prints one of `PASS — LIVE NEO4J VERIFIED`,
+`BLOCKED — LIVE NEO4J CREDENTIALS OR INSTANCE UNAVAILABLE`, or `FAIL — LIVE
+NEO4J INTEGRATION FAILED`. See `docs/verification-neo4j.md`.
+
+Judge demonstration script: [`docs/demo-script-neo4j.md`](docs/demo-script-neo4j.md).
+
 ## Going live: connecting a real database
 
 Everything below is optional. Nothing in the app requires it to run.
@@ -259,6 +305,8 @@ banner says so honestly either way. The full comparison is in [docs/graph-databa
 1. Create a free instance at <https://console.neo4j.io>. Free instances are enough for this dataset.
 2. In the console: **Connect → Query API** and copy the URL — it looks like
    `https://<instance-id>.databases.neo4j.io/db/neo4j/query/v2`. The password is shown once at creation.
+   The **Bolt URI** (preferred by the Node backend) is `neo4j+s://<instance-id>.databases.neo4j.io`;
+   the backend will also derive this automatically if you only set `NEO4J_QUERY_URL`.
 3. Load the schema and the seed data (this runs from your machine, not the browser):
 
    ```bash
