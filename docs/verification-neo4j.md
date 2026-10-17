@@ -113,3 +113,24 @@ npm run seed:neo4j -- --check
 ```
 
 That is read-only: it reports the identity of the configured database, what it already holds, and whether that matches the generated manifest.
+
+## Account data in Neo4j
+
+User data (saved roadmaps and tasks, skill progress, bookmarks, feedback, profile preferences,
+data export and deletion, rate-limit windows and nonce replay records) is stored in the same
+database. The schema is `neo4j/user-schema.cypher`; the design is [docs/neo4j-schema.md](neo4j-schema.md).
+
+Steps, in order. Each one is safe to repeat:
+
+1. `npm run seed:neo4j -- --dry-run` lists the schema and seed statements and validates
+   `NEO4J_QUERY_URL` and `NEO4J_DATABASE`. It writes nothing.
+2. `npm run seed:neo4j -- --check` reads the database and compares curriculum counts with the manifest.
+   This is the live connectivity check. It needs real credentials and the instance must be running.
+3. `npm run seed:neo4j` applies `neo4j/schema.cypher`, then `neo4j/user-schema.cypher`, then the seed.
+4. `SHOW CONSTRAINTS` in Neo4j Browser should list the `gm_appuser_id`, `gm_roadmap_id`,
+   `gm_roadmaptask_key`, `gm_skillrating_key`, `gm_bookmark_key` and `gm_usednonce_nonce` constraints.
+
+What the automated tests prove: the store's logic, the parameter contract, the schema-to-query
+consistency, and the Query API client's request and failure handling, all against mocks. They do not
+prove that AuraDB accepts these statements. Only step 2 and step 3 against a live instance do that,
+and that result is reported separately.

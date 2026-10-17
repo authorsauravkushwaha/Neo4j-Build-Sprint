@@ -4,6 +4,8 @@ See [architecture.md](architecture.md) for the single architecture source of tru
 
 ## Neo4j (intended live graph)
 
+Neo4j holds the curriculum and, on the Supabase deployment, all user data (see [neo4j-schema.md](neo4j-schema.md)). Supabase is used for sign-in only.
+
 - Node hosting uses `server/neo4jDriverReader.ts` and the official `neo4j-driver` over Bolt.
 - Supabase Edge Functions are an alternative host and use the HTTPS Query API implementation under `supabase/functions/_shared/core/neo4jReader.ts`.
 - Both use the checked-in graph schema and parameterized queries. Credentials remain server-side.

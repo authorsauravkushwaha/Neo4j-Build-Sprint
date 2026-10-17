@@ -1,5 +1,11 @@
 # Database migrations
 
+> **Status: superseded, kept as history.** Account data (roadmaps, progress, bookmarks, feedback,
+> profiles, rate limits, nonces) is now stored in Neo4j under `neo4j/user-schema.cypher`, and Supabase
+> is used for sign-in only. The Supabase deployment path no longer applies these migrations or calls
+> their functions. See [docs/neo4j-schema.md](../../docs/neo4j-schema.md). The files stay so the
+> history of the schema is preserved and can be audited.
+
 Two migrations describe everything the Edge Functions and the web app store.
 
 | File | Contents |

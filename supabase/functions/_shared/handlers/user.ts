@@ -295,7 +295,9 @@ export async function submitFeedbackHandler(runtime: Runtime, request: ApiReques
       note:
         runtime.storageBackend === 'appwrite'
           ? 'Thanks — feedback is stored in this deployment’s Appwrite project. Contact details are optional and never used for marketing.'
-          : 'Thanks — feedback is stored in the project owner’s database. Contact details are optional and never used for marketing.',
+          : runtime.storageBackend === 'neo4j'
+            ? 'Thanks — feedback is stored in this deployment’s Neo4j database. Contact details are optional and never used for marketing.'
+            : 'Thanks — feedback is stored in the project owner’s database. Contact details are optional and never used for marketing.',
     }
     return json(202, { ok: true, data: payload, meta: { source: 'cache', generatedAt: new Date().toISOString() } }, { 'cache-control': 'no-store' })
   } catch (error) {

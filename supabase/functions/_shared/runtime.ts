@@ -3,8 +3,9 @@
  *
  * Pure module: it reads process environment through an injected accessor and
  * returns a validated, typed configuration. The Deno entrypoint
- * (`_shared/platform/deno.ts`) performs the one runtime-specific step — creating
- * the Supabase client — and then assembles a `Runtime` from these pieces.
+ * (`_shared/platform/deno.ts`) performs the runtime-specific steps — creating the
+ * Supabase Auth client and the Neo4j Query API client — and then assembles a
+ * `Runtime` from these pieces.
  *
  * Everything is optional by design: a deployment with no Neo4j credentials and no
  * AI key still starts, reports its state honestly through `health-check`, and
@@ -17,6 +18,7 @@ import type { FixedWindowStore, RateLimitPolicy } from './core/rateLimit.ts'
 import { MemoryFixedWindowStore, MemoryNonceStore, RATE_POLICIES } from './core/rateLimit.ts'
 import type { NonceStore } from './core/security.ts'
 import { createNeo4jReader, emptyGraphHint, type Neo4jConfig } from './core/neo4jReader.ts'
+import { parseQueryApiUrl } from './core/neo4jQueryApi.ts'
 import type { AuthCheck, UserRepositories } from './platform/supabaseStore.ts'
 
 export type EnvAccessor = (key: string) => string | undefined
@@ -73,7 +75,7 @@ export function readRuntimeConfig(env: EnvAccessor): RuntimeConfig {
   const queryUrl = (env('NEO4J_QUERY_URL') ?? '').trim()
   const username = (env('NEO4J_USERNAME') ?? '').trim()
   const password = env('NEO4J_PASSWORD') ?? ''
-  const database = (env('NEO4J_DATABASE') ?? 'neo4j').trim()
+  const declaredDatabase = (env('NEO4J_DATABASE') ?? '').trim()
 
   let neo4j: Neo4jConfig | null = null
   let neo4jIssue: string | null = null
@@ -81,18 +83,23 @@ export function readRuntimeConfig(env: EnvAccessor): RuntimeConfig {
   if (!queryUrl || !username || !password) {
     neo4jIssue =
       'Neo4j is not configured. Set NEO4J_QUERY_URL, NEO4J_USERNAME and NEO4J_PASSWORD as Edge Function secrets (see supabase/.env.example).'
-  } else if (!/^https:\/\//i.test(queryUrl)) {
-    // Refuse plain http: the Query API carries credentials in the Authorization
-    // header and curriculum reads must not be downgradeable to cleartext.
-    neo4jIssue = 'NEO4J_QUERY_URL must be an https:// URL.'
   } else {
-    neo4j = {
-      queryUrl,
-      username,
-      password,
-      database,
-      timeoutMs: num(env('NEO4J_TIMEOUT_MS'), 8000, 1000, 30_000),
-      maxRows: num(env('NEO4J_MAX_ROWS'), 400, 10, 2000),
+    // The Query API URL names the database in its path. It is the single source of
+    // truth; a separately declared NEO4J_DATABASE must agree with it.
+    const urlCheck = parseQueryApiUrl(queryUrl)
+    if (!urlCheck.ok) {
+      neo4jIssue = urlCheck.reason
+    } else if (declaredDatabase && declaredDatabase !== urlCheck.database) {
+      neo4jIssue = `NEO4J_DATABASE ("${declaredDatabase.slice(0, 64)}") does not match the database in NEO4J_QUERY_URL ("${urlCheck.database.slice(0, 64)}"). Remove NEO4J_DATABASE or make them agree.`
+    } else {
+      neo4j = {
+        queryUrl,
+        username,
+        password,
+        database: urlCheck.database,
+        timeoutMs: num(env('NEO4J_TIMEOUT_MS'), 8000, 1000, 30_000),
+        maxRows: num(env('NEO4J_MAX_ROWS'), 400, 10, 2000),
+      }
     }
   }
 
@@ -197,7 +204,7 @@ export function createReaderFromConfig(config: RuntimeConfig, deps: ReaderDeps =
  * "your Supabase project" is a false statement on an Appwrite deployment. So the
  * backend is part of the runtime rather than something each message guesses at.
  */
-export type StorageBackend = 'supabase' | 'appwrite'
+export type StorageBackend = 'neo4j' | 'appwrite'
 
 /** Assembled per-request dependencies for the handlers. */
 export interface Runtime {
@@ -235,9 +242,8 @@ export interface RuntimeParts {
  * available (local development); they are explicitly documented as
  * single-instance-only.
  *
- * `storageBackend` defaults to 'supabase' when repositories are present, because
- * that is what the repositories are when nobody says otherwise — the in-memory
- * doubles the tests inject behave like the Postgres ones.
+ * `storageBackend` defaults to 'neo4j' when repositories are present: account data
+ * is stored in Neo4j, and the in-memory doubles the tests inject behave like it.
  */
 export function assembleRuntime(parts: RuntimeParts): Runtime {
   const ai =
@@ -254,7 +260,7 @@ export function assembleRuntime(parts: RuntimeParts): Runtime {
     ...(parts.readerSetupHint ? { readerSetupHint: parts.readerSetupHint } : {}),
     ai,
     repos: parts.repos,
-    storageBackend: parts.repos ? (parts.storageBackend ?? 'supabase') : null,
+    storageBackend: parts.repos ? (parts.storageBackend ?? 'neo4j') : null,
     rateLimit: parts.rateLimit ?? new MemoryFixedWindowStore(),
     nonce: parts.nonce ?? new MemoryNonceStore(),
     verifyAuth:
