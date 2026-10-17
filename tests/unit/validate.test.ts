@@ -130,9 +130,13 @@ describe('query schemas', () => {
     expect(neighborhoodQuerySchema.safeParse({ seedId: 'skill:python-programming' }).success).toBe(true)
   })
 
-  it('bounds pagination and defaults the limit', () => {
-    expect(careerSearchQuerySchema.parse({}).limit).toBe(12)
+  it('bounds pagination and stays silent about the limit — no hidden schema default', () => {
+    // A silent .default() here once truncated every live catalogue response
+    // (the client omits `limit`, so the default always won). The handler owns
+    // the fallback instead; the schema stays honest and just bounds the range.
+    expect(careerSearchQuerySchema.parse({}).limit).toBeUndefined()
     expect(careerSearchQuerySchema.safeParse({ limit: 500 }).success).toBe(false)
+    expect(careerSearchQuerySchema.safeParse({ limit: 0 }).success).toBe(false)
     expect(careerSearchQuerySchema.safeParse({ offset: 10_000 }).success).toBe(false)
   })
 

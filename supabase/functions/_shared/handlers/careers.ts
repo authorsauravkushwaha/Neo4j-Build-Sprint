@@ -2,7 +2,7 @@
  * Career endpoints.
  *
  *   GET  /get-careers?q=&branch=&difficulty=&limit=&offset=
- *   GET  /get-career-details?careerId=
+ *   GET  /get-career-details?id=          (the alias careerId= is accepted)
  *   POST /get-career-path  { careerId, fromSkillId?, mode?, maxDepth? }
  *
  * All three are public: a visitor must be able to explore careers without an
@@ -11,6 +11,7 @@
  */
 import type { ApiRequest, HttpResponse } from '../core/http.ts'
 import { parseJsonBody, publicJson } from '../core/http.ts'
+import { AppError } from '../core/errors.ts'
 import {
   careerDetailsQuerySchema,
   careerPathQuerySchema,
@@ -22,7 +23,6 @@ import type { CareerDetailsResponse, CareerPathResponse, CareerSummaryResponse }
 import type { ResourceView } from '../core/graphReader.ts'
 import { accessBadgeFor, buildPathway, rankResources, CAVEATS } from '../core/recommend.ts'
 import { graphBasisLine } from '../core/graphModel.ts'
-import { AppError } from '../core/errors.ts'
 import type { Runtime } from '../runtime.ts'
 import { enforceRateLimit, metaFor, notFoundFor, requireReader } from './shared.ts'
 
@@ -42,7 +42,9 @@ export async function getCareersHandler(runtime: Runtime, request: ApiRequest): 
   const started = Date.now()
   const [branches, careers] = await Promise.all([
     reader.listBranches(40),
-    input.q
+    // Any filter — not only free text — goes through search, or a branch-only
+    // filter would silently return the whole catalogue.
+    input.q || input.branch || input.difficulty
       ? reader.searchCareers({
           ...(input.q ? { q: input.q } : {}),
           ...(input.branch ? { branchId: input.branch } : {}),
@@ -92,9 +94,19 @@ export async function getCareerDetailsHandler(runtime: Runtime, request: ApiRequ
     coerceQuery(Object.fromEntries(request.url.searchParams.entries()), { booleans: ['includeGraph'] }),
   )
 
+  // The web client calls this endpoint with `id`; `careerId` stays supported.
+  const careerId = input.careerId ?? input.id
+  if (!careerId) {
+    throw new AppError('validation_failed', {
+      requestId: request.requestId,
+      fields: { id: 'Pass the career id, e.g. ?id=career:robotics-engineer.' },
+      publicMessage: 'Which career should be shown? Add its id to the request.',
+    })
+  }
+
   const started = Date.now()
-  const { value: career } = await reader.getCareer(input.careerId)
-  if (!career) throw notFoundFor('career', input.careerId, request)
+  const { value: career } = await reader.getCareer(careerId)
+  if (!career) throw notFoundFor('career', careerId, request)
 
   const skillIds = career.skills.map((skill) => skill.id)
   const [projects, resources] = await Promise.all([

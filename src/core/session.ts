@@ -13,7 +13,7 @@
  *     knows why they are looking at sample data.
  */
 import { createDemoClient, createLiveClient, type GraphMentorClient, type HealthReport } from './api.ts'
-import { config, hasBackend, isDemoForced } from './env.ts'
+import { config, hasApiBackend, isDemoForced } from './env.ts'
 import { getAccessToken } from './supabase.ts'
 
 export interface SessionState {
@@ -30,7 +30,7 @@ let state: SessionState = {
   mode: 'demo',
   client: createDemoClient(),
   health: null,
-  fallbackReason: isDemoForced && hasBackend ? 'This build is configured to start in demo mode (VITE_FORCE_DEMO_MODE=true).' : null,
+  fallbackReason: isDemoForced && hasApiBackend ? 'This build is configured to start in demo mode (VITE_FORCE_DEMO_MODE=true).' : null,
   graphWarning: null,
   ready: false,
 }
@@ -73,9 +73,11 @@ export async function initSession(): Promise<SessionState> {
     const graphWarning =
       health.graph === 'unreachable'
         ? `The API is reachable but the knowledge graph is not: ${health.graphDetail}`
-        : health.graph === 'neo4j-live' && health.graphDetail.toLowerCase().includes('empty')
-          ? health.graphDetail
-          : null
+        : health.graph === 'local-sample'
+          ? `The backend answered, but it reports serving the bundled sample dataset rather than a database: ${health.graphDetail}`
+          : health.graphDetail.toLowerCase().includes('empty')
+            ? health.graphDetail
+            : null
     publish({ mode: 'live', client: live, health, fallbackReason: null, graphWarning, ready: true })
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'The backend did not answer.'

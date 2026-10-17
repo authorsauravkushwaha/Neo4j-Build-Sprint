@@ -1,0 +1,170 @@
+# Backend deployment, driven entirely by GitHub Actions.
+#
+# This is path B from docs/graph-database.md: the published site calls Supabase
+# Edge Functions, which read the curriculum from a Neo4j AuraDB instance.
+# (Path A — the project's own Node backend with its own PostgreSQL graph
+# store — needs no Supabase or Neo4j account at all; see render.yaml.)
+#
+# Trigger: Actions -> "Deploy backend" -> Run workflow. Nothing runs on push.
+#
+# Repository secrets this workflow needs (it refuses to run until they exist,
+# so a half-configured run fails with instructions, not with a stack trace):
+#   SUPABASE_ACCESS_TOKEN   Supabase dashboard -> Account -> Access Tokens
+#   SUPABASE_PROJECT_REF    the project ref from the project URL (…/project/<ref>)
+#   NEO4J_QUERY_URL         e.g. https://<id>.databases.neo4j.io/db/neo4j/query/v2
+#   NEO4J_USERNAME          usually "neo4j"
+#   NEO4J_PASSWORD          the Aura password (shown once at instance creation)
+#
+# Optional secrets, forwarded to the Edge Functions only when set:
+#   NEO4J_DATABASE (default "neo4j"), ALLOWED_ORIGINS, AI_PROVIDER,
+#   GEMINI_API_KEY, GEMINI_MODEL, OPENAI_COMPATIBLE_API_KEY,
+#   OPENAI_COMPATIBLE_MODEL, OPENAI_COMPATIBLE_BASE_URL,
+#   REQUEST_SIGNING_SECRET, RATE_LIMIT_PEPPER, REQUIRE_REQUEST_SIGNING,
+#   AUTH_ATTEMPTS_PER_MINUTE, ENVIRONMENT
+#
+# After this workflow succeeds, set the VITE_SUPABASE_URL and
+# VITE_SUPABASE_ANON_KEY repository secrets so the Pages workflow (deploy.yml)
+# builds the site against this backend.
+name: Deploy backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed_neo4j:
+        description: 'Seed the Neo4j instance after deploying functions (idempotent MERGEs)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Functions, database schema, graph seed
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      NEO4J_QUERY_URL: ${{ secrets.NEO4J_QUERY_URL }}
+      NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
+      NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+      NEO4J_DATABASE: ${{ secrets.NEO4J_DATABASE }}
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=()
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF NEO4J_QUERY_URL NEO4J_USERNAME NEO4J_PASSWORD; do
+            if [ -z "${!name}" ]; then missing+=("$name"); fi
+          done
+          if (( ${#missing[@]} )); then
+            echo "::error title=Backend secrets missing::Set these repository secrets, then re-run: ${missing[*]}. How to get them: docs/graph-database.md, path B."
+            exit 1
+          fi
+          echo "All required secrets are present."
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: '2.54.11'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Link the Supabase project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      # The handlers authenticate callers themselves: guests must be able to
+      # READ (the app works signed-out), and signed-in users are verified
+      # inside the function against the forwarded token. A gateway-level
+      # verify_jwt would 401 every guest before the function ever ran.
+      - name: Write the gateway config for the functions
+        run: |
+          for fn in \
+            health-check get-careers get-career-details get-career-path \
+            get-skill-details get-skills get-graph get-projects get-resources \
+            analyze-skill-gaps generate-learning-roadmap mentor-chat \
+            save-roadmap update-progress manage-bookmarks manage-account \
+            submit-feedback auth-guard; do
+            printf '\n[functions.%s]\nverify_jwt = false\n' "$fn" >> supabase/config.toml
+          done
+          cat supabase/config.toml
+
+      - name: Apply database migrations
+        run: supabase db push
+
+      - name: Set Edge Function secrets
+        env:
+          ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+          AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          OPENAI_COMPATIBLE_API_KEY: ${{ secrets.OPENAI_COMPATIBLE_API_KEY }}
+          OPENAI_COMPATIBLE_MODEL: ${{ secrets.OPENAI_COMPATIBLE_MODEL }}
+          OPENAI_COMPATIBLE_BASE_URL: ${{ secrets.OPENAI_COMPATIBLE_BASE_URL }}
+          REQUEST_SIGNING_SECRET: ${{ secrets.REQUEST_SIGNING_SECRET }}
+          RATE_LIMIT_PEPPER: ${{ secrets.RATE_LIMIT_PEPPER }}
+          REQUIRE_REQUEST_SIGNING: ${{ secrets.REQUIRE_REQUEST_SIGNING }}
+          AUTH_ATTEMPTS_PER_MINUTE: ${{ secrets.AUTH_ATTEMPTS_PER_MINUTE }}
+          ENVIRONMENT: ${{ secrets.ENVIRONMENT }}
+        run: |
+          args=(
+            "NEO4J_QUERY_URL=$NEO4J_QUERY_URL"
+            "NEO4J_USERNAME=$NEO4J_USERNAME"
+            "NEO4J_PASSWORD=$NEO4J_PASSWORD"
+          )
+          [ -n "$NEO4J_DATABASE" ] && args+=("NEO4J_DATABASE=$NEO4J_DATABASE")
+          for name in ALLOWED_ORIGINS AI_PROVIDER GEMINI_API_KEY GEMINI_MODEL \
+            OPENAI_COMPATIBLE_API_KEY OPENAI_COMPATIBLE_MODEL OPENAI_COMPATIBLE_BASE_URL \
+            REQUEST_SIGNING_SECRET RATE_LIMIT_PEPPER REQUIRE_REQUEST_SIGNING \
+            AUTH_ATTEMPTS_PER_MINUTE ENVIRONMENT; do
+            value="${!name}"
+            [ -n "$value" ] && args+=("$name=$value")
+          done
+          supabase secrets set "${args[@]}"
+
+      - name: Deploy the Edge Functions
+        run: |
+          supabase functions deploy \
+            health-check get-careers get-career-details get-career-path \
+            get-skill-details get-skills get-graph get-projects get-resources \
+            analyze-skill-gaps generate-learning-roadmap mentor-chat \
+            save-roadmap update-progress manage-bookmarks manage-account \
+            submit-feedback auth-guard
+
+      - name: Seed the Neo4j knowledge graph
+        if: inputs.seed_neo4j
+        run: npm run seed:neo4j
+
+      - name: Verify the deployment end to end
+        run: |
+          node --input-type=module -e "
+            const url = 'https://' + process.env.SUPABASE_PROJECT_REF + '.supabase.co/functions/v1/health-check'
+            const response = await fetch(url)
+            const body = await response.json()
+            if (!response.ok || body?.ok !== true) throw new Error('health-check did not answer ok: HTTP ' + response.status)
+            const graph = body.data.graph
+            console.log('health-check:', JSON.stringify(graph, null, 2))
+            if (!graph.reachable) throw new Error(\`The API is up but the graph is not reachable: \${graph.message}\`)
+            if (graph.source !== 'neo4j-live') throw new Error(\`Unexpected graph source: \${graph.source}\`)
+            console.log(\`Backend verified: \${graph.nodeCount} nodes, \${graph.relationshipCount} relationships, source \${graph.source}.\`)
+          "
+
+      - name: What is left to do
+        if: success()
+        run: |
+          {
+            echo '## Backend is live'
+            echo
+            echo 'Final step — point the published site at it:'
+            echo '1. Set repository secret `VITE_SUPABASE_URL` to `https://'"$SUPABASE_PROJECT_REF"'.supabase.co`'
+            echo '2. Set repository secret `VITE_SUPABASE_ANON_KEY` to the project anon/publishable key'
+            echo '3. Merge to main (or re-run "Build and deploy") — the site then opens in live mode.'
+          } >> "$GITHUB_STEP_SUMMARY"

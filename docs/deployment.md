@@ -5,6 +5,13 @@ with a persistent disk: see [database.md](database.md). `render.yaml` provides a
 plan). Build with `npm run build`, start with `npm start`, set `GM_DATABASE_DIR` to the disk path, and
 use one replica. Publishing only `dist/` will not run that database.
 
+That same Node service also serves the **knowledge graph itself** from the deployment's own PostgreSQL
+store — no Supabase, no Neo4j account, fully live mode ("Path A" in [graph-database.md](graph-database.md)):
+one build with `VITE_API_BASE_URL=/functions/v1` and one `npm start` give the site its own database and the
+banner goes away honestly. The `render.yaml` Blueprint does exactly this. The Supabase + Neo4j route
+("Path B") remains for a static host plus managed services, and can be run end to end by
+[.github/workflows/deploy-backend.yml](../.github/workflows/deploy-backend.yml).
+
 The rest of this document covers three static/frontend targets with an optional Supabase backend.
 Pick one; they are alternatives, not steps.
 
@@ -197,6 +204,14 @@ is derived from that — not hard-coded to one vendor.
    `auth-guard` is the pre-flight rate limiter for sign-in attempts. It must be deployed for the sign-in
    ceilings in `supabase/.env` (`AUTH_ATTEMPTS_*`) to apply; without it the app still works and relies on
    Supabase Auth's own rate limiting, which is the backstop rather than the plan.
+
+   The browser reaches every function **anonymously** (requests carry no Supabase session; each handler
+   validates and rate-limits requests itself), so the gateway must not demand a JWT first. The automated
+   setup — [.github/workflows/deploy-backend.yml](../.github/workflows/deploy-backend.yml) — generates a
+   `supabase/config.toml` marking all functions `verify_jwt = false` before deploying and then verifies the
+   result with an anonymous health-check call. If you deploy by hand, apply the same project setting
+   (**Authentication → JWT for Edge Functions off**, or the equivalent `config.toml` block) or every guest
+   request — including the health check — answers 401.
 
 4. Set `ALLOWED_ORIGINS` in `supabase/.env` to the exact origins that may call the API (your Pages/Netlify
    URL, plus `https://localhost` and `capacitor://localhost` for the Android app). CORS echoes these back and

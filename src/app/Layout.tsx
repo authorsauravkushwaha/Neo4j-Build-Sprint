@@ -149,7 +149,11 @@ function DataSourceBanner(): ReactNode {
   if (session.mode === 'live' && !session.graphWarning && !session.fallbackReason) {
     return (
       <p className="border-b border-line bg-[var(--gm-surface-2)] px-3 py-1.5 text-center text-xs text-muted">
-        Live data: reading the knowledge graph through the deployed backend.
+        {session.health?.graph === 'postgres-live'
+          ? 'Live data: reading the knowledge graph from this deployment’s own PostgreSQL database.'
+          : session.health?.graph === 'neo4j-live'
+            ? 'Live data: reading the Neo4j knowledge graph through the deployed backend.'
+            : 'Live data: reading the knowledge graph through the deployed backend.'}
       </p>
     )
   }

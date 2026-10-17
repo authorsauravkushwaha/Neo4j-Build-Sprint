@@ -254,7 +254,7 @@ export interface MentorChatResponse {
     projectsUsed: number
     resourcesUsed: number
     truncated: boolean
-    graphSource: 'neo4j-live' | 'local-sample' | 'unavailable'
+    graphSource: 'neo4j-live' | 'postgres-live' | 'local-sample' | 'unavailable'
     /**
      * Every graph read that produced this answer, grouped by reader method.
      *

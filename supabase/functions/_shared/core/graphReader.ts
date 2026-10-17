@@ -1,10 +1,14 @@
 /**
  * The read contract every knowledge-graph backend must satisfy.
  *
- * Two implementations exist and are used interchangeably:
- *   - neo4jReader.ts  -> live Neo4j AuraDB over the HTTPS Query API (server only)
- *   - localReader.ts  -> the bundled sample dataset (browser demo mode, tests,
- *                        and the graceful fallback when Neo4j is not configured)
+ * Three implementations exist and are used interchangeably:
+ *   - neo4jReader.ts        -> live Neo4j AuraDB over the HTTPS Query API (server only)
+ *   - localReader.ts        -> the bundled sample dataset (browser demo mode, tests,
+ *                              and the graceful fallback when Neo4j is not configured)
+ *   - server/graphReader.ts -> the deployment's own PostgreSQL database (the
+ *                              repo-owned backend; hydrates the same local
+ *                              engine from real `graph.*` tables so every read
+ *                              is answered from database content, not a bundle)
  *
  * Everything above this layer (career explorer, graph explorer, skill-gap
  * analysis, roadmap engine, mentor context builder) is backend-agnostic, which is
@@ -222,8 +226,13 @@ export interface SkillIndexInput {
 }
 
 export interface GraphReader {
-  /** Identifies the data source so the UI can label it honestly. */
-  readonly kind: 'neo4j' | 'local'
+  /**
+   * Identifies the data source so the UI can label it honestly.
+   *   - `neo4j`    -> a Neo4j database over the HTTPS Query API,
+   *   - `postgres` -> the deployment's own PostgreSQL (server/graphReader.ts),
+   *   - `local`    -> the bundled sample dataset (demo mode, tests).
+   */
+  readonly kind: 'neo4j' | 'postgres' | 'local'
   /** Human-readable provenance string shown in the UI banner. */
   readonly provenance: string
   /** True when this reader could be built from the current configuration. */

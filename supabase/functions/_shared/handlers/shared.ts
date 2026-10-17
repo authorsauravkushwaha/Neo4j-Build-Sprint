@@ -23,9 +23,20 @@ export function requireReader(runtime: Runtime, request: ApiRequest): GraphReade
   throw new AppError('not_configured', {
     requestId: request.requestId,
     publicMessage:
-      'This deployment has no Neo4j knowledge graph configured, so live graph features are unavailable. The app keeps working with the bundled sample dataset in the browser.',
+      'This deployment has no knowledge graph database configured, so live graph features are unavailable. The app keeps working with the bundled sample dataset in the browser.',
     context: { reason: runtime.readerReason ?? 'unknown' },
   })
+}
+
+/**
+ * The single place a reader becomes a provenance label. Every handler labels
+ * through this so a response can never claim Neo4j for the deployment's own
+ * PostgreSQL, nor live data for the bundled sample.
+ */
+export function sourceFor(reader: GraphReader): 'neo4j-live' | 'postgres-live' | 'local-sample' {
+  if (reader.kind === 'neo4j') return 'neo4j-live'
+  if (reader.kind === 'postgres') return 'postgres-live'
+  return 'local-sample'
 }
 
 export function metaFor(
@@ -34,7 +45,7 @@ export function metaFor(
 ): ApiMeta {
   return {
     // Never claim live data for a local dataset, and vice versa.
-    source: reader.kind === 'neo4j' ? 'neo4j-live' : 'local-sample',
+    source: sourceFor(reader),
     ...(input.truncated !== undefined ? { truncated: input.truncated } : {}),
     ...(input.selectionNote ? { selectionNote: input.selectionNote } : {}),
     ...(input.ms !== undefined ? { queryMs: input.ms } : {}),

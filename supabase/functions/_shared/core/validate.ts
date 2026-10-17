@@ -112,7 +112,10 @@ export const learningStyleSchema = z.enum(['video', 'reading', 'hands-on', 'mixe
 export const difficultySchema = z.enum(DIFFICULTIES)
 export const taskStatusSchema = z.enum(['not-started', 'in-progress', 'completed', 'needs-review'])
 export const skillStateSchema = z.enum(SKILL_STATES)
-export const listLimitSchema = z.number().int().min(1).max(50).default(12)
+// No hidden default here: when the caller sends no limit the handler's own
+// catalogue fallback applies (`?? 60`), so an unfiltered careers request
+// returns the whole catalogue rather than a silent page of it.
+export const listLimitSchema = z.number().int().min(1).max(50)
 
 /* ==========================================================================
  * Read endpoints (GET)
@@ -134,12 +137,16 @@ export const skillIndexQuerySchema = z.strictObject({
 })
 
 export const careerDetailsQuerySchema = z.strictObject({
-  careerId: careerIdSchema,
+  careerId: careerIdSchema.optional(),
+  /** Alias the web client sends (`GET /get-career-details?id=…`). */
+  id: careerIdSchema.optional(),
   includeGraph: z.boolean().default(true).optional(),
 })
 
 export const skillDetailsQuerySchema = z.strictObject({
-  skillId: nodeIdSchema,
+  skillId: nodeIdSchema.optional(),
+  /** Alias the web client sends (`GET /get-skill-details?id=…`). */
+  id: nodeIdSchema.optional(),
 })
 
 export const careerPathQuerySchema = z.strictObject({
@@ -167,6 +174,8 @@ export const neighborhoodQuerySchema = z.strictObject({
 export const resourcesQuerySchema = z.strictObject({
   q: searchTermSchema.optional(),
   skillId: nodeIdSchema.optional(),
+  /** Array form of the skill filter; what the web client's POST body sends. */
+  skillIds: z.array(nodeIdSchema).max(30).optional(),
   subjectId: nodeIdSchema.optional(),
   careerId: careerIdSchema.optional(),
   format: z.enum(['docs', 'video', 'course', 'book', 'tutorial', 'practice', 'repository', 'reference']).optional(),
@@ -174,14 +183,16 @@ export const resourcesQuerySchema = z.strictObject({
     .enum(['free-open', 'free-account', 'free-audit', 'free-with-limits', 'mixed', 'unknown'])
     .optional(),
   difficulty: difficultySchema.optional(),
-  limit: z.number().int().min(1).max(MAX_CATALOG_LIMIT).default(20).optional(),
+  // Same default the browser engine uses, or live mode silently shows fewer
+  // resources than demo mode for the same screen.
+  limit: z.number().int().min(1).max(MAX_CATALOG_LIMIT).default(40).optional(),
 })
 
 export const projectsQuerySchema = z.strictObject({
   skillIds: z.array(nodeIdSchema).max(30).optional(),
   careerId: careerIdSchema.optional(),
   difficulty: difficultySchema.optional(),
-  limit: z.number().int().min(1).max(MAX_CATALOG_LIMIT).default(8).optional(),
+  limit: z.number().int().min(1).max(MAX_CATALOG_LIMIT).default(20).optional(),
 })
 
 export const progressQuerySchema = z.strictObject({

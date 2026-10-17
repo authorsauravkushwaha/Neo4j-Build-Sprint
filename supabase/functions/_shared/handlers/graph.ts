@@ -1,16 +1,21 @@
 /**
  * Graph + catalogue endpoints.
  *
- *   GET /get-graph?seedId=|careerId=&depth=&labels=&relations=&difficulty=&limit=
- *   GET /get-resources?q=&skillId=&careerId=&format=&accessModel=&difficulty=&limit=
- *   GET /get-projects?careerId=&skillIds=&difficulty=&limit=
+ *   GET|POST /get-graph?seedId=|careerId=&depth=&labels=&relations=&difficulty=&limit=
+ *   GET|POST /get-resources?q=&skillId=&skillIds=&careerId=&format=&accessModel=&difficulty=&limit=
+ *   GET|POST /get-projects?careerId=&skillIds=&difficulty=&limit=
+ *
+ * Input is read from the JSON body when one is present (the web client POSTs)
+ * and from the query string otherwise (shareable GET links and curl). The
+ * validation schema is the same in both cases.
  *
  * Bounded by design: depth ≤ 3, nodes ≤ 300 by default (`NEO4J_MAX_ROWS`), and
  * every edge returned has both endpoints present in the same payload, so the
  * visualisation can never render a dangling edge.
  */
 import type { ApiRequest, HttpResponse } from '../core/http.ts'
-import { publicJson } from '../core/http.ts'
+import { parseJsonBody, publicJson } from '../core/http.ts'
+import { AppError } from '../core/errors.ts'
 import {
   coerceQuery,
   neighborhoodQuerySchema,
@@ -25,13 +30,36 @@ import type { NodeLabel, RelationType } from '../core/types.ts'
 import type { Runtime } from '../runtime.ts'
 import { enforceRateLimit, metaFor, requireReader } from './shared.ts'
 
+/**
+ * Where an endpoint's input comes from. The React client POSTs a small JSON
+ * body; GET with query parameters stays supported so a filtered view can be a
+ * link and so curl works without a body. A body must be a single JSON object —
+ * anything else is a 400, never a silent fallthrough to defaults.
+ */
+function endpointInput(
+  request: ApiRequest,
+  options: { numbers?: string[]; booleans?: string[]; lists?: string[] } = {},
+): Record<string, unknown> {
+  if (request.bodyText.trim()) {
+    const body = parseJsonBody(request)
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      throw new AppError('bad_request', {
+        requestId: request.requestId,
+        publicMessage: 'The request body must be a single JSON object.',
+      })
+    }
+    return body as Record<string, unknown>
+  }
+  return coerceQuery(Object.fromEntries(request.url.searchParams.entries()), options)
+}
+
 export async function getGraphHandler(runtime: Runtime, request: ApiRequest): Promise<HttpResponse> {
   const reader = requireReader(runtime, request)
   await enforceRateLimit(runtime, request, runtime.config.limits.readPerMinute, 'graph-read')
 
   const input = parseOrThrow(
     neighborhoodQuerySchema,
-    coerceQuery(Object.fromEntries(request.url.searchParams.entries()), {
+    endpointInput(request, {
       numbers: ['depth', 'limit'],
       lists: ['labels', 'relations'],
     }),
@@ -96,10 +124,11 @@ export async function getResourcesHandler(runtime: Runtime, request: ApiRequest)
 
   const input = parseOrThrow(
     resourcesQuerySchema,
-    coerceQuery(Object.fromEntries(request.url.searchParams.entries()), { numbers: ['limit'] }),
+    endpointInput(request, { numbers: ['limit'], lists: ['skillIds'] }),
   )
 
-  const skillIds = input.skillId ? [input.skillId] : undefined
+  // `skillIds` (array, what the client sends) wins over the single-id form.
+  const skillIds = input.skillIds ?? (input.skillId ? [input.skillId] : undefined)
   const result = await reader.findResources({
     ...(skillIds ? { skillIds } : {}),
     ...(input.subjectId ? { subjectId: input.subjectId } : {}),
@@ -159,7 +188,7 @@ export async function getProjectsHandler(runtime: Runtime, request: ApiRequest):
 
   const input = parseOrThrow(
     projectsQuerySchema,
-    coerceQuery(Object.fromEntries(request.url.searchParams.entries()), { numbers: ['limit'], lists: ['skillIds'] }),
+    endpointInput(request, { numbers: ['limit'], lists: ['skillIds'] }),
   )
 
   const result = await reader.findProjects({

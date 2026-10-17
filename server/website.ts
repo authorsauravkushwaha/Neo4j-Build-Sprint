@@ -1,4 +1,14 @@
-/** Production website + same-origin API. Deploy with ONE replica and a persistent disk. */
+/**
+ * Production website + same-origin APIs. Deploy with ONE replica and a persistent disk.
+ *
+ * One process serves three things:
+ *   - the static site (`dist/`),
+ *   - the account API at `/api/*` (sign-in, sync — the project's own database),
+ *   - the graph API at `/functions/v1/*` (the same endpoints the Supabase Edge
+ *     Functions serve, backed by this deployment's own PostgreSQL graph store).
+ * Build the frontend with `VITE_API_BASE_URL=/functions/v1` and this one
+ * service is the whole live app, no third-party accounts involved.
+ */
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
@@ -7,6 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { loadServerEnv } from './env.ts'
 import { openDatabase } from './database.ts'
 import { createAuthServer } from './server.ts'
+import { createGraphApi, describeGraphStore, type GraphApi } from './graphApi.ts'
 
 const mime: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -63,6 +74,21 @@ if (isMain) {
   const dist = resolve(dirname(fileURLToPath(import.meta.url)), '../dist')
   await stat(resolve(dist, 'index.html')).catch(() => { throw new Error('Run npm run build before npm start.') })
   const db = await openDatabase()
+
+  /* The graph API must never take the site down with it: if the graph store
+   * refuses to open (permissions, a locked directory), the website and the
+   * account API still serve, and the frontend — honestly — reports demo mode. */
+  let graph: GraphApi | null = null
+  try {
+    graph = await createGraphApi({ env: process.env })
+    console.log(`GraphMentor graph API ready at /functions/v1 (${await describeGraphStore(graph.db)}).`)
+  } catch (error) {
+    console.error(
+      `GraphMentor graph API is unavailable (${error instanceof Error ? error.message : 'unknown error'}); ` +
+        'serving the website without it — the app will run in labelled sample mode.',
+    )
+  }
+
   const api = createAuthServer(db, {
     trustProxy: process.env['AUTH_TRUST_PROXY'] === 'true',
     allowInsecureHttp: process.env['AUTH_ALLOW_INSECURE_HTTP'] === 'true',
@@ -71,7 +97,12 @@ if (isMain) {
   const server = createServer((request, response) => {
     const path = (request.url ?? '').split('?')[0]
     if (path === '/api' || path.startsWith('/api/')) api.emit('request', request, response)
-    else void serve(request, response).catch(() => {
+    else if (graph?.matches(path)) {
+      void graph.handle(request, response).catch(() => {
+        if (!response.headersSent) response.writeHead(500).end('Unable to serve this request.')
+        else response.destroy()
+      })
+    } else void serve(request, response).catch(() => {
       if (!response.headersSent) response.writeHead(500).end('Unable to serve this request.')
       else response.destroy()
     })
@@ -80,7 +111,10 @@ if (isMain) {
   server.listen(port, '0.0.0.0', () => console.log(`GraphMentor website and account database ready on port ${port}`))
   for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.once(signal, () => {
-      server.close(() => { void db.end() })
+      server.close(() => {
+        void db.end()
+        void graph?.close()
+      })
       server.closeIdleConnections()
     })
   }

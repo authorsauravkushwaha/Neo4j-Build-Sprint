@@ -1,5 +1,5 @@
 /**
- * GET /get-skill-details?skillId=skill:mechanics
+ * GET /get-skill-details?id=skill:mechanics   (the alias skillId= is accepted)
  *
  * One skill with its prerequisites, what it unlocks, the tools it uses, the
  * projects that practise it, verified learning resources and (optionally) a
@@ -7,6 +7,7 @@
  */
 import type { ApiRequest, HttpResponse } from '../core/http.ts'
 import { publicJson } from '../core/http.ts'
+import { AppError } from '../core/errors.ts'
 import { coerceQuery, parseOrThrow, skillDetailsQuerySchema } from '../core/validate.ts'
 import type { SkillDetailsResponse } from '../core/contracts.ts'
 import { accessBadgeFor, CAVEATS } from '../core/recommend.ts'
@@ -23,9 +24,19 @@ export async function getSkillDetailsHandler(runtime: Runtime, request: ApiReque
     coerceQuery(Object.fromEntries(request.url.searchParams.entries())),
   )
 
+  // The web client calls this endpoint with `id`; `skillId` stays supported.
+  const skillId = input.skillId ?? input.id
+  if (!skillId) {
+    throw new AppError('validation_failed', {
+      requestId: request.requestId,
+      fields: { id: 'Pass the skill id, e.g. ?id=skill:circuit-analysis.' },
+      publicMessage: 'Which skill should be shown? Add its id to the request.',
+    })
+  }
+
   const started = Date.now()
-  const { value: skill } = await reader.getSkill(input.skillId)
-  if (!skill) throw notFoundFor('skill', input.skillId, request)
+  const { value: skill } = await reader.getSkill(skillId)
+  if (!skill) throw notFoundFor('skill', skillId, request)
 
   const [assessments, resources] = await Promise.all([
     reader.getAssessments([skill.id], 4),

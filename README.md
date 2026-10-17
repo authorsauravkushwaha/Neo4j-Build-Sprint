@@ -33,7 +33,7 @@ only deploys the frontend. See [Database setup and deployment](docs/database.md)
 4. [Quick start (works with zero configuration)](#quick-start-works-with-zero-configuration)
 5. [Windows: the short version](#windows-the-short-version)
 6. [Commands you will actually use](#commands-you-will-actually-use)
-7. [Going live: Neo4j + Supabase](#going-live-neo4j--supabase)
+7. [Going live: connecting a real database](#going-live-connecting-a-real-database)
 8. [Accounts and sign-in](#accounts-and-sign-in)
 9. [Deploying](#deploying)
 10. [Android app and APK](#android-app-and-apk)
@@ -217,9 +217,42 @@ Notes for Windows users:
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
 | `npm run cap:sync`, `cap:open`, `cap:add:android` | Capacitor helpers — see [Android](#android-app-and-apk). | Yes (Android SDK) |
 
-## Going live: Neo4j + Supabase
+## Going live: connecting a real database
 
 Everything below is optional. Nothing in the app requires it to run.
+
+Two paths turn the demo into a live deployment — both serve the *same* endpoints and the *same* logic; the
+banner says so honestly either way. The full comparison is in [docs/graph-database.md](docs/graph-database.md).
+
+- **Path A — no third-party accounts (recommended first): the repo's own graph database.** The Node server
+  serves the shared API from a PostgreSQL store the deployment owns — embedded on disk by default — seeded
+  automatically on first boot. Any Node host with one persistent disk runs the whole thing;
+  [`render.yaml`](render.yaml) is a complete Blueprint for it. See §0 below.
+- **Path B — Supabase Edge Functions + Neo4j AuraDB.** The route that needs no Node host: static site
+  (GitHub Pages) plus Supabase. See §1–§3, or run the automation in
+  [.github/workflows/deploy-backend.yml](.github/workflows/deploy-backend.yml).
+
+### 0. Path A: the repo-owned PostgreSQL graph store (no accounts to create)
+
+1. Build and start the self-contained deployment locally to check it out:
+
+   ```bash
+   VITE_BASE_PATH=/ VITE_API_BASE_URL=/functions/v1 npm run build
+   npm start
+   ```
+
+   Open the printed address: the sample-data banner is gone, replaced by *"Live data: reading the knowledge
+   graph from this deployment's own PostgreSQL database."*, and `curl http://localhost:3000/functions/v1/health-check`
+   answers `reachable: true`, `source: "postgres-live"` with real table counts.
+2. For a public host, the included [`render.yaml`](render.yaml) Blueprint provisions exactly this: one web
+   service, one persistent disk for both databases (accounts + graph), `VITE_API_BASE_URL=/functions/v1`.
+   Import the blueprint in the host's dashboard — that is the whole setup.
+3. Operator tools: `npm run seed:graphdb` (idempotent seed), `--force` (rebuild from the bundle), `--wipe`
+   (drop the tables). To serve from an existing PostgreSQL cluster instead of the embedded engine, set
+   `GRAPH_DATABASE_URL` — details, edits-by-SQL and the exactly-one-change-provenance rule are in
+   [docs/graph-database.md](docs/graph-database.md).
+
+## Going live: Neo4j + Supabase
 
 ### 1. Neo4j AuraDB Free (graph)
 

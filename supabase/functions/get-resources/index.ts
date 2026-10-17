@@ -10,6 +10,6 @@
 import { getResourcesHandler } from '../_shared/handlers/graph.ts'
 import { serve } from '../_shared/platform/deno.ts'
 
-serve(getResourcesHandler, { methods: ['GET'] })
+serve(getResourcesHandler, { methods: ['GET', 'POST'] })
 
 
