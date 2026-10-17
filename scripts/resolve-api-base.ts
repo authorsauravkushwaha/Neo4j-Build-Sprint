@@ -138,7 +138,9 @@ export function resolveApiBase(options: ResolveOptions): Resolution {
     problems.push('The API base URL must not contain credentials.')
   }
   const isLocal = LOCAL_HOSTS.has(url.hostname)
-  if (url.protocol === 'http:' && !(isLocal && !production)) {
+  // Plain http is only acceptable for a local backend; anything else would
+  // carry the curriculum reads in clear text.
+  if (url.protocol === 'http:' && !isLocal) {
     problems.push('The API base URL must use https://.')
   }
   if (production && isLocal) {

@@ -1,7 +1,7 @@
 import { accountsPlugin } from './server/vite.ts'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa'
@@ -226,13 +226,39 @@ export default defineConfig(({ mode, command }) => {
       : []),
   ]
 
+  /**
+   * A same-origin graph API for the dev and preview servers. Set
+   * GM_GRAPH_API_TARGET to a running backend (for example
+   * "http://127.0.0.1:3000") and the server forwards the shared function
+   * contract to it, so the site can be previewed against a real backend
+   * without a cross-origin request — which is also how the built site behaves
+   * when its API base is a relative path. Local tooling only: the built site
+   * is static files and never runs this server.
+   */
+  const graphApiProxy: Record<string, ProxyOptions> = env.GM_GRAPH_API_TARGET
+    ? {
+        '/functions/v1': {
+          target: env.GM_GRAPH_API_TARGET,
+          changeOrigin: false,
+          xfwd: false,
+        },
+      }
+    : {}
+
   const connectHosts = [
     "'self'",
     'https://*.supabase.co',
     'https://*.supabase.in',
     // A relative base ("/functions/v1" for a same-origin backend) is covered by
     // 'self' and is not a valid CSP source, so only absolute URLs are added.
-    apiBase.apiBaseUrl.startsWith('http') ? apiBase.apiBaseUrl : '',
+    //
+    // The *origin* is what belongs here, not the whole base URL. A CSP source
+    // that carries a path only matches that exact path unless the path ends
+    // with "/", so "https://api.example.com/functions/v1" would have blocked
+    // every real request to "https://api.example.com/functions/v1/health-check"
+    // — the browser blocked the whole API, silently, while the build stayed
+    // green. A real browser check now covers this.
+    apiBase.apiBaseUrl.startsWith('http') ? new URL(apiBase.apiBaseUrl).origin : '',
     env.VITE_CSP_EXTRA_CONNECT_SRC?.trim(),
   ].filter((v): v is string => Boolean(v))
 
@@ -423,6 +449,7 @@ export default defineConfig(({ mode, command }) => {
         ...(env.GM_EXTERNAL_API === 'true'
           ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
           : {}),
+        ...graphApiProxy,
       },
     },
     preview: {
@@ -434,6 +461,7 @@ export default defineConfig(({ mode, command }) => {
         ...(env.GM_EXTERNAL_API === 'true'
           ? { '/api': { target: `http://127.0.0.1:${env.AUTH_PORT || '8787'}`, changeOrigin: false, xfwd: false } }
           : {}),
+        ...graphApiProxy,
       },
     },
   }

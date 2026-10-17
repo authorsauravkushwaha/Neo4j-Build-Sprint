@@ -10,7 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { ApiError, type ClientResult } from '@/core/api.ts'
-import { api } from '@/core/session.ts'
+import { hasApiBackend } from '@/core/env.ts'
+import { api, sessionState, subscribeSession } from '@/core/session.ts'
 
 export interface QueryState<T> {
   status: 'loading' | 'ready' | 'error'
@@ -28,36 +29,74 @@ export function useClientQuery<T>(run: () => Promise<ClientResult<T>>, deps: unk
 
   useEffect(() => {
     let cancelled = false
-    setState((previous) => ({ ...previous, status: previous.data ? previous.status : 'loading', error: null }))
-    runRef
-      .current()
-      .then((result) => {
-        if (cancelled) return
-        setState({ status: 'ready', data: result.data, meta: result.meta, error: null })
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return
-        const apiError = error instanceof ApiError ? error : null
-        setState({
-          status: 'error',
-          data: null,
-          meta: null,
-          error: {
-            message: apiError ? apiError.message : `Could not load ${label}.`,
-            ...(apiError?.code ? { code: apiError.code } : {}),
-            detail:
-              apiError?.code === 'not_configured'
-                ? 'The backend has no knowledge graph configured. Everything still works with the bundled sample dataset.'
-                : apiError?.code === 'rate_limited'
-                  ? `Too many requests. ${apiError.retryAfterSeconds ? `Try again in ${apiError.retryAfterSeconds}s.` : 'Please wait a moment.'}`
-                  : apiError?.code === 'network_error'
-                    ? 'The request never reached the server.'
-                    : undefined,
-          },
+    /* The session probe runs in the background, so `api()` is the bundled demo
+     * client for the first moments of the app's life. A query that runs in that
+     * window answers with the sample dataset even though a live backend is
+     * about to be confirmed — the page would show demo data next to a working
+     * backend, and the banner would be the only thing telling the truth.
+     *
+     * So the query waits for the probe. If the probe has not answered after a
+     * short grace period the query runs anyway (a hanging backend must not
+     * leave the page spinning forever) and is repeated with the live client
+     * as soon as the probe does answer.
+     */
+    let client: unknown = null
+    const execute = (): void => {
+      setState((previous) => ({ ...previous, status: previous.data ? previous.status : 'loading', error: null }))
+      runRef
+        .current()
+        .then((result) => {
+          if (cancelled) return
+          setState({ status: 'ready', data: result.data, meta: result.meta, error: null })
         })
-      })
+        .catch((error: unknown) => {
+          if (cancelled) return
+          const apiError = error instanceof ApiError ? error : null
+          setState({
+            status: 'error',
+            data: null,
+            meta: null,
+            error: {
+              message: apiError ? apiError.message : `Could not load ${label}.`,
+              ...(apiError?.code ? { code: apiError.code } : {}),
+              detail:
+                apiError?.code === 'not_configured'
+                  ? 'The backend has no knowledge graph configured. Everything still works with the bundled sample dataset.'
+                  : apiError?.code === 'rate_limited'
+                    ? `Too many requests. ${apiError.retryAfterSeconds ? `Try again in ${apiError.retryAfterSeconds}s.` : 'Please wait a moment.'}`
+                    : apiError?.code === 'network_error'
+                      ? 'The request never reached the server.'
+                      : undefined,
+            },
+          })
+        })
+    }
+
+    const unsubscribe = subscribeSession((session) => {
+      if (cancelled) return
+      // With a backend configured, the probe decides which client is correct,
+      // so the query waits for it. Without one, the bundled client is the only
+      // client there is and there is nothing to wait for.
+      if (hasApiBackend && !session.ready) return
+      if (session.client === client) return
+      client = session.client
+      execute()
+    })
+
+    // The grace period: a backend that never answers must not keep the page
+    // in its loading state for ever.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return
+      if (client === null) {
+        client = sessionState().client
+        execute()
+      }
+    }, 2500)
+
     return () => {
       cancelled = true
+      unsubscribe()
+      window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, nonce])
