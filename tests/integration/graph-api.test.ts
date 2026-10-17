@@ -80,6 +80,78 @@ describe('Neo4j REST verification endpoints stay truthful without a Neo4j driver
   })
 })
 
+describe('the named-query allow-list validates its parameters', () => {
+  it('rejects a missing career id instead of silently matching nothing', async () => {
+    const response = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'career.longest-prereq-chain', params: {} }),
+    })
+    const body = await response.json()
+    expect(response.status).toBe(400)
+    expect(body.error).toBe('invalid_params')
+    expect(body.queryId).toBe('career.longest-prereq-chain')
+  })
+
+  it('rejects an injected parameter rather than executing it', async () => {
+    const response = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'career.longest-prereq-chain', params: { careerId: "career:x' OR 1=1 //" } }),
+    })
+    const body = await response.json()
+    expect(response.status).toBe(400)
+    expect(body.error).toBe('invalid_params')
+  })
+
+  it('rejects a parameter of the wrong kind', async () => {
+    const response = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'career.longest-prereq-chain', params: { careerId: 'skill:programming-fundamentals' } }),
+    })
+    const body = await response.json()
+    expect(response.status).toBe(400)
+    expect(body.error).toBe('invalid_params')
+  })
+
+  it('rejects a params value that is not an object', async () => {
+    const response = await fetch(`${base.replace('/functions/v1', '')}/api/query`, {
+      method: 'POST',
+      ...json({ queryId: 'career.longest-prereq-chain', params: ['career:software-engineer'] }),
+    })
+    expect(response.status).toBe(400)
+    expect((await response.json()).error).toBe('invalid_params')
+  })
+})
+
+describe('the read ledger records the source of each request, not of the deployment', () => {
+  it('labels a graph read postgres-live and a liveness check as no graph read', async () => {
+    // A read that really touched the store.
+    await fetch(`${base}/get-careers`)
+    // A liveness check that read no graph at all.
+    await fetch(`${base.replace('/functions/v1', '')}/api/health`)
+
+    const ledger = await (await fetch(`${base.replace('/functions/v1', '')}/api/ledger/recent`)).json()
+    expect(ledger.ok).toBe(true)
+    const rest = ledger.entries.filter((entry: { queryId: string }) => entry.queryId.startsWith('REST:'))
+    expect(rest.length).toBeGreaterThan(0)
+    const liveness = rest.find((entry: { queryId: string }) => entry.queryId === 'REST:health')
+    expect(liveness).toBeTruthy()
+    // The liveness check did not read a graph, so it must not claim Neo4j.
+    expect(liveness.servedBy).toBe('none')
+    for (const entry of rest) {
+      expect(entry.servedBy).not.toBe('neo4j-live')
+    }
+  })
+
+  it('never labels the PostgreSQL store as Neo4j', async () => {
+    await fetch(`${base}/get-career-details?id=career:robotics-engineer`)
+    const ledger = await (await fetch(`${base.replace('/functions/v1', '')}/api/ledger/recent`)).json()
+    const entries = ledger.entries as Array<{ queryId: string; servedBy: string }>
+    const reads = entries.filter((entry) => entry.queryId.startsWith('REST:') === false)
+    expect(reads.length).toBeGreaterThan(0)
+    for (const entry of reads) expect(entry.servedBy).toBe('postgres-live')
+  })
+})
+
 describe('health-check reports the deployment database, not a bundle', () => {
   it('answers reachable, postgres-live, with counts straight from the tables', async () => {
     const response = await fetch(`${base}/health-check`)

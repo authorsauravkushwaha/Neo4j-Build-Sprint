@@ -38,6 +38,9 @@ jobs:
       - run: npm run lint:secrets
       - run: npm run lint:secrets:history
       - run: npm run validate:seed
+      # The backend URL a build would embed must be valid before anything is
+      # published. An empty value is a legitimate demo build.
+      - run: npm run verify:api-config -- --check
       - run: npm run emit:cypher
       - run: node -e "const a=require('./neo4j/MANIFEST.json');console.log('datasetVersion',a.datasetVersion,'nodes',a.counts.Career+a.counts.Skill+a.counts.Resource)"
       - run: git diff --exit-code -- neo4j/ || (echo '::error::neo4j/ is stale — run npm run emit:cypher and commit' && exit 1)

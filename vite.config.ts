@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa'
 
 import { canonicalSiteUrl, escapeRegExp, normalizeBase, spaFallbackDocument, withManifestBaseUrl } from './scripts/pages-target.ts'
+import { resolveApiBase } from './scripts/resolve-api-base.ts'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 
@@ -171,6 +172,23 @@ export default defineConfig(({ mode, command }) => {
    * this value onto paths with string concatenation — see `normalizeBase`.
    */
   const base = normalizeBase(env.VITE_BASE_PATH)
+  /**
+   * The backend URL this build talks to.
+   *
+   * `VITE_API_BASE_URL` still wins; `config/production-backend.json` is the
+   * committed fallback that makes a build reproducible from the repository. The
+   * resolved value is written back into `env` so that the CSP allow-list, the
+   * embedded client configuration and the workflow's own validation step all
+   * read the same string (scripts/resolve-api-base.ts holds the rules).
+   */
+  const apiBase = resolveApiBase({ env, production: mode === 'production' })
+  if (apiBase.problems.length > 0) {
+    for (const problem of apiBase.problems) console.warn(`[api-base] ${problem}`)
+  }
+  env.VITE_API_BASE_URL = apiBase.apiBaseUrl
+  console.log(
+    `[api-base] backend ${apiBase.kind}, base ${apiBase.apiBaseUrl || '(none — demo build)'} (from ${apiBase.source})`,
+  )
   /** The site's own URL including the base path and a trailing slash, or null. */
   const siteCanonical = canonicalSiteUrl(env.VITE_SITE_URL, base)
   /**
@@ -214,7 +232,7 @@ export default defineConfig(({ mode, command }) => {
     'https://*.supabase.in',
     // A relative base ("/functions/v1" for a same-origin backend) is covered by
     // 'self' and is not a valid CSP source, so only absolute URLs are added.
-    env.VITE_API_BASE_URL?.trim().startsWith('http') ? env.VITE_API_BASE_URL.trim() : '',
+    apiBase.apiBaseUrl.startsWith('http') ? apiBase.apiBaseUrl : '',
     env.VITE_CSP_EXTRA_CONNECT_SRC?.trim(),
   ].filter((v): v is string => Boolean(v))
 
@@ -254,7 +272,12 @@ export default defineConfig(({ mode, command }) => {
   return {
     base,
     // The build knows its own version; before this the footer rendered "vdev".
-    define: { 'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion) },
+    define: {
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+      // The client reads the backend base from here, so the value that the
+      // build validated is exactly the value the browser will call.
+      'import.meta.env.VITE_API_BASE_URL': JSON.stringify(apiBase.apiBaseUrl),
+    },
     plugins: [
       accountsPlugin(env),
       react(),

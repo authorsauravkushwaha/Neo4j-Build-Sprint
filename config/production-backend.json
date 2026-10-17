@@ -1,0 +1,5 @@
+{
+  "apiBaseUrl": "",
+  "kind": "none",
+  "note": "The public API base of the deployed GraphMentor backend, embedded into the GitHub Pages build. It must be the shared function contract: an absolute https URL ending in /functions/v1. Empty means a clearly-labelled demo build. The VITE_API_BASE_URL environment variable overrides this file; when both are set they must agree. See docs/deployment.md."
+}

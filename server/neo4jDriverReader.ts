@@ -140,6 +140,15 @@ export interface DriverReader extends GraphReader {
   close(): Promise<void>
   /** Exposed for tests and the verification endpoint. */
   runQuery: (cypher: string, params: Record<string, unknown>, tag: string, options?: ReadOptions) => Promise<{ rows: RawRow[]; ms: number; summary: ResultSummary }>
+  /**
+   * The identity of the database this reader is actually talking to.
+   *
+   * `SHOW DATABASES` needs administrative rights, which some Aura instances
+   * withhold from the application user, so a failure here is not an error: the
+   * configured database name is reported instead, with a null status. The
+   * point is that an operator can tell *which* database answered.
+   */
+  identity: () => Promise<{ name: string; status: string | null; address: string | null }>
   uri: string
 }
 
@@ -606,7 +615,38 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
     },
   }
 
-  return Object.assign(reader, { driver, close: async () => driver.close(), runQuery, uri: config.uri }) as DriverReader
+  return Object.assign(reader, {
+    driver,
+    close: async () => driver.close(),
+    runQuery,
+    uri: config.uri,
+    /**
+     * Which database answered. `SHOW DATABASES` is attempted first because it
+     * proves the identity from the server rather than from our configuration;
+     * when the account may not list databases, the configured name is reported
+     * with a null status rather than a guess.
+     */
+    async identity() {
+      try {
+        const result = await runQuery(
+          'SHOW DATABASES YIELD name, currentStatus, address WHERE name = $name RETURN name AS name, currentStatus AS status, address AS address',
+          { name: database },
+          'SHOW_DATABASES',
+        )
+        const row = result.rows[0]
+        if (row?.name) {
+          return {
+            name: asString(row.name, 72) ?? database,
+            status: asString(row.status, 32) ?? null,
+            address: asString(row.address, 200) ?? null,
+          }
+        }
+      } catch {
+        // Fall through to the configured identity below.
+      }
+      return { name: database, status: null, address: null }
+    },
+  }) as DriverReader
 }
 
 /**
