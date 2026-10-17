@@ -49,6 +49,11 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run lint:secrets # Scan the actual browser artifact too.
+      # The two policies a browser is given (the <meta> tag and dist/_headers)
+      # must allow the same hosts. A disagreement is how a green build ships a
+      # site whose API requests the browser then blocks.
+      - name: Confirm the built CSP copies agree
+        run: npm run check:csp
       - run: npm audit --audit-level=high
       - run: npm run check:bundle
       - uses: actions/upload-artifact@v4

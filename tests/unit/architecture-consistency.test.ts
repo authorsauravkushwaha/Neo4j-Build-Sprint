@@ -39,6 +39,9 @@ describe('architecture documentation consistency', () => {
     // place rather than re-implementing the checks.
     expect(workflow).toContain('scripts/resolve-api-base.ts')
     expect(read('scripts/resolve-api-base.ts')).toContain('must not point at localhost')
+    expect(read('scripts/resolve-api-base.ts')).toContain('GM_ALLOW_SAME_ORIGIN_API_BASE')
+    expect(read('render.yaml')).toContain('GM_ALLOW_SAME_ORIGIN_API_BASE')
+    expect(read('.github/workflows/ci.yml')).toContain('npm run check:csp')
   })
 
   it('keeps one source of truth for the backend URL', () => {

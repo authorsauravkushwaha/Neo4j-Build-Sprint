@@ -50,6 +50,10 @@ services:
       # with VITE_API_BASE_URL pointing at this service instead.
       - key: VITE_API_BASE_URL
         value: /functions/v1
+      # Required so the production build accepts the relative API base above:
+      # this one host serves both the site and the graph API.
+      - key: GM_ALLOW_SAME_ORIGIN_API_BASE
+        value: 'true'
       - key: VITE_BASE_PATH
         value: /
       # Cross-origin callers: add your GitHub Pages URL here.

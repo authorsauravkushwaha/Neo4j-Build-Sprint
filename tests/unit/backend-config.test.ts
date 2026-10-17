@@ -85,6 +85,45 @@ describe('the API base resolver', () => {
     expect(resolution.problems).toEqual([])
   })
 
+  it('refuses a same-origin relative base in a production build without an explicit opt-in', () => {
+    const resolution = resolveApiBase({
+      env: { VITE_API_BASE_URL: '/functions/v1' },
+      readConfigFile: () => file(''),
+      production: true,
+    })
+    expect(resolution.problems.join(' ')).toContain('GM_ALLOW_SAME_ORIGIN_API_BASE')
+  })
+
+  it('allows a same-origin relative base in a production build when the operator says so', () => {
+    const resolution = resolveApiBase({
+      env: { VITE_API_BASE_URL: '/functions/v1', GM_ALLOW_SAME_ORIGIN_API_BASE: 'true' },
+      readConfigFile: () => file(''),
+      production: true,
+    })
+    expect(resolution.apiBaseUrl).toBe('/functions/v1')
+    expect(resolution.kind).toBe('node')
+    expect(resolution.problems).toEqual([])
+  })
+
+  it('allows a local integration backend in a production build only with the same opt-in', () => {
+    const refused = resolveApiBase({
+      env: { VITE_API_BASE_URL: 'http://127.0.0.1:3000/functions/v1' },
+      readConfigFile: () => file(''),
+      production: true,
+    })
+    expect(refused.problems.join(' ')).toContain('localhost')
+    const allowed = resolveApiBase({
+      env: {
+        VITE_API_BASE_URL: 'http://127.0.0.1:3000/functions/v1',
+        GM_ALLOW_SAME_ORIGIN_API_BASE: 'true',
+      },
+      readConfigFile: () => file(''),
+      production: true,
+    })
+    expect(allowed.problems).toEqual([])
+    expect(allowed.apiBaseUrl).toBe('http://127.0.0.1:3000/functions/v1')
+  })
+
   it('refuses credentials in the URL', () => {
     const resolution = resolveApiBase({
       env: { VITE_API_BASE_URL: 'https://user:secret@api.example.com/functions/v1' },

@@ -331,8 +331,15 @@ describe('the Content-Security-Policy cannot drift between its three copies', ()
     const builtMeta = /http-equiv="Content-Security-Policy"\s+content="([^"]+)"/.exec(readFileSync(builtHtml, 'utf8'))?.[1] ?? ''
     const builtHeaderPolicy = /^\s*Content-Security-Policy:\s*(.+)$/m.exec(readFileSync(builtHeaders, 'utf8'))?.[1] ?? ''
     const metaHosts = new Set(directivesOf(builtMeta).get('connect-src') ?? [])
-    for (const host of directivesOf(builtHeaderPolicy).get('connect-src') ?? []) {
+    const headerHosts = new Set(directivesOf(builtHeaderPolicy).get('connect-src') ?? [])
+    for (const host of headerHosts) {
       expect(metaHosts.has(host), `dist/index.html connect-src is missing ${host}, which dist/_headers allows`).toBe(true)
+    }
+    // The other direction is the defect this test used to miss: a host added to
+    // the meta tag (the configured API origin) but not to dist/_headers, so the
+    // browser — which enforces the intersection — blocked every API request.
+    for (const host of metaHosts) {
+      expect(headerHosts.has(host), `dist/_headers connect-src is missing ${host}, which dist/index.html allows`).toBe(true)
     }
     // And the placeholder really was substituted at build time.
     expect(builtMeta).not.toContain('__CSP_CONNECT_SRC__')

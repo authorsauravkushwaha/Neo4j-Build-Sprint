@@ -22,9 +22,11 @@ When both are set they must be **equal**; a disagreement is an error, because a 
 The rules the resolver enforces — and the workflow checks with the same code — are:
 
 - an absolute `https://` URL in a production build; plain `http://` only for a local host;
-- no `localhost` in a production build;
+- no `localhost` in a production build, unless the operator opts in (see below);
 - no credentials in the URL;
 - the base must end in `/functions/v1`, the shared function contract. The Node backend serves it too (`server/graphApi.ts` mounts every function route under `/functions/v1/`), so this is not a Supabase-only shape.
+
+One legitimate production shape is a **same-origin** API: one process serves the static site *and* `/functions/v1` (the Render Blueprint, or `npm start` after `npm run build`). In that case set `VITE_API_BASE_URL=/functions/v1` **and** `GM_ALLOW_SAME_ORIGIN_API_BASE=true`. The second variable is never `VITE_*` — it never reaches the browser — and it is the operator saying this host really does serve the function contract. Without it a production build refuses a relative API base, because GitHub Pages cannot.
 
 Check what a build would embed, without building:
 
@@ -58,7 +60,9 @@ The build embeds the API base in two places, and both have to be right:
 - the client configuration (`import.meta.env.VITE_API_BASE_URL`), and
 - the `connect-src` of the Content-Security-Policy.
 
-The CSP entry is the API base's **origin**, not the whole URL. A CSP source that carries a path matches only that exact path, so `connect-src https://api.example.com/functions/v1` would have blocked every real request to `https://api.example.com/functions/v1/health-check` — the browser would have refused the whole API while the build stayed green. `scripts/verify-frontend-backend.mjs` now opens the built site in a real browser and fails when that happens.
+The CSP entry is the API base's **origin**, not the whole URL. A CSP source that carries a path matches only that exact path, so `connect-src https://api.example.com/functions/v1` would have blocked every real request to `https://api.example.com/functions/v1/health-check` — the browser would have refused the whole API while the build stayed green.
+
+The policy is written in two places a browser can see: the `<meta>` tag in `index.html` (generated at build time) and `dist/_headers` (the file a static host such as Netlify sends as a real header). Browsers enforce the *intersection* of every policy they are given, so those two copies have to list the same hosts. The build rewrites `dist/_headers` from the same allow-list it injects into the meta tag; CI fails if they disagree. `scripts/verify-frontend-backend.mjs` (`npm run verify:frontend-backend`) opens the built site in a real browser and fails when the browser still cannot reach the API.
 
 ## Environment naming
 
@@ -71,18 +75,22 @@ The CSP entry is the API base's **origin**, not the whole URL. A CSP source that
 To see the built site talk to a backend on this machine:
 
 ```bash
-# 1. the backend, with a real graph store
-GM_GRAPH_DATABASE_DIR=/tmp/gm-graph-pg ALLOWED_ORIGINS=http://127.0.0.1:4173 npm start
+# 1. the site, built so it talks to the same origin that will serve it
+GM_ALLOW_SAME_ORIGIN_API_BASE=true VITE_API_BASE_URL=/functions/v1 npm run build
 
-# 2. the site, built with the API base it should use
-VITE_API_BASE_URL=http://127.0.0.1:3000/functions/v1 npm run build
+# 2. one process serves the site, the account API, and the graph API
+GM_GRAPH_DATABASE_DIR=/tmp/gm-graph-pg npm start
 
-# 3. a static server for dist/
-npx vite preview --port 4173
+# 3. the contract check (PASS only when Neo4j answered; BLOCKED for Postgres or no graph)
+npm run verify:neo4j -- http://127.0.0.1:3000
 
-# 4. the browser check
-CHROMIUM_PATH=/path/to/chromium node scripts/verify-frontend-backend.mjs http://127.0.0.1:4173 http://127.0.0.1:3000
+# 4. the browser check (needs Chromium)
+CHROMIUM_PATH=/path/to/chromium npm run verify:frontend-backend -- http://127.0.0.1:3000 http://127.0.0.1:3000
 ```
+
+For a *cross-origin* preview (Vite on :4173, backend on :3000) build with
+`GM_ALLOW_SAME_ORIGIN_API_BASE=true VITE_API_BASE_URL=http://127.0.0.1:3000/functions/v1`
+and set `ALLOWED_ORIGINS=http://127.0.0.1:4173` on the backend.
 
 The check reports the requests the browser really made, the source each response carried, and the banner the user sees. It fails when the browser could not reach the API, when the page produced JavaScript errors, or when the banner disagrees with the observed source.
 

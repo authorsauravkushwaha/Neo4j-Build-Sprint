@@ -211,6 +211,9 @@ Notes for Windows users:
 | `npm run smoke:http` | Serves the Edge Function request pipeline on a real port and asserts the auth path over HTTP (30 checks; add `DATABASE_URL=…` to run the limiter against Postgres). | No (local) |
 | `npm run appwrite:provision` | Prints the Appwrite collections and indexes this API needs (`--json` for a pipeline, `--run` to execute). Derived from the same schema module the adapter reads, so the two cannot drift. | No |
 | `npm run verify:browser` | Drives the built app in headless Chromium: WebGL scenes, the neumorphic material, mobile layout, reduced motion, the command palette, the delta view and the enforced CSP. The script prints its own total — 112 in the last full run, 114 with `CHECK_OFFLINE=1`. Needs a running preview of `dist/` — pass `BASE_URL=http://127.0.0.1:4173`. | No (local) |
+| `npm run verify:api-config` | Prints the backend URL a build would embed. Add `-- --check` to fail on an invalid production URL. An empty value is a legitimate demo build. | No |
+| `npm run verify:neo4j` | Proves a backend really executed Cypher against Neo4j. Exit `0` PASS, `1` FAIL, `2` BLOCKED (no credentials / unreachable / not Neo4j). Never reports a missing database as a successful live query. | Yes (running backend) |
+| `npm run verify:frontend-backend` | Opens the built site in Chromium and checks the whole path: no JS errors, the browser issued the API requests, they carried a source, the banner matches. Exit `2` if no browser can be started. | No (local Chromium) |
 | `npm run seed:neo4j -- --dry-run` | Prints the statements it would send. | No |
 | `npm run seed:neo4j` | Loads the graph into Neo4j (needs credentials). | Yes |
 | `npm run cap:sync`, `cap:open`, `cap:add:android` | Capacitor helpers — see [Android](#android-app-and-apk). | Yes (Android SDK) |

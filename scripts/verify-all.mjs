@@ -51,6 +51,18 @@ async function previewReachable() {
 
 const previewUp = await previewReachable()
 
+/** Can the Node backend answer? Used only to decide whether to skip. */
+async function backendReachable() {
+  try {
+    const response = await fetch('http://127.0.0.1:3000/api/health', { signal: AbortSignal.timeout(2500) })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+const backendUp = await backendReachable()
+
 /**
  * Is the preview serving a *build* or a dev server? The service-worker checks
  * only mean anything against a build (`vite dev` does not emit sw.js), so the
@@ -118,6 +130,11 @@ const steps = [
     detail: 'the artifact every other browser check reads',
   },
   {
+    name: 'Built CSP copies agree',
+    run: 'npm run check:csp',
+    detail: 'the <meta> tag and dist/_headers list the same connect-src hosts',
+  },
+  {
     name: 'Cross-language oracle (Java)',
     run: 'npm run oracle',
     detail: 'recomputes every frontier number in Java and diffs it against the TypeScript engine',
@@ -155,6 +172,29 @@ const steps = [
     env: { DATABASE_URL: databaseUrl },
     detail: 'rate limiting and error hygiene through a real socket',
     skip: databaseUrl ? null : 'DATABASE_URL is not set — see docs/verification.md §5 for the local setup',
+    infra: true,
+  },
+  {
+    name: 'Backend URL a build would embed',
+    run: 'npm run verify:api-config -- --check',
+    detail: 'an empty value is a legitimate demo build; a set value must be a valid https /functions/v1 URL',
+  },
+  {
+    name: 'Live Neo4j contract',
+    run: 'npm run verify:neo4j -- http://127.0.0.1:3000',
+    detail: 'PASS only when a real Cypher query ran against Neo4j; BLOCKED (exit 2) when the database is not Neo4j or is unconfigured',
+    skip: backendUp ? null : 'no backend answering at http://127.0.0.1:3000 — start one with `npm run build && npm start`',
+    blockedExit: 2,
+    infra: true,
+  },
+  {
+    name: 'Frontend talks to the backend (real browser)',
+    run: 'npm run verify:frontend-backend -- http://127.0.0.1:3000 http://127.0.0.1:3000',
+    detail: 'Chromium loads the built site and checks the API requests, the source label, and the banner',
+    skip: backendUp
+      ? null
+      : 'no backend answering at http://127.0.0.1:3000 — start one with `npm run build && npm start`',
+    blockedExit: 2,
     infra: true,
   },
 ]
@@ -200,22 +240,32 @@ for (const [index, step] of steps.entries()) {
     env: { ...process.env, ...(step.env ?? {}) },
   })
   const ms = Date.now() - startedAt
-  const ok = result.status === 0
-  if (!ok) failed += 1
-  results.push({ ...step, status: ok ? 'passed' : 'failed', ms })
-  console.log(`── ${ok ? 'PASS' : 'FAIL'}  ${label} (${(ms / 1000).toFixed(1)}s)`)
+  if (result.status === 0) {
+    results.push({ ...step, status: 'passed', ms })
+    console.log(`── PASS  ${label} (${(ms / 1000).toFixed(1)}s)`)
+    continue
+  }
+  if (step.blockedExit != null && result.status === step.blockedExit) {
+    skipped += 1
+    results.push({ ...step, status: 'blocked', ms })
+    console.log(`── BLOCK ${label} (${(ms / 1000).toFixed(1)}s) — verification could not be completed (not a code defect)`)
+    continue
+  }
+  failed += 1
+  results.push({ ...step, status: 'failed', ms })
+  console.log(`── FAIL  ${label} (${(ms / 1000).toFixed(1)}s)`)
 }
 
 const width = Math.max(...results.map((entry) => entry.name.length))
 console.log(`\n${'='.repeat(72)}\nSummary\n${'='.repeat(72)}`)
 for (const entry of results) {
-  const mark = entry.status === 'passed' ? 'ok  ' : entry.status === 'skipped' ? 'skip' : 'FAIL'
+  const mark = entry.status === 'passed' ? 'ok  ' : entry.status === 'skipped' ? 'skip' : entry.status === 'blocked' ? 'BLOCK' : 'FAIL'
   const timing = entry.status === 'skipped' ? '' : `${(entry.ms / 1000).toFixed(1)}s`
   console.log(`  ${mark}  ${entry.name.padEnd(width)}  ${timing}`)
 }
 
-const ran = results.filter((entry) => entry.status !== 'skipped').length
-console.log(`\n${ran - failed}/${ran} executed step(s) passed; ${skipped} skipped.`)
+const ran = results.filter((entry) => entry.status === 'passed' || entry.status === 'failed').length
+console.log(`\n${ran - failed}/${ran} executed step(s) passed; ${skipped} skipped or blocked.`)
 
 if (failed > 0) {
   console.log('\nFailed:')
@@ -228,8 +278,9 @@ if (withInfra && skipped > 0) {
 }
 
 if (skipped > 0 && failed === 0) {
-  console.log('\nThe skipped steps above are local-infrastructure checks. Their last recorded results are in')
-  console.log('docs/verification.md §5 — do not read this summary as having re-run them.')
+  console.log('\nThe skipped/blocked steps above are local-infrastructure checks. A BLOCKED Neo4j')
+  console.log('step means the database was not there to query — it is not evidence of a live connection.')
+  console.log('Last recorded results: docs/verification.md §5. Do not read this summary as having re-run them.')
 }
 
 process.exit(failed > 0 ? 1 : 0)

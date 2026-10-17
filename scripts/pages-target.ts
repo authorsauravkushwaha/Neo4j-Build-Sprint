@@ -135,6 +135,55 @@ export function escapeRegExp(literal: string): string {
   return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+/* ==========================================================================
+   The static-host Content-Security-Policy
+   ========================================================================== */
+
+/**
+ * Replace the `connect-src` value of a policy string.
+ *
+ * The policy ships in three copies (the `<meta>` tag, `public/_headers` and
+ * netlify.toml) and the browser enforces the *intersection* of every policy it
+ * is given. That makes the header copies dangerous when the deployment's API
+ * lives on a host the committed default does not list: the meta tag is
+ * generated at build time and allows the real backend, but the header copy
+ * still says `connect-src 'self' https://*.supabase.co https://*.supabase.in`,
+ * so the browser blocks the API request and the page quietly falls back to
+ * demo data. The build stays green, the backend stays healthy, and the site
+ * looks like a demo for ever.
+ *
+ * So the header copies are generated too: this build writes the resolved
+ * allow-list into the emitted `_headers`, and the two copies cannot disagree
+ * because they come from the same list.
+ *
+ * The rewrite is deliberately narrow: only the `connect-src` directive is
+ * touched, and only the first one. Every other directive — the ones that make
+ * the policy a policy — is left exactly as it was written.
+ */
+export function rewriteConnectSrc(policy: string, connectSrc: string): string {
+  const value = connectSrc.trim()
+  if (!value) return policy
+  return policy.replace(/connect-src\s+[^;]*/, `connect-src ${value}`)
+}
+
+/**
+ * Rewrite the `Content-Security-Policy` header inside a `_headers` file.
+ *
+ * Returns the new text and whether a policy was found at all: a file without
+ * one is a deployment that silently has no header policy, and the caller is
+ * told so it can say so rather than pretend the rewrite happened.
+ */
+export function rewriteStaticHeaders(text: string, connectSrc: string): { text: string; found: boolean } {
+  let found = false
+  const lines = text.split(/\r?\n/).map((line) => {
+    const match = /^(\s*Content-Security-Policy:\s*)(.+)$/.exec(line)
+    if (!match) return line
+    found = true
+    return `${match[1]}${rewriteConnectSrc(match[2] ?? '', connectSrc)}`
+  })
+  return { text: lines.join('\n'), found }
+}
+
 /**
  * Turn the built app shell into the document a static host serves for unknown paths.
  *
