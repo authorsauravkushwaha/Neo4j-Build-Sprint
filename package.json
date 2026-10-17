@@ -50,9 +50,11 @@
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "server": "tsx server/server.ts",
     "check:bundle": "node scripts/check-bundle-budget.mjs",
+    "check:csp": "node scripts/check-csp-copies.mjs",
     "start": "tsx server/website.ts",
     "seed:graphdb": "tsx scripts/seed-graph-db.ts",
     "verify:neo4j": "node scripts/verify-neo4j.mjs",
+    "verify:frontend-backend": "node scripts/verify-frontend-backend.mjs",
     "verify:api-config": "tsx scripts/resolve-api-base.ts"
   },
   "dependencies": {

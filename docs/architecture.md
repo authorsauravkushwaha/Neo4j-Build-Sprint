@@ -52,6 +52,8 @@ That base has exactly one resolver, `scripts/resolve-api-base.ts`, and two possi
 
 When both are set they must agree; a build that silently prefers one of them is how a site ends up pointing at a backend nobody is looking at. The rules the resolver enforces are the same rules the workflow checks with: an absolute `https://` URL in a production build, no credentials in it, no localhost, and the shared function contract `/functions/v1` at the end. The Node service genuinely serves that contract (`server/graphApi.ts` mounts every function route under `/functions/v1/`), so the suffix is not Supabase-specific.
 
+One legitimate production shape is a same-origin API: one process serves the static site *and* `/functions/v1` (the Render Blueprint). In that case set `VITE_API_BASE_URL=/functions/v1` and `GM_ALLOW_SAME_ORIGIN_API_BASE=true`. The second variable is never `VITE_*` and never reaches the browser; without it a production build refuses a relative API base, because GitHub Pages cannot serve that contract. The Content-Security-Policy copies (the `<meta>` tag and `dist/_headers`) are generated from the same allow-list so a static host cannot ship a header that blocks the API the meta tag just allowed.
+
 Never use a `VITE_*` variable for Neo4j credentials. Changing either source does not change an existing Pages artifact: run a new Pages build afterwards. If both are empty, the Pages workflow deliberately builds the demo-capable frontend, which labels itself DEMO DATA.
 
 ## Seed and data safety

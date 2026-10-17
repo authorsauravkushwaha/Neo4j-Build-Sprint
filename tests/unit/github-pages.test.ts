@@ -33,6 +33,8 @@ import {
   normalizeBase,
   pagesBasePath,
   pagesSiteUrl,
+  rewriteConnectSrc,
+  rewriteStaticHeaders,
   spaFallbackDocument,
   withManifestBaseUrl,
 } from '../../scripts/pages-target.ts'
@@ -235,5 +237,40 @@ describe('the offline navigation fallback', () => {
     expect(pattern.test('/Neo4j-Build-Sprint/offline.html')).toBe(true)
     expect(pattern.test('/offline.html')).toBe(false)
     expect(new RegExp(`^${escapeRegExp('/')}offline\\.html$`).test('/offline.html')).toBe(true)
+  })
+})
+
+describe('the static-host Content-Security-Policy is generated, not copied', () => {
+  it('rewrites only the connect-src directive of a policy string', () => {
+    const original = "default-src 'self'; connect-src 'self' https://*.supabase.co; object-src 'none'"
+    const rewritten = rewriteConnectSrc(original, "'self' https://api.example.com")
+    expect(rewritten).toBe("default-src 'self'; connect-src 'self' https://api.example.com; object-src 'none'")
+    expect(rewritten).toContain("object-src 'none'")
+    expect(rewritten).not.toContain('supabase.co')
+  })
+
+  it('rewrites the Content-Security-Policy line of a _headers file', () => {
+    const file = [
+      '/*',
+      "  Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co; object-src 'none'",
+      '  X-Frame-Options: DENY',
+      '',
+    ].join('\n')
+    const { text, found } = rewriteStaticHeaders(file, "'self' https://graphmentor.onrender.com")
+    expect(found).toBe(true)
+    expect(text).toContain("connect-src 'self' https://graphmentor.onrender.com")
+    expect(text).toContain('X-Frame-Options: DENY')
+    expect(text).not.toContain('supabase.co')
+  })
+
+  it('reports when the file has no policy to rewrite', () => {
+    const { found } = rewriteStaticHeaders('X-Frame-Options: DENY\n', "'self'")
+    expect(found).toBe(false)
+  })
+
+  it('is wired into the production build so the two policies cannot disagree', () => {
+    expect(viteConfig).toContain('staticHeadersPlugin')
+    expect(viteConfig).toContain('rewriteStaticHeaders')
+    expect(viteConfig).toContain('closeBundle')
   })
 })

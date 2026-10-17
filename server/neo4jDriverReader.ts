@@ -195,13 +195,20 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
 
     const sessionCfg: SessionConfig = {
       database,
-      defaultAccessMode: (neo4j as unknown as { session: { READ: symbol } }).session.READ as unknown as SessionConfig['defaultAccessMode'],
+      defaultAccessMode: neo4j.session.READ,
       // Bookmarks / database are default; fetch size keeps big results streaming.
       fetchSize: 1000,
     }
     const session: Session = driver.session(sessionCfg)
     let summary: ResultSummary | null = null
+    const onAbort = () => {
+      session.close().catch(() => {})
+    }
+    options.signal?.addEventListener?.('abort', onAbort, { once: true })
     try {
+      if (options.signal?.aborted) {
+        throw new AppError('timeout', { internal: 'neo4j query aborted before start' })
+      }
       const txConfig = { timeout: timeoutMs }
       const result = await session.run(cypher, safeParams, txConfig)
       const recs = await result.records
@@ -218,9 +225,6 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
         dbAvailableMs: availableMs,
         dbConsumedMs: consumedMs,
       })
-      options.signal?.addEventListener?.('abort', () => {
-        session.close().catch(() => {})
-      })
       return { rows, ms, summary }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'unknown neo4j error'
@@ -233,6 +237,7 @@ export async function createNeo4jDriverReader(config: Neo4jDriverConfig): Promis
       }
       throw new AppError('dependency_unavailable', { internal: `neo4j query failed: ${tag}` })
     } finally {
+      options.signal?.removeEventListener?.('abort', onAbort)
       await session.close().catch(() => {})
     }
   }

@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA, type ManifestOptions } from 'vite-plugin-pwa'
 
-import { canonicalSiteUrl, escapeRegExp, normalizeBase, spaFallbackDocument, withManifestBaseUrl } from './scripts/pages-target.ts'
+import { canonicalSiteUrl, escapeRegExp, normalizeBase, rewriteStaticHeaders, spaFallbackDocument, withManifestBaseUrl } from './scripts/pages-target.ts'
 import { resolveApiBase } from './scripts/resolve-api-base.ts'
 
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
@@ -73,6 +73,53 @@ function htmlPlugin(connectSrc: string, styleSrc: string, canonicalHref: string 
           .replaceAll('<!-- __OG_IMAGE__ -->', socialCardBlock)
           .replaceAll('<!-- __TWITTER_IMAGE__ -->', twitterImage)
       },
+    },
+  }
+}
+
+/**
+ * Write the static host's header file with the policy this build actually needs.
+ *
+ * `public/_headers` is the template, and it is copied into `dist/` verbatim by
+ * Vite — which meant the shipped `Content-Security-Policy` always carried the
+ * committed default host list. A deployment whose backend lives anywhere else
+ * (a Render service, a custom domain) therefore had two policies: the `<meta>`
+ * tag, generated from the configured API base, and the header, which did not
+ * list that host. Browsers enforce the strictest policy they are given, so the
+ * API request was blocked, the page fell back to the bundled sample dataset,
+ * and nothing in the build said so.
+ *
+ * This plugin rewrites the emitted copy so both policies come from the same
+ * list. The committed template keeps the default hosts, so a build with no
+ * backend configured still ships exactly what the repository says it ships.
+ */
+function staticHeadersPlugin(connectSrc: string): Plugin {
+  return {
+    name: 'graphmentor-static-headers',
+    apply: 'build',
+    // closeBundle, not writeBundle: Vite copies public/ after user writeBundle
+    // hooks in some versions, and a rewrite that then gets overwritten by the
+    // committed template is exactly the defect this plugin exists to prevent.
+    closeBundle() {
+      const outDir = fileURLToPath(new URL('./dist/', import.meta.url))
+      const file = `${outDir}/_headers`
+      if (!existsSync(file)) {
+        // eslint-disable-next-line no-console
+        console.warn('[headers] dist/_headers is missing: the static host will send no header policy at all.')
+        return
+      }
+      const original = readFileSync(file, 'utf8')
+      const { text, found } = rewriteStaticHeaders(original, connectSrc)
+      if (!found) {
+        // eslint-disable-next-line no-console
+        console.warn('[headers] dist/_headers has no Content-Security-Policy line: nothing was rewritten.')
+        return
+      }
+      if (text !== original) {
+        writeFileSync(file, text)
+        // eslint-disable-next-line no-console
+        console.log(`[headers] dist/_headers: connect-src set to ${connectSrc}`)
+      }
     },
   }
 }
@@ -318,6 +365,7 @@ export default defineConfig(({ mode, command }) => {
         socialCard,
       ),
       spaFallbackPlugin(),
+      staticHeadersPlugin([...new Set(connectHosts)].join(' ')),
       seoPlugin(siteCanonical?.replace(/\/$/, '') ?? null, publicRoutes),
       VitePWA({
         // 'prompt' => the UI asks before reloading; we never silently swap the app shell.

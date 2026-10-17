@@ -21,7 +21,9 @@
  * disagree about them):
  *
  *   - an absolute URL is required; a relative base is allowed only for a
- *     same-origin deployment and only outside a production build;
+ *     same-origin deployment, and only when the operator says so with
+ *     GM_ALLOW_SAME_ORIGIN_API_BASE=true (one host serving both the site and
+ *     the API is a legitimate deployment — see render.yaml);
  *   - a production build must use https and must not point at localhost;
  *   - the base must address the shared function contract: it ends in
  *     `/functions/v1`. The Node backend genuinely serves that contract
@@ -76,6 +78,32 @@ export const FUNCTION_PREFIX = '/functions/v1'
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0'])
 
+/**
+ * The opt-in that says "the site and the API are served by the same origin".
+ *
+ * One deployment shape is genuinely legitimate and was being refused: a single
+ * process serves the static site *and* the graph API (see `render.yaml` and
+ * `server/website.ts`, which mounts the function contract at `/functions/v1`).
+ * In that shape the API base is a same-origin path, and a same-origin request
+ * is *safer* than a cross-origin absolute URL — there is no second origin to
+ * allow, no CORS preflight, and no third-party host in the CSP.
+ *
+ * The build cannot prove that the operator's host really does serve both, so
+ * the operator says so explicitly, in a variable that is never `VITE_`-prefixed
+ * and therefore never reaches the browser:
+ *
+ *   GM_ALLOW_SAME_ORIGIN_API_BASE=true
+ *
+ * It also covers the local integration case (a preview server on
+ * http://127.0.0.1:3000 answering both the site and `/functions/v1`), which is
+ * what the Neo4j integration job uses to exercise the real stack in CI.
+ */
+export const SAME_ORIGIN_OPT_IN = 'GM_ALLOW_SAME_ORIGIN_API_BASE'
+
+function sameOriginOptIn(env: Record<string, string | undefined>): boolean {
+  return (env[SAME_ORIGIN_OPT_IN] ?? '').trim().toLowerCase() === 'true'
+}
+
 export function readBackendConfigFile(path: string = BACKEND_CONFIG_PATH): BackendConfigFile | null {
   try {
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as BackendConfigFile
@@ -116,8 +144,12 @@ export function resolveApiBase(options: ResolveOptions): Resolution {
   }
 
   if (isRelativeBase(value)) {
-    if (production) {
-      problems.push('A production build must use an absolute https:// backend URL, not a same-origin path.')
+    const sameOrigin = sameOriginOptIn(options.env)
+    if (production && !sameOrigin) {
+      problems.push(
+        'A production build must use an absolute https:// backend URL, not a same-origin path. ' +
+          `If one host serves both the site and the API, set ${SAME_ORIGIN_OPT_IN}=true to say so explicitly.`,
+      )
       return { apiBaseUrl: value, kind: declaredKind === 'none' ? 'node' : declaredKind, source, problems }
     }
     if (!value.startsWith(FUNCTION_PREFIX)) {
@@ -143,8 +175,11 @@ export function resolveApiBase(options: ResolveOptions): Resolution {
   if (url.protocol === 'http:' && !isLocal) {
     problems.push('The API base URL must use https://.')
   }
-  if (production && isLocal) {
-    problems.push('A production build must not point at localhost.')
+  if (production && isLocal && !sameOriginOptIn(options.env)) {
+    problems.push(
+      'A production build must not point at localhost. ' +
+        `A local integration run may set ${SAME_ORIGIN_OPT_IN}=true when the same local host serves the site and the API.`,
+    )
   }
   const path = url.pathname.replace(/\/+$/, '')
   if (!path.endsWith(FUNCTION_PREFIX)) {
